@@ -4354,6 +4354,28 @@ IgnoredOrdersText:
 	text_far _IgnoredOrdersText
 	text_end
 
+; Read the per-move damage category without modifying the six-byte move
+; records. Input: a = move ID (1..165); output: a = MOVE_CATEGORY_*.
+; Preserves BC, DE and HL for CalculateDamage input preparation.
+GetBattleMoveCategory:
+	push bc
+	push de
+	push hl
+	dec a
+	ld c, a
+	ld b, 0
+	ld hl, MoveCategories
+	add hl, bc
+	ld de, wBuffer
+	ld bc, 1
+	ld a, BANK(MoveCategories)
+	call FarCopyData
+	ld a, [wBuffer]
+	pop hl
+	pop de
+	pop bc
+	ret
+
 ; sets b, c, d, and e for the CalculateDamage routine in the case of an attack by the player mon
 GetDamageVarsForPlayerAttack:
 	xor a
@@ -4365,9 +4387,10 @@ GetDamageVarsForPlayerAttack:
 	and a
 	ld d, a ; d = move power
 	ret z ; return if move power is zero
-	ld a, [hl] ; a = [wPlayerMoveType]
-	cp SPECIAL ; types >= SPECIAL are all special
-	jr nc, .specialAttack
+	ld a, [wPlayerMoveNum]
+	call GetBattleMoveCategory
+	cp MOVE_CATEGORY_SPECIAL
+	jr z, .specialAttack
 ; physical attack
 	ld hl, wEnemyMonDefense
 	ld a, [hli]
@@ -4478,9 +4501,10 @@ GetDamageVarsForEnemyAttack:
 	ld d, a ; d = move power
 	and a
 	ret z ; return if move power is zero
-	ld a, [hl] ; a = [wEnemyMoveType]
-	cp SPECIAL ; types >= SPECIAL are all special
-	jr nc, .specialAttack
+	ld a, [wEnemyMoveNum]
+	call GetBattleMoveCategory
+	cp MOVE_CATEGORY_SPECIAL
+	jr z, .specialAttack
 ; physical attack
 	ld hl, wBattleMonDefense
 	ld a, [hli]
