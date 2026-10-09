@@ -36,6 +36,14 @@ jobs:
             --sym pokeyellow_debug.sym \
             --sprite-2bpp gfx/sprites/ivysaur.2bpp \
             --out test-results/dev-lab-ivysaur
+      - name: Verify GBC-mode Ivysaur palette rendering
+        run: |
+          python scripts/yel_test_004_gbc_ivysaur.py \
+            --cgb \
+            --rom pokeyellow_debug.gbc \
+            --sym pokeyellow_debug.sym \
+            --sprite-2bpp gfx/sprites/ivysaur.2bpp \
+            --out test-results/yel-test-004-gbc-ivysaur
       - name: Archive evidence only
         if: always()
         uses: actions/upload-artifact@v4
@@ -44,5 +52,6 @@ jobs:
           path: |
             test-results/dev-lab-boot/
             test-results/dev-lab-ivysaur/
+            test-results/yel-test-004-gbc-ivysaur/
             test-results-rom-sha256.txt
           if-no-files-found: warn
