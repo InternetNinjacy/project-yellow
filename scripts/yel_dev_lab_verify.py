@@ -470,18 +470,35 @@ def main():
             positions.add((mem8(emu, s2 + 4), mem8(emu, s2 + 5)))
             facing = mem8(emu, s1 + 9) & 0x0C
             if facing in FACING_NAMES and facing not in facing_seen:
-                name = FACING_NAMES[facing]
-                path_out = out / f"facing_{name}.png"
-                screenshot(emu, path_out)
-                facing_seen[facing] = {
-                    "name": name,
-                    "frame": frame,
-                    "screenshot": path_out.name,
-                }
+                # Only accept direction evidence with all four sprite tiles
+                # visibly inside the 160x144 LCD. WRAM facing alone is not
+                # proof of actual rendered art.
+                live_oam = matching_oam_entries(
+                    emu, symbols["wShadowOAM"], first_tile, len(expected) // 16
+                )
+                visible = [
+                    e for e in live_oam
+                    if 8 <= e["x"] <= 160 and 16 <= e["y"] <= 144
+                ]
+                if len(visible) >= 4:
+                    name = FACING_NAMES[facing]
+                    path_out = out / f"facing_{name}.png"
+                    screenshot(emu, path_out)
+                    facing_seen[facing] = {
+                        "name": name,
+                        "frame": frame,
+                        "screenshot": path_out.name,
+                        "on_screen_oam_tiles": len(visible),
+                    }
             if len(facing_seen) == 4 and saw_moving_status and len(positions) >= 2:
                 break
 
         result["facings"] = [facing_seen[k] for k in sorted(facing_seen)]
+        facing_hashes = {
+            FACING_NAMES[k]: sha256(out / facing_seen[k]["screenshot"])
+            for k in sorted(facing_seen)
+        }
+        result["facing_screenshot_sha256"] = facing_hashes
         result["movement_status_3_observed"] = saw_moving_status
         result["distinct_object_positions"] = [list(p) for p in sorted(positions)]
         if len(facing_seen) != 4:
@@ -491,6 +508,10 @@ def main():
             )
         if not saw_moving_status or len(positions) < 2:
             raise AssertionError("WALK behavior was not observed moving the lab object")
+        if len(set(facing_hashes.values())) != 4:
+            raise AssertionError(
+                "Four distinct on-screen rendered facing screenshots were not captured"
+            )
 
         # Record hashes for all screenshots as immutable evidence references.
         result["screenshot_sha256"] = {
