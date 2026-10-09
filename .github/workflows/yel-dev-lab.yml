@@ -29,13 +29,13 @@ jobs:
           sha256sum pokeyellow.gbc pokeyellow_debug.gbc | tee test-results-rom-sha256.txt
       - name: Boot DEBUG ROM in headless DMG mode
         run: python scripts/yel_emulator_smoke.py --rom pokeyellow_debug.gbc --out test-results/dev-lab-boot
-      - name: Verify real Bulbasaur lab rendering
+      - name: Verify real Ivysaur lab rendering
         run: |
-          python scripts/yel_dev_lab_verify.py \
+          python scripts/yel_dev_lab_verify_ivysaur.py \
             --rom pokeyellow_debug.gbc \
             --sym pokeyellow_debug.sym \
-            --sprite-2bpp gfx/sprites/bulbasaur.2bpp \
-            --out test-results/dev-lab-bulbasaur
+            --sprite-2bpp gfx/sprites/ivysaur.2bpp \
+            --out test-results/dev-lab-ivysaur
       - name: Archive evidence only
         if: always()
         uses: actions/upload-artifact@v4
@@ -43,6 +43,6 @@ jobs:
           name: yel-test-003-dev-lab-build-visual-evidence
           path: |
             test-results/dev-lab-boot/
-            test-results/dev-lab-bulbasaur/
+            test-results/dev-lab-ivysaur/
             test-results-rom-sha256.txt
           if-no-files-found: warn
