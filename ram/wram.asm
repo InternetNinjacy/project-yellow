@@ -655,7 +655,15 @@ wLowHealthAlarmDisabled:: db
 
 wPlayerMonMinimized:: db
 
-	ds 13
+; YEL-BAL-002: reclaim ten bytes of an existing 13-byte unused gap in the
+; battle-temporary WRAM union. Does not shift subsequent addresses or SRAM.
+wPlayerSpecialDefense:: dw
+wEnemySpecialDefense:: dw
+wPlayerUnmodifiedSpecialDefense:: dw
+wEnemyUnmodifiedSpecialDefense:: dw
+wPlayerSpecialDefenseMod:: db
+wEnemySpecialDefenseMod:: db
+	ds 3
 
 UNION
 ; the amount of damage accumulated by the enemy while biding
@@ -2529,17 +2537,3 @@ SECTION "Stack", WRAM0
 wStack:: db
 
 ENDSECTION
-
-; YEL-BAL-002: supplemental transient six-stat battle state.
-; Do not add these fields to party_struct or box_struct: those records are
-; serialized and must retain their original lengths for save compatibility.
-; These values are only storage reservations; producers and consumers have
-; not been wired in yet. Initialization, stat-stage updates, Transform, and
-; player/enemy switch handling must be implemented before enabling them.
-SECTION "Six Stat Battle Cache", WRAM0
-wPlayerSpecialDefense:: dw
-wEnemySpecialDefense:: dw
-wPlayerUnmodifiedSpecialDefense:: dw
-wEnemyUnmodifiedSpecialDefense:: dw
-wPlayerSpecialDefenseMod:: db
-wEnemySpecialDefenseMod:: db
