@@ -21,7 +21,10 @@ DebugNewGameParty: ; unreferenced except in _DEBUG
 
 PrepareNewGameDebug: ; dummy except in _DEBUG
 IF DEF(_DEBUG)
-	xor a ; PLAYER_PARTY_DATA
+	; _AddPartyMon treats a zero low nybble as player-party data, but only
+	; offers the naming screen when the entire value is zero. Use a temporary
+	; nonzero high nybble so the stock DEBUG party can be assembled unattended.
+	ld a, $10
 	ld [wMonDataLocation], a
 
 	; Fly anywhere.
@@ -34,6 +37,8 @@ IF DEF(_DEBUG)
 	ld [wObtainedBadges], a
 
 	call SetDebugNewGameParty
+	xor a ; restore PLAYER_PARTY_DATA for normal debug play
+	ld [wMonDataLocation], a
 
 	; Pikachu gets Surf.
 	ld a, SURF
