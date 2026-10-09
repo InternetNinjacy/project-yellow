@@ -12,13 +12,20 @@ jobs:
           repository: gbdev/rgbds
           ref: v1.0.3
           path: .toolchain/rgbds
+      - uses: actions/checkout@v4
+        with:
+          repository: LIJI32/SameBoy
+          ref: v1.0.3
+          path: .toolchain/sameboy
       - name: Install SGB emulator and virtual screen
         run: |
           sudo apt-get update
-          sudo apt-get install -y bison libpng-dev pkg-config build-essential xvfb xdotool imagemagick sameboy
+          sudo apt-get install -y bison libpng-dev pkg-config build-essential xvfb xdotool imagemagick libsdl2-dev
       - name: Build RGBDS
         working-directory: .toolchain/rgbds
         run: sudo make -j2 install
+      - name: Build pinned SameBoy SGB-capable emulator
+        run: make -C .toolchain/sameboy -j2 sdl CONF=release
       - name: Compile isolated DEBUG ROM
         run: |
           rm -rf .toolchain
@@ -29,7 +36,7 @@ jobs:
         run: |
           xvfb-run --auto-servernum --server-args='-screen 0 1024x768x24' bash -euxo pipefail -c '
             export SDL_AUDIODRIVER=dummy
-            timeout 28s sameboy --nogl --model sgb-ntsc pokeyellow_debug.gbc >test-results/sgb-smoke/sameboy.log 2>&1 &
+            timeout 28s .toolchain/sameboy/build/bin/SDL/sameboy --nogl --model sgb-ntsc pokeyellow_debug.gbc >test-results/sgb-smoke/sameboy.log 2>&1 &
             pid=$!
             sleep 8
             wid=$(xdotool search --name "SameBoy" | head -1)
