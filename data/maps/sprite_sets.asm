@@ -74,7 +74,7 @@ SpriteSets:
 	db SPRITE_COOLTRAINER_M
 	db SPRITE_GAMBLER
 	db SPRITE_OAK
-	db SPRITE_SWIMMER
+	db SPRITE_BULBASAUR ; YEL-TEST-002 fixture: replaces otherwise unused Pallet Swimmer graphics slot
 	db SPRITE_POKE_BALL
 	db SPRITE_GAMBLER_ASLEEP
 
