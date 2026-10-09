@@ -124,7 +124,7 @@ ItemUseBall:
 	jr nz, .canUseBall
 	; Rotate to the next non-full box only when capture needs storage.
 	; A = 0 when every box is full.
-	callfar AutoSwitchBoxForCapture
+	callfar CheckBoxSpaceForCapture
 	and a
 	jp z, BoxFullCannotThrowBall
 
@@ -580,6 +580,8 @@ ItemUseBall:
 
 .sendToBox
 	call ClearSprites
+	; A successful catch now requires storage: switch only at this point.
+	callfar AutoSwitchBoxForCapture
 	call SendNewMonToBox
 	ld hl, ItemUseBallText07
 	CheckEvent EVENT_MET_BILL
