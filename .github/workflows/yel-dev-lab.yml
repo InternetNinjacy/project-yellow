@@ -1,7 +1,7 @@
 name: Project Yellow dev lab build
 on:
   push:
-    branches: [yel-test-003-dev-lab, yel-test-003-bulbasaur-visual-qa]
+    branches: [yel-test-003-dev-lab]
   pull_request:
   workflow_dispatch:
 jobs:
