@@ -531,7 +531,7 @@ ItemUseBall:
 	cp BATTLE_TYPE_OLD_MAN ; is this the old man battle?
 	jp z, .oldManCaughtMon ; if so, don't give the player the caught Pokémon
 	cp BATTLE_TYPE_PIKACHU
-	jr z, .oldManCaughtMon ; same with Pikachu battle
+	jp z, .oldManCaughtMon ; same with Pikachu battle
 	ld hl, ItemUseBallText05
 	call PrintText
 
