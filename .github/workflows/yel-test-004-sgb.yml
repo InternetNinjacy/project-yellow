@@ -1,0 +1,51 @@
+name: Project Yellow Super Game Boy smoke
+on:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  sgb-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: gbdev/rgbds
+          ref: v1.0.3
+          path: .toolchain/rgbds
+      - name: Install SGB emulator and virtual screen
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bison libpng-dev pkg-config build-essential xvfb xdotool imagemagick sameboy
+      - name: Build RGBDS
+        working-directory: .toolchain/rgbds
+        run: sudo make -j2 install
+      - name: Compile isolated DEBUG ROM
+        run: |
+          rm -rf .toolchain
+          make -j2 pokeyellow_debug.gbc
+          mkdir -p test-results/sgb-smoke
+          sha256sum pokeyellow_debug.gbc > test-results/sgb-smoke/rom.sha256
+      - name: Launch genuine SGB model in headless X server
+        run: |
+          xvfb-run --auto-servernum --server-args='-screen 0 1024x768x24' bash -euxo pipefail -c '
+            export SDL_AUDIODRIVER=dummy
+            timeout 28s sameboy --nogl --model sgb-ntsc pokeyellow_debug.gbc >test-results/sgb-smoke/sameboy.log 2>&1 &
+            pid=$!
+            sleep 8
+            wid=$(xdotool search --name "SameBoy" | head -1)
+            test -n "$wid"
+            xdotool windowactivate --sync "$wid" || true
+            xdotool key --window "$wid" BackSpace
+            sleep 2
+            import -window "$wid" test-results/sgb-smoke/sgb_menu.png
+            kill $pid || true
+            wait $pid || true
+          '
+          test -s test-results/sgb-smoke/sgb_menu.png
+      - name: Archive actual SGB emulator evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yel-test-004-sgb-boot-smoke
+          path: test-results/sgb-smoke/
+          if-no-files-found: warn
