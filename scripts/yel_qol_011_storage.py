@@ -146,8 +146,8 @@ def main():
             report['status'] = 'EMULATOR_RECORDS_PRESERVED_NOT_SAVE_VERIFIED'
             report['warning'] = '12-box records preserved in emulator memory; persistent save/reload and UI regressions remain unverified.'
         else:
-    report['status'] = 'PARTIAL_PASS_ACTIVE_BOX_ONLY'
-        report['warning'] = ('Active WRAM box assertions passed, but SRAM boxes, per-Pokémon '
+            report['status'] = 'PARTIAL_PASS_ACTIVE_BOX_ONLY'
+            report['warning'] = ('Active WRAM box assertions passed, but SRAM boxes, per-Pokémon '
                              'fields, full-box preservation, and save/reload are NOT yet '
                              'asserted. Do not mark storage integrity verified.')
     except Exception as exc:
