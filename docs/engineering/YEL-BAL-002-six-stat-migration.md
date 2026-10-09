@@ -84,3 +84,14 @@ Verified directly on `master` (source audit, not execution):
 - This is a **storage reservation only**, not functional six-stat damage support. Values are not initialized, derived, copied, or read by battle code yet. Special Attack remains at the legacy Special address pending later integration.
 - **Validation status:** Re-fetched the branch file and confirmed declarations exist. No rgbds/linker build or emulator verification performed; WRAM0 allocation success and section link placement must be verified by CI before merging.
 - Next: wire derived stat values on wild/trainer/party load; reset/copy both stages on switch, Transform and Haze; then integrate category-driven stat selection with matching tests.
+
+## BAL-04: initialise transient stat cache on battler loads (2026-10-09)
+
+Committed a bounded assembly edit to `engine/battle/core.asm`:
+
+- `LoadBattleMonFromParty` now calls `InitPlayerSpecialDefenseCache` after its existing stage reset.
+- `LoadEnemyMonFromParty` now calls `InitEnemySpecialDefenseCache` after its existing stage reset.
+- The wild/trainer non-link path in `LoadEnemyMonData` now calls `InitEnemySpecialDefenseCache` after its existing stage reset.
+- Each helper copies the current 16-bit legacy Special value to both its current and unmodified supplemental Special Defense cache, and resets its new Sp. Def stage to neutral (`BASE_STAT_LEVEL`). No persistent party or box layout is changed.
+
+**Strict scope warning:** This is a transitional *initialisation* step only. The cache initially equals legacy Special, not a separately derived species Sp. Def. Stat-exp/DV-based independent calculation, new species Sp. Atk/Sp. Def bases, per-move category routing, switch/Transform/Haze update paths, and six-stat battle math are still required. Branch source was re-fetched to confirm both helpers and three call sites; no ROM build or emulator validation has yet occurred. Do not merge until all users and WRAM allocation are tested.
