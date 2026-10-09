@@ -39,10 +39,10 @@ def record(box, slot):
     r[0] = 0x24   # Pidgey internal species ID in Yellow.
     r[1:3] = (20 + slot).to_bytes(2, 'big')  # HP
     r[3] = 8 + (slot % 8)                    # box level
-    r[8] = 33                               # catch rate
-    r[9] = 33                               # Tackle internal move ID
-    r[14:16] = (0x1000 + box * 20 + slot).to_bytes(2, 'big')
-    r[16:19] = (500 + box * 20 + slot).to_bytes(3, 'big')
+    r[7] = 45                               # catch rate
+    r[8] = 33                               # Tackle move ID
+    r[12:14] = (0x1000 + box * 20 + slot).to_bytes(2, 'big')
+    r[14:17] = (500 + box * 20 + slot).to_bytes(3, 'big')
     r[27:29] = (0x2000 + box * 20 + slot).to_bytes(2, 'big')
     r[29] = 35                              # tackle PP
     return bytes(r)
