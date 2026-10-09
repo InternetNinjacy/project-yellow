@@ -1705,6 +1705,7 @@ LoadBattleMonFromParty:
 	ld [hli], a
 	dec b
 	jr nz, .statModLoop
+	call InitPlayerSpecialDefenseCache
 	ret
 
 ; copies from enemy party data to current enemy mon data when sending out a new enemy mon
@@ -1759,6 +1760,37 @@ LoadEnemyMonFromParty:
 	jr nz, .statModLoop
 	ld a, [wWhichPokemon]
 	ld [wEnemyMonPartyPos], a
+	call InitEnemySpecialDefenseCache
+	ret
+
+; Initialise supplemental Special Defense from the legacy Special value.
+; This is a compatibility fallback until independently derived Sp. Def
+; calculations and six-stat species bases are integrated. Party/box record
+; sizes remain unchanged. Both caches use the same big-endian stat format.
+InitPlayerSpecialDefenseCache:
+	ld hl, wBattleMonSpecial
+	ld de, wPlayerSpecialDefense
+	ld bc, 2
+	call CopyData
+	ld hl, wBattleMonSpecial
+	ld de, wPlayerUnmodifiedSpecialDefense
+	ld bc, 2
+	call CopyData
+	ld a, BASE_STAT_LEVEL
+	ld [wPlayerSpecialDefenseMod], a
+	ret
+
+InitEnemySpecialDefenseCache:
+	ld hl, wEnemyMonSpecial
+	ld de, wEnemySpecialDefense
+	ld bc, 2
+	call CopyData
+	ld hl, wEnemyMonSpecial
+	ld de, wEnemyUnmodifiedSpecialDefense
+	ld bc, 2
+	call CopyData
+	ld a, BASE_STAT_LEVEL
+	ld [wEnemySpecialDefenseMod], a
 	ret
 
 SendOutMon:
@@ -6328,6 +6360,7 @@ LoadEnemyMonData:
 	ld [hli], a
 	dec b
 	jr nz, .statModLoop
+	call InitEnemySpecialDefenseCache
 	ret
 
 ; calls BattleTransition to show the battle transition animation and initializes some battle variables
