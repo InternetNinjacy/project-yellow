@@ -1705,6 +1705,7 @@ LoadBattleMonFromParty:
 	ld [hli], a
 	dec b
 	jr nz, .statModLoop
+	call InitPlayerSpecialAttack
 	call InitPlayerSpecialDefenseCache
 	ret
 
@@ -1760,6 +1761,7 @@ LoadEnemyMonFromParty:
 	jr nz, .statModLoop
 	ld a, [wWhichPokemon]
 	ld [wEnemyMonPartyPos], a
+	call InitEnemySpecialAttack
 	call InitEnemySpecialDefenseCache
 	ret
 
@@ -1767,6 +1769,131 @@ LoadEnemyMonFromParty:
 ; This is a compatibility fallback until independently derived Sp. Def
 ; calculations and six-stat species bases are integrated. Party/box record
 ; sizes remain unchanged. Both caches use the same big-endian stat format.
+; Use the historical split Sp. Atk base with Yellow's existing Special DV
+; and Special stat experience. Only the active battler and its unmodified
+; battle snapshot are changed; saved party and box records retain their format.
+InitPlayerSpecialAttack:
+	push af
+	push bc
+	push de
+	push hl
+	ld a, [wMonHBaseSpecial]
+	push af
+	ld a, [wBattleMonSpecies]
+	call LoadSpecialAttackBase
+	jr c, .resetHeader
+	ld a, [wCurEnemyLevel]
+	push af
+	ld a, [wBattleMonLevel]
+	ld [wCurEnemyLevel], a
+	ld a, [wPlayerMonNumber]
+	ld hl, wPartyMon1HPExp - 1
+	ld bc, PARTYMON_STRUCT_LENGTH
+	call AddNTimes
+	ld b, 1
+	ld c, STAT_SPECIAL
+	call CalcStat
+	pop af
+	ld [wCurEnemyLevel], a
+	ldh a, [hMultiplicand + 1]
+	ld [wBattleMonSpecial], a
+	ld [wPlayerMonUnmodifiedSpecial], a
+	ldh a, [hMultiplicand + 2]
+	ld [wBattleMonSpecial + 1], a
+	ld [wPlayerMonUnmodifiedSpecial + 1], a
+.resetHeader
+	pop af
+	ld [wMonHBaseSpecial], a
+	pop hl
+	pop de
+	pop bc
+	pop af
+	ret
+
+InitEnemySpecialAttack:
+	push af
+	push bc
+	push de
+	push hl
+	ld a, [wMonHBaseSpecial]
+	push af
+	ld a, [wEnemyMonSpecies]
+	call LoadSpecialAttackBase
+	jr c, .resetHeader
+	ld a, [wCurEnemyLevel]
+	push af
+	ld a, [wEnemyMonLevel]
+	ld [wCurEnemyLevel], a
+	ld a, [wLinkState]
+	cp LINK_STATE_BATTLING
+	jr z, .partyExp
+	ld a, [wIsInBattle]
+	cp TRAINER_BATTLE
+	jr z, .partyExp
+	ld hl, wEnemyMonDVs - (MON_DVS - (MON_HP_EXP - 1))
+	ld b, 0
+	jr .calculate
+.partyExp
+	ld a, [wEnemyMonPartyPos]
+	ld hl, wEnemyMon1HPExp - 1
+	ld bc, PARTYMON_STRUCT_LENGTH
+	call AddNTimes
+	ld b, 1
+.calculate
+	ld c, STAT_SPECIAL
+	call CalcStat
+	pop af
+	ld [wCurEnemyLevel], a
+	ldh a, [hMultiplicand + 1]
+	ld [wEnemyMonSpecial], a
+	ld [wEnemyMonUnmodifiedSpecial], a
+	ldh a, [hMultiplicand + 2]
+	ld [wEnemyMonSpecial + 1], a
+	ld [wEnemyMonUnmodifiedSpecial + 1], a
+.resetHeader
+	pop af
+	ld [wMonHBaseSpecial], a
+	pop hl
+	pop de
+	pop bc
+	pop af
+	ret
+
+; Load species base Sp. Atk (table's first column).
+LoadSpecialAttackBase:
+	push bc
+	push de
+	push hl
+	ld [wPokedexNum], a
+	predef IndexToPokedex
+	ld a, [wPokedexNum]
+	and a
+	jr z, .notFound
+	cp 152
+	jr nc, .notFound
+	dec a
+	ld c, a
+	ld b, 0
+	sla c
+	rl b
+	ld hl, BaseSpecialStats
+	add hl, bc
+	ld de, wBuffer
+	ld bc, 1
+	ld a, BANK(BaseSpecialStats)
+	call FarCopyData
+	ld a, [wBuffer]
+	ld [wMonHBaseSpecial], a
+	and a
+	jr .done
+.notFound
+	scf
+.done
+	pop hl
+	pop de
+	pop bc
+	ret
+
 ; Supplemental Sp. Def is recalculated at switch-in, using the same
 ; DV / stat-exp arithmetic as original Yellow's Special calculation.
 InitPlayerSpecialDefenseCache:
@@ -6509,6 +6636,7 @@ LoadEnemyMonData:
 	ld [hli], a
 	dec b
 	jr nz, .statModLoop
+	call InitEnemySpecialAttack
 	call InitEnemySpecialDefenseCache
 	ret
 
