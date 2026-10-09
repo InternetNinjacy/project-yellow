@@ -84,6 +84,36 @@ def wait_for_map(emu, w_cur_map, wanted, limit):
     )
 
 
+def enter_debug_menu(emu, symbols, out, limit=6000):
+    """Reach the actual DEBUG menu without assuming a boot-frame duration."""
+    w_top_y = symbols["wTopMenuItemY"]
+    w_max = symbols["wMaxMenuItem"]
+    w_watched = symbols["wMenuWatchedKeys"]
+
+    elapsed = 0
+    while elapsed < limit:
+        # Select is harmless during the startup movie. Once TitleScreen's
+        # _DEBUG input loop is active it transfers control to DebugMenu.
+        tap(emu, "select", hold=2, settle=18)
+        elapsed += 20
+
+        # DebugMenu configures a unique two-item menu at Y=7 watching A/B/Start.
+        # This makes the test state-based rather than timing/screenshot-based.
+        if (
+            mem8(emu, w_top_y) == 7
+            and mem8(emu, w_max) == 1
+            and mem8(emu, w_watched) == 0x0B
+        ):
+            screenshot(emu, out / "debug_menu.png")
+            return elapsed
+
+        tick(emu, 40)
+        elapsed += 40
+
+    screenshot(emu, out / "debug_menu_not_reached.png")
+    raise AssertionError("Timed out waiting for the actual DEBUG menu WRAM signature")
+
+
 def move_one_step(emu, button, w_cur_map, w_y, w_x):
     """Attempt one grid movement and return resulting map/y/x."""
     before = (mem8(emu, w_cur_map), mem8(emu, w_y), mem8(emu, w_x))
@@ -219,6 +249,7 @@ def main():
     required = [
         "wCurMap", "wYCoord", "wXCoord", "wSprite01StateData1",
         "wSprite01StateData2", "wShadowOAM", "vSprites",
+        "wTopMenuItemY", "wMaxMenuItem", "wMenuWatchedKeys",
     ]
     missing = [name for name in required if name not in symbols]
     if missing:
@@ -245,10 +276,9 @@ def main():
         emu = PyBoy(str(rom), window="null", cgb=False, sound_emulated=False)
         emu.set_emulation_speed(0)
 
-        # Reach the stable title screen, then invoke the existing DEBUG menu with Select.
-        tick(emu, 720)
-        tap(emu, "select", hold=3, settle=90)
-        screenshot(emu, out / "debug_menu.png")
+        # Reach the actual DEBUG menu by its WRAM menu signature, not a fixed
+        # frame count. Boot/intro duration can vary with emulator/audio behavior.
+        result["frames_to_debug_menu"] = enter_debug_menu(emu, symbols, out)
 
         # DEBUG is the second menu entry.
         tap(emu, "down", hold=2, settle=20)
