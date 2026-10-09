@@ -19,6 +19,7 @@ from pathlib import Path
 
 from pyboy import PyBoy
 
+PALLET_TOWN = 0x00
 REDS_HOUSE_1F = 0x25
 REDS_HOUSE_2F = 0x26
 SPRITE_BULBASAUR = 0x41
@@ -122,7 +123,12 @@ def enter_debug_menu(emu, symbols, out, limit=6000):
 
 def choose_debug_new_game(emu, symbols, out, limit=9000):
     """Select DEBUG and drive the stock debug intro to SpecialEnterMap."""
-    state = {"start_seen": False, "prompt_count": 0, "enter_seen": False}
+    state = {
+        "start_seen": False,
+        "prompt_count": 0,
+        "enter_seen": False,
+        "overworld_seen": False,
+    }
 
     def hit_start_debug(ctx):
         ctx["start_seen"] = True
@@ -133,11 +139,15 @@ def choose_debug_new_game(emu, symbols, out, limit=9000):
     def hit_special_enter(ctx):
         ctx["enter_seen"] = True
 
+    def hit_overworld(ctx):
+        ctx["overworld_seen"] = True
+
     # The stock DEBUG path retains OakSpeechText3, which spans several
     # ManualTextScroll waits. Advance only when the CPU reaches a real wait.
     emu.hook_register(None, "StartNewGameDebug", hit_start_debug, state)
     emu.hook_register(None, "ManualTextScroll", hit_prompt, state)
     emu.hook_register(None, "SpecialEnterMap", hit_special_enter, state)
+    emu.hook_register(None, "OverworldLoop", hit_overworld, state)
 
     for _ in range(8):
         if mem8(emu, symbols["wCurrentMenuItem"]) == 1:
@@ -152,7 +162,7 @@ def choose_debug_new_game(emu, symbols, out, limit=9000):
 
     elapsed = 0
     handled_prompts = 0
-    while elapsed < limit and not state["enter_seen"]:
+    while elapsed < limit and not state["overworld_seen"]:
         emu.tick(1)
         elapsed += 1
 
@@ -175,6 +185,7 @@ def choose_debug_new_game(emu, symbols, out, limit=9000):
     emu.hook_deregister(None, "StartNewGameDebug")
     emu.hook_deregister(None, "ManualTextScroll")
     emu.hook_deregister(None, "SpecialEnterMap")
+    emu.hook_deregister(None, "OverworldLoop")
 
     if not state["start_seen"]:
         raise AssertionError("A press did not execute StartNewGameDebug")
@@ -187,11 +198,17 @@ def choose_debug_new_game(emu, symbols, out, limit=9000):
             "DEBUG new-game intro never reached SpecialEnterMap "
             f"after {handled_prompts} text waits"
         )
+    if not state["overworld_seen"]:
+        screenshot(emu, out / "debug_map_not_initialized.png")
+        raise AssertionError(
+            "SpecialEnterMap executed but map initialization never reached OverworldLoop"
+        )
 
     return {"frames": elapsed, "text_waits": handled_prompts}
 
 
 def find_lab_by_exploration(emu, symbols, out):
+    """Reach Red's House 1F through real movement from a supported DEBUG start."""
     w_cur_map = symbols["wCurMap"]
     w_y = symbols["wYCoord"]
     w_x = symbols["wXCoord"]
@@ -199,21 +216,24 @@ def find_lab_by_exploration(emu, symbols, out):
     cur = mem8(emu, w_cur_map)
     if cur == REDS_HOUSE_1F:
         return []
-    if cur != REDS_HOUSE_2F:
+    if cur not in (PALLET_TOWN, REDS_HOUSE_2F):
         raise AssertionError(f"Debug new game reached unexpected map {cur:#04x}")
 
+    source_map = cur
     root = save_state_bytes(emu)
     start = (mem8(emu, w_y), mem8(emu, w_x))
     q = deque([(start, root, [])])
     seen = {start}
     exploration = []
+    max_positions = 512 if source_map == PALLET_TOWN else 96
 
-    while q and len(seen) <= 96:
+    while q and len(seen) <= max_positions:
         (y, x), state, path = q.popleft()
         for direction in DIRECTIONS:
             load_state_bytes(emu, state)
             new_map, ny, nx = move_one_step(emu, direction, w_cur_map, w_y, w_x)
             exploration.append({
+                "from_map": source_map,
                 "from": [y, x],
                 "input": direction,
                 "to_map": new_map,
@@ -221,9 +241,13 @@ def find_lab_by_exploration(emu, symbols, out):
             })
             if new_map == REDS_HOUSE_1F:
                 screenshot(emu, out / "lab_entry.png")
-                (out / "exploration.json").write_text(json.dumps(exploration, indent=2) + "\n")
+                (out / "exploration.json").write_text(
+                    json.dumps(exploration, indent=2) + "\n"
+                )
                 return path + [direction]
-            if new_map != REDS_HOUSE_2F:
+            if new_map != source_map:
+                # Ignore unrelated Pallet doors/connections and any unexpected
+                # upstairs exit; only the Red's House 1F transition is accepted.
                 continue
             pos = (ny, nx)
             if pos == (y, x) or pos in seen:
@@ -232,7 +256,10 @@ def find_lab_by_exploration(emu, symbols, out):
             q.append((pos, save_state_bytes(emu), path + [direction]))
 
     (out / "exploration.json").write_text(json.dumps(exploration, indent=2) + "\n")
-    raise AssertionError(f"Could not reach downstairs lab; explored {len(seen)} upstairs positions")
+    raise AssertionError(
+        f"Could not reach Red's House 1F from map {source_map:#04x}; "
+        f"explored {len(seen)} positions"
+    )
 
 
 def matching_oam_entries(emu, shadow_oam, first_tile, tile_count):
@@ -349,11 +376,17 @@ def main():
         result["frames_through_debug_intro"] = intro["frames"]
         result["debug_intro_text_waits"] = intro["text_waits"]
 
-        start_map = wait_for_map(
-            emu, symbols["wCurMap"], {REDS_HOUSE_2F, REDS_HOUSE_1F}, 4000
-        )
-        tick(emu, 120)
+        start_map = mem8(emu, symbols["wCurMap"])
+        if start_map not in (PALLET_TOWN, REDS_HOUSE_2F, REDS_HOUSE_1F):
+            raise AssertionError(
+                f"DEBUG overworld initialized on unexpected map {start_map:#04x}"
+            )
+        tick(emu, 30)
         result["debug_new_game_initial_map"] = start_map
+        result["debug_new_game_initial_coord"] = [
+            mem8(emu, symbols["wYCoord"]),
+            mem8(emu, symbols["wXCoord"]),
+        ]
 
         path = find_lab_by_exploration(emu, symbols, out)
         result["upstairs_input_path"] = path
