@@ -4921,69 +4921,79 @@ INCLUDE "data/battle/unused_critical_hit_moves.asm"
 ; Azure Heights claims "the fastest pokémon (who are, not coincidentally,
 ; among the most popular) tend to CH about 20 to 25% of the time."
 CriticalHitTest:
+; Project Yellow critical stages: ordinary 1/24, +1 1/8, +2 1/2, +3 guaranteed.
+; High-critical moves add one stage; Focus Energy adds two. Speed has no effect.
+; A zero-power status move cannot score an ordinary critical hit.
 	xor a
 	ld [wCriticalHitOrOHKO], a
 	ldh a, [hWhoseTurn]
 	and a
-	ld a, [wEnemyMonSpecies]
-	jr nz, .handleEnemy
-	ld a, [wBattleMonSpecies]
-.handleEnemy
-	ld [wCurSpecies], a
-	call GetMonHeader
-	ld a, [wMonHBaseSpeed]
-	ld b, a
-	srl b                        ; (effective (base speed/2))
-	ldh a, [hWhoseTurn]
-	and a
 	ld hl, wPlayerMovePower
 	ld de, wPlayerBattleStatus2
-	jr z, .calcCriticalHitProbability
+	jr z, .getMove
 	ld hl, wEnemyMovePower
 	ld de, wEnemyBattleStatus2
-.calcCriticalHitProbability
-	ld a, [hld]                  ; read base power from RAM
+.getMove
+	ld a, [hld]
 	and a
-	ret z                        ; do nothing if zero
+	ret z
 	dec hl
-	ld c, [hl]                   ; read move id
+	ld c, [hl]
+	ld b, 0
 	ld a, [de]
-	bit GETTING_PUMPED, a        ; test for focus energy
-	jr nz, .focusEnergyUsed      ; bug: using focus energy causes a shift to the right instead of left,
-	                             ; resulting in 1/4 the usual crit chance
-	sla b                        ; (effective (base speed/2)*2)
-	jr nc, .noFocusEnergyUsed
-	ld b, $ff                    ; cap at 255/256
-	jr .noFocusEnergyUsed
-.focusEnergyUsed
-	srl b
-.noFocusEnergyUsed
-	ld hl, HighCriticalMoves     ; table of high critical hit moves
-.Loop
-	ld a, [hli]                  ; read move from move table
-	cp c                         ; does it match the move about to be used?
-	jr z, .HighCritical          ; if so, the move about to be used is a high critical hit ratio move
-	inc a                        ; move on to the next move, FF terminates loop
-	jr nz, .Loop                 ; check the next move in HighCriticalMoves
-	srl b                        ; /2 for regular move (effective (base speed / 2))
-	jr .SkipHighCritical         ; continue as a normal move
-.HighCritical
-	sla b                        ; *2 for high critical hit moves
-	jr nc, .noCarry
-	ld b, $ff                    ; cap at 255/256
-.noCarry
-	sla b                        ; *4 for high critical move (effective (base speed/2)*8))
-	jr nc, .SkipHighCritical
-	ld b, $ff
-.SkipHighCritical
-	call BattleRandom            ; generates a random value, in "a"
-	rlc a
-	rlc a
-	rlc a
-	cp b                         ; check a against calculated crit rate
-	ret nc                       ; no critical hit if no borrow
-	ld a, $1
-	ld [wCriticalHitOrOHKO], a   ; set critical hit flag
+	bit GETTING_PUMPED, a
+	jr z, .checkHighCrit
+	inc b
+	inc b
+.checkHighCrit
+	ld hl, HighCriticalMoves
+.loop
+	ld a, [hli]
+	cp c
+	jr z, .highCrit
+	inc a
+	jr nz, .loop
+	jr .roll
+.highCrit
+	inc b
+.roll
+	ld a, b
+	cp 3
+	jr nc, .critical
+	call BattleRandom
+	ld c, a
+	ld a, b
+	and a
+	jr z, .stageZero
+	cp 1
+	jr z, .stageOne
+; Stage 2: 128/256 = 1/2.
+	ld a, c
+	cp 128
+	jr c, .critical
+	ret
+.stageOne
+; Stage 1: 32/256 = 1/8.
+	ld a, c
+	cp 32
+	jr c, .critical
+	ret
+.stageZero
+; Stage 0: exactly 1/24 via rejection of 256's four excess values.
+; Reject rolls >= 252, leaving 252 equally likely values (10.5/252 not integer).
+; Use 3-byte threshold sampling below instead for exact 1/24.
+; Reject >= 240 to sample uniformly from 240 values.
+.retry
+	call BattleRandom
+	cp 240
+	jr nc, .retry
+; 10 values out of 240 produce the 1/24 chance.
+	cp 10
+	jr c, .critical
+	ret
+.critical
+	ld a, 1
+	ld [wCriticalHitOrOHKO], a
 	ret
 
 INCLUDE "data/battle/critical_hit_moves.asm"
