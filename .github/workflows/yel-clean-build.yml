@@ -1,0 +1,35 @@
+name: Project Yellow clean baseline
+on:
+  push:
+    branches: [master, main, yellow-dev]
+  pull_request:
+  workflow_dispatch:
+jobs:
+  clean-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch pinned RGBDS
+        uses: actions/checkout@v4
+        with:
+          repository: gbdev/rgbds
+          ref: v1.0.3
+          path: .toolchain/rgbds
+      - name: Install RGBDS prerequisites
+        run: sudo apt-get update && sudo apt-get install -y bison libpng-dev pkg-config build-essential
+      - name: Build RGBDS
+        working-directory: .toolchain/rgbds
+        run: sudo make -j2 install
+      - name: Report toolchain
+        run: rgbasm --version
+      - name: Clean build
+        run: |
+          rm -rf .toolchain
+          make -j2
+      - name: Verify ROM and save manifest
+        run: bash scripts/yel-baseline-check.sh
+      - name: Upload non-ROM verification manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: yellow-baseline-manifest
+          path: test-results/baseline.txt
