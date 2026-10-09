@@ -85,6 +85,23 @@ def wait_for_map(emu, w_cur_map, wanted, limit):
     )
 
 
+def move_one_step(emu, button, w_cur_map, w_y, w_x):
+    """Attempt one real overworld grid movement and return map/y/x."""
+    before = (mem8(emu, w_cur_map), mem8(emu, w_y), mem8(emu, w_x))
+    emu.button_press(button)
+    tick(emu, 5)
+    emu.button_release(button)
+
+    # A normal Yellow grid step plus a map transition settles comfortably here.
+    for _ in range(48):
+        emu.tick(1)
+        now = (mem8(emu, w_cur_map), mem8(emu, w_y), mem8(emu, w_x))
+        if now[0] != before[0]:
+            tick(emu, 90)
+            return (mem8(emu, w_cur_map), mem8(emu, w_y), mem8(emu, w_x))
+    return (mem8(emu, w_cur_map), mem8(emu, w_y), mem8(emu, w_x))
+
+
 def enter_debug_menu(emu, symbols, out, limit=6000):
     """Reach the real DebugMenu routine using a symbol-resolved CPU hook."""
     state = {"seen": False}
