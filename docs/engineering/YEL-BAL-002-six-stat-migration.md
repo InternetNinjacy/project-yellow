@@ -95,3 +95,11 @@ Committed a bounded assembly edit to `engine/battle/core.asm`:
 - Each helper copies the current 16-bit legacy Special value to both its current and unmodified supplemental Special Defense cache, and resets its new Sp. Def stage to neutral (`BASE_STAT_LEVEL`). No persistent party or box layout is changed.
 
 **Strict scope warning:** This is a transitional *initialisation* step only. The cache initially equals legacy Special, not a separately derived species Sp. Def. Stat-exp/DV-based independent calculation, new species Sp. Atk/Sp. Def bases, per-move category routing, switch/Transform/Haze update paths, and six-stat battle math are still required. Branch source was re-fetched to confirm both helpers and three call sites; no ROM build or emulator validation has yet occurred. Do not merge until all users and WRAM allocation are tested.
+
+## BAL-05: separate species stat source verification (2026-10-09)
+
+Inspected Project Yellow `data/pokemon/base_stats.asm`: 151 included per-species files in National Dex order. Confirmed the approved Gen-II-derived starting point: `pret/pokecrystal/data/pokemon/base_stats/bulbasaur.asm` defines six base stats `45,49,49,45,65,65` (HP/Atk/Def/Spd/SpA/SpD). This is a reference, not imported game data.
+
+Integration rules: maintain legacy five-stat ROM species layout and existing boxed/party save layouts until stat/header consumers are migrated; a separate 151-entry Sp. Def (and Sp. Atk if different from old Special) table must be fully populated and audited by dex index, with explicit handling for added species. The battle cache must be **computed** from the new species base Sp. Def plus shared Special DV and Special stat experience using the existing non-HP stat formula at its level. No shortcuts copying legacy Special can be treated as final behavior. Wire both player and enemy through a single calculation helper and regression-test species with unequal SpA/SpD, including after box retrieval and level-up.
+
+**Not yet complete:** all-species import, safe header lookup, actual stat computation code, assembler build and emulator tests. The attempted bulk reference import was interrupted; no partial species table is used in game. Preserve current functional fallback until a full, verified table and helper can be committed atomically.
