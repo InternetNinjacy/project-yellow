@@ -36,19 +36,33 @@ jobs:
         run: |
           xvfb-run --auto-servernum --server-args='-screen 0 1024x768x24' bash -euxo pipefail -c '
             export SDL_AUDIODRIVER=dummy
-            timeout 28s .toolchain/sameboy/build/bin/SDL/sameboy --nogl --model sgb-ntsc pokeyellow_debug.gbc >test-results/sgb-smoke/sameboy.log 2>&1 &
+            timeout 75s .toolchain/sameboy/build/bin/SDL/sameboy --nogl --model sgb-ntsc pokeyellow_debug.gbc >test-results/sgb-smoke/sameboy.log 2>&1 &
             pid=$!
-            sleep 8
+            sleep 12
             wid=$(xdotool search --name "SameBoy" | head -1)
             test -n "$wid"
             xdotool windowactivate --sync "$wid" || true
+            import -window "$wid" test-results/sgb-smoke/sgb_title.png
             xdotool key --window "$wid" BackSpace
-            sleep 2
-            import -window "$wid" test-results/sgb-smoke/sgb_menu.png
+            sleep 3
+            import -window "$wid" test-results/sgb-smoke/sgb_select.png
+            xdotool key --window "$wid" Down
+            sleep 1
+            xdotool key --window "$wid" x
+            sleep 5
+            import -window "$wid" test-results/sgb-smoke/sgb_intro.png
+            for n in $(seq 1 10); do
+              xdotool key --window "$wid" x
+              sleep 1
+            done
+            import -window "$wid" test-results/sgb-smoke/sgb_after_intro.png
+            xdotool key --window "$wid" Up
+            sleep 5
+            import -window "$wid" test-results/sgb-smoke/sgb_lab_attempt.png
             kill $pid || true
             wait $pid || true
           '
-          test -s test-results/sgb-smoke/sgb_menu.png
+          test -s test-results/sgb-smoke/sgb_lab_attempt.png
       - name: Archive actual SGB emulator evidence
         if: always()
         uses: actions/upload-artifact@v4
