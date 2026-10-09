@@ -4549,7 +4549,7 @@ GetDamageVarsForPlayerAttack:
 	pop bc
 	jr .scaleStats
 .specialAttack
-	ld hl, wEnemyMonSpecial
+	ld hl, wEnemySpecialDefense
 	ld a, [hli]
 	ld b, a
 	ld c, [hl] ; bc = enemy special
@@ -4663,7 +4663,7 @@ GetDamageVarsForEnemyAttack:
 	pop bc
 	jr .scaleStats
 .specialAttack
-	ld hl, wBattleMonSpecial
+	ld hl, wPlayerSpecialDefense
 	ld a, [hli]
 	ld b, a
 	ld c, [hl]
