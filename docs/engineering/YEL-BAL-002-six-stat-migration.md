@@ -75,3 +75,12 @@ Verified directly on `master` (source audit, not execution):
 5. Run clean rgbds build, save/load and PC round-trips, then emulator tests before considering merge. Include the original-Pokémon-Yellow save fixture if available.
 
 **Current branch remains unimplemented at the engine level.** No source change, build, emulator run or save migration is claimed by this audit.
+
+## BAL-03: transient battle cache reservation (2026-10-09)
+
+**First executable-source edit committed to PR #5:** `ram/wram.asm` now declares a separate `SECTION "Six Stat Battle Cache", WRAM0`, allocating ten bytes: two 16-bit current Special Defense values, two 16-bit unmodified Special Defense values, and two independent 8-bit Special Defense stage modifiers (one set for each side). These are *separate from serialized party and box structs*. The existing `Special` fields and persistent record lengths have not changed.
+
+- Added names: `wPlayerSpecialDefense`, `wEnemySpecialDefense`, `wPlayerUnmodifiedSpecialDefense`, `wEnemyUnmodifiedSpecialDefense`, `wPlayerSpecialDefenseMod`, `wEnemySpecialDefenseMod`.
+- This is a **storage reservation only**, not functional six-stat damage support. Values are not initialized, derived, copied, or read by battle code yet. Special Attack remains at the legacy Special address pending later integration.
+- **Validation status:** Re-fetched the branch file and confirmed declarations exist. No rgbds/linker build or emulator verification performed; WRAM0 allocation success and section link placement must be verified by CI before merging.
+- Next: wire derived stat values on wild/trainer/party load; reset/copy both stages on switch, Transform and Haze; then integrate category-driven stat selection with matching tests.
