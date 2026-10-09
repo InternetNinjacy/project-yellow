@@ -3599,8 +3599,10 @@ PlayerCalcMoveDamage:
 	call CalculateDamage
 	jp z, PlayerCheckIfFlyOrChargeEffect ; for moves with 0 BP, skip any further damage calculation and, for now, skip MoveHitTest
 	               ; for these moves, accuracy tests will only occur if they are called as part of the effect itself
+	call ApplyProjectYellowCriticalDamage
 	call AdjustDamageForMoveType
 	call RandomizeDamage
+	call ApplyProjectYellowScreens
 .moveHitTest
 	call MoveHitTest
 HandleIfPlayerMoveMissed:
@@ -4523,12 +4525,6 @@ GetDamageVarsForPlayerAttack:
 	ld a, [hli]
 	ld b, a
 	ld c, [hl] ; bc = enemy defense
-	ld a, [wEnemyBattleStatus3]
-	bit HAS_REFLECT_UP, a ; check for Reflect
-	jr z, .physicalAttackCritCheck
-; if the enemy has used Reflect, double the enemy's defense
-	sla c
-	rl b
 .physicalAttackCritCheck
 	ld hl, wBattleMonAttack
 	ld a, [wCriticalHitOrOHKO]
@@ -4553,14 +4549,6 @@ GetDamageVarsForPlayerAttack:
 	ld a, [hli]
 	ld b, a
 	ld c, [hl] ; bc = enemy special
-	ld a, [wEnemyBattleStatus3]
-	bit HAS_LIGHT_SCREEN_UP, a ; check for Light Screen
-	jr z, .specialAttackCritCheck
-; if the enemy has used Light Screen, double the enemy's special
-	sla c
-	rl b
-; reflect and light screen boosts do not cap the stat at MAX_STAT_VALUE, so weird things will happen during stats scaling
-; if a Pokemon with 512 or more Defense has used Reflect, or if a Pokemon with 512 or more Special has used Light Screen
 .specialAttackCritCheck
 	ld hl, wBattleMonSpecial
 	ld a, [wCriticalHitOrOHKO]
@@ -4608,10 +4596,6 @@ GetDamageVarsForPlayerAttack:
 	        ; (c already contains enemy's defensive stat (possibly scaled))
 	ld a, [wBattleMonLevel]
 	ld e, a ; e = level
-	ld a, [wCriticalHitOrOHKO]
-	and a ; check for critical hit
-	jr z, .done
-	sla e ; double level if it was a critical hit
 .done
 	ld a, 1
 	and a
@@ -4637,12 +4621,6 @@ GetDamageVarsForEnemyAttack:
 	ld a, [hli]
 	ld b, a
 	ld c, [hl] ; bc = player defense
-	ld a, [wPlayerBattleStatus3]
-	bit HAS_REFLECT_UP, a ; check for Reflect
-	jr z, .physicalAttackCritCheck
-; if the player has used Reflect, double the player's defense
-	sla c
-	rl b
 .physicalAttackCritCheck
 	ld hl, wEnemyMonAttack
 	ld a, [wCriticalHitOrOHKO]
@@ -4667,14 +4645,6 @@ GetDamageVarsForEnemyAttack:
 	ld a, [hli]
 	ld b, a
 	ld c, [hl]
-	ld a, [wPlayerBattleStatus3]
-	bit HAS_LIGHT_SCREEN_UP, a ; check for Light Screen
-	jr z, .specialAttackCritCheck
-; if the player has used Light Screen, double the player's special
-	sla c
-	rl b
-; reflect and light screen boosts do not cap the stat at MAX_STAT_VALUE, so weird things will happen during stats scaling
-; if a Pokemon with 512 or more Defense has used Reflect, or if a Pokemon with 512 or more Special has used Light Screen
 .specialAttackCritCheck
 	ld hl, wEnemyMonSpecial
 	ld a, [wCriticalHitOrOHKO]
@@ -4722,10 +4692,6 @@ GetDamageVarsForEnemyAttack:
 	        ; (c already contains player's defensive stat (possibly scaled))
 	ld a, [wEnemyMonLevel]
 	ld e, a
-	ld a, [wCriticalHitOrOHKO]
-	and a ; check for critical hit
-	jr z, .done
-	sla e ; double level if it was a critical hit
 .done
 	ld a, $1
 	and a
@@ -5906,6 +5872,98 @@ CalcHitChance:
 	ld [hl], a ; store the hit chance in the move accuracy variable
 	ret
 
+
+; YEL-BAL-002: apply floor(3 * damage / 2) before STAB/type/random.
+; Original Yellow's critical-level doubling is removed in both paths.
+ApplyProjectYellowCriticalDamage:
+	ld a, [wCriticalHitOrOHKO]
+	cp 1
+	ret nz
+	push bc
+	push de
+	push hl
+	ld hl, wDamage
+	ld a, [hli]
+	ld d, a
+	ld e, [hl]
+	ld h, d
+	ld l, e
+	add hl, hl
+	ld b, 0
+	ld c, e
+	ld a, h
+	add b
+	ld h, a
+	ld a, l
+	add c
+	ld l, a
+	jr nc, .noCarry
+	inc h
+.noCarry
+	srl h
+	rr l
+	ld a, h
+	ld [wDamage], a
+	ld a, l
+	ld [wDamage + 1], a
+	pop hl
+	pop de
+	pop bc
+	ret
+
+; Screen is a late damage modifier, not a defense-stat multiplier.
+; Existing singles retain 50% damage reduction, floor, crit bypass.
+; Double-battle 2/3 modifier is deferred until doubles turn-state exists.
+ApplyProjectYellowScreens:
+	ld a, [wCriticalHitOrOHKO]
+	cp 1
+	ret z
+	push af
+	push bc
+	push hl
+	ldh a, [hWhoseTurn]
+	and a
+	jr nz, .enemy
+	ld a, [wPlayerMoveNum]
+	call GetBattleMoveCategory
+	ld b, a
+	ld a, [wEnemyBattleStatus3]
+	jr .select
+.enemy
+	ld a, [wEnemyMoveNum]
+	call GetBattleMoveCategory
+	ld b, a
+	ld a, [wPlayerBattleStatus3]
+.select
+	ld c, a
+	ld a, b
+	cp MOVE_CATEGORY_SPECIAL
+	jr z, .special
+	cp MOVE_CATEGORY_PHYSICAL
+	jr nz, .done
+	bit HAS_REFLECT_UP, c
+	jr z, .done
+	jr .halve
+.special
+	bit HAS_LIGHT_SCREEN_UP, c
+	jr z, .done
+.halve
+	ld hl, wDamage
+	ld a, [hli]
+	ld b, a
+	ld c, [hl]
+	srl b
+	rr c
+	ld a, b
+	ld [wDamage], a
+	ld a, c
+	ld [wDamage + 1], a
+.done
+	pop hl
+	pop bc
+	pop af
+	ret
+
 ; multiplies damage by a random percentage from ~85% to 100%
 RandomizeDamage:
 	ld hl, wDamage
@@ -6026,8 +6084,10 @@ EnemyCalcMoveDamage:
 	call SwapPlayerAndEnemyLevels
 	call CalculateDamage
 	jp z, EnemyCheckIfFlyOrChargeEffect
+	call ApplyProjectYellowCriticalDamage
 	call AdjustDamageForMoveType
 	call RandomizeDamage
+	call ApplyProjectYellowScreens
 
 EnemyMoveHitTest:
 	call MoveHitTest
