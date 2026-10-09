@@ -17,7 +17,7 @@ IF DEF(_DEBUG)
 	; YEL-TEST-003: first development-only graphics lab station.
 	; Reuse the starting house so testers can enter without game progression.
 	; No release-build alteration and no additional dynamic sprite allocation.
-	object_event  5,  4, SPRITE_BULBASAUR, WALK, ANY_DIR, TEXT_REDSHOUSE1F_MOM
+	object_event  5,  4, SPRITE_IVYSAUR, WALK, ANY_DIR, TEXT_REDSHOUSE1F_MOM
 ELSE
 	object_event  5,  4, SPRITE_MOM, STAY, LEFT, TEXT_REDSHOUSE1F_MOM
 ENDC

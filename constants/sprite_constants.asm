@@ -85,4 +85,5 @@ DEF FIRST_STILL_SPRITE EQU const_value
 	const SPRITE_UNUSED_GAMBLER_ASLEEP_1 ; $50
 	const SPRITE_UNUSED_GAMBLER_ASLEEP_2 ; $51
 	const SPRITE_GAMBLER_ASLEEP          ; $52
+const SPRITE_IVYSAUR                ; $53, appended to preserve stock sprite IDs
 DEF NUM_SPRITES EQU const_value - 1

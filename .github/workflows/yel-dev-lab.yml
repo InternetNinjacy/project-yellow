@@ -31,7 +31,7 @@ jobs:
         run: python scripts/yel_emulator_smoke.py --rom pokeyellow_debug.gbc --out test-results/dev-lab-boot
       - name: Verify real Bulbasaur lab rendering
         run: |
-          python scripts/yel_dev_lab_verify.py \
+          python scripts/yel_dev_lab_verify_ivysaur.py --out test-results/dev-lab-ivysaur \
             --rom pokeyellow_debug.gbc \
             --sym pokeyellow_debug.sym \
             --sprite-2bpp gfx/sprites/bulbasaur.2bpp \
@@ -43,6 +43,6 @@ jobs:
           name: yel-test-003-dev-lab-build-visual-evidence
           path: |
             test-results/dev-lab-boot/
-            test-results/dev-lab-bulbasaur/
+            test-results/dev-lab-ivysaur/
             test-results-rom-sha256.txt
           if-no-files-found: warn

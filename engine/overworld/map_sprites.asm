@@ -125,6 +125,8 @@ CheckForFourTileSprite:
 	cp SPRITE_PIKACHU       ; is this the Pikachu Sprite?
 	ret z                   ; return if yes
 
+	cp SPRITE_IVYSAUR      ; DEX-002 appended after vanilla still sprites, but walks
+	ret z
 	cp FIRST_STILL_SPRITE   ; is this a four tile sprite?
 	jr nc, .notYellowSprite ; set carry if yes
 ; regular sprite
