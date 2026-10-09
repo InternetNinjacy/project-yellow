@@ -120,21 +120,21 @@ def enter_debug_menu(emu, symbols, out, limit=6000):
     return elapsed
 
 
-def choose_debug_new_game(emu, symbols, out, limit=3600):
+def choose_debug_new_game(emu, symbols, out, limit=9000):
     """Select DEBUG and drive the stock debug intro to SpecialEnterMap."""
-    state = {"start_seen": False, "prompt_seen": False, "enter_seen": False}
+    state = {"start_seen": False, "prompt_count": 0, "enter_seen": False}
 
     def hit_start_debug(ctx):
         ctx["start_seen"] = True
 
     def hit_prompt(ctx):
-        ctx["prompt_seen"] = True
+        ctx["prompt_count"] += 1
 
     def hit_special_enter(ctx):
         ctx["enter_seen"] = True
 
-    # The stock DEBUG path still displays OakSpeechText3. Hook its actual text
-    # wait routine so the confirmation press cannot be consumed while printing.
+    # The stock DEBUG path retains OakSpeechText3, which spans several
+    # ManualTextScroll waits. Advance only when the CPU reaches a real wait.
     emu.hook_register(None, "StartNewGameDebug", hit_start_debug, state)
     emu.hook_register(None, "ManualTextScroll", hit_prompt, state)
     emu.hook_register(None, "SpecialEnterMap", hit_special_enter, state)
@@ -151,57 +151,44 @@ def choose_debug_new_game(emu, symbols, out, limit=3600):
     tap(emu, "a", hold=3, settle=8)
 
     elapsed = 0
-    while elapsed < limit and not state["prompt_seen"]:
-        emu.tick(1)
-        elapsed += 1
-
-    if not state["start_seen"]:
-        raise AssertionError("A press did not execute StartNewGameDebug")
-    if not state["prompt_seen"]:
-        screenshot(emu, out / "debug_intro_prompt_not_reached.png")
-        raise AssertionError("DEBUG Oak intro never reached ManualTextScroll")
-
-    screenshot(emu, out / "debug_intro_prompt.png")
-
-    # ManualTextScroll uses JoypadLowSensitivity and requires a NEW A/B edge.
-    # Ensure the A used to choose DEBUG has been observed as released before
-    # creating the confirmation edge for OakSpeechText3.
-    emu.button_release("a")
-    tick(emu, 12)
-    elapsed += 12
-    tap(emu, "a", hold=4, settle=24)
-    elapsed += 28
-
+    handled_prompts = 0
     while elapsed < limit and not state["enter_seen"]:
         emu.tick(1)
         elapsed += 1
+
+        if state["prompt_count"] > handled_prompts:
+            handled_prompts += 1
+            screenshot(
+                emu,
+                out / f"debug_intro_prompt_{handled_prompts:02d}.png",
+            )
+
+            # ManualTextScroll uses JoypadLowSensitivity and requires a NEW
+            # A/B edge. First let the previous input be observed as released.
+            emu.button_release("a")
+            emu.button_release("b")
+            tick(emu, 12)
+            elapsed += 12
+            tap(emu, "a", hold=4, settle=24)
+            elapsed += 28
 
     emu.hook_deregister(None, "StartNewGameDebug")
     emu.hook_deregister(None, "ManualTextScroll")
     emu.hook_deregister(None, "SpecialEnterMap")
 
+    if not state["start_seen"]:
+        raise AssertionError("A press did not execute StartNewGameDebug")
+    if handled_prompts == 0:
+        screenshot(emu, out / "debug_intro_prompt_not_reached.png")
+        raise AssertionError("DEBUG Oak intro never reached ManualTextScroll")
     if not state["enter_seen"]:
         screenshot(emu, out / "debug_intro_not_finished.png")
-        raise AssertionError("DEBUG new-game intro never reached SpecialEnterMap")
+        raise AssertionError(
+            "DEBUG new-game intro never reached SpecialEnterMap "
+            f"after {handled_prompts} text waits"
+        )
 
-    return elapsed
-
-
-def move_one_step(emu, button, w_cur_map, w_y, w_x):
-    """Attempt one grid movement and return resulting map/y/x."""
-    before = (mem8(emu, w_cur_map), mem8(emu, w_y), mem8(emu, w_x))
-    emu.button_press(button)
-    tick(emu, 5)
-    emu.button_release(button)
-
-    # A normal Yellow grid step plus map transition settles comfortably here.
-    for _ in range(48):
-        emu.tick(1)
-        now = (mem8(emu, w_cur_map), mem8(emu, w_y), mem8(emu, w_x))
-        if now[0] != before[0]:
-            tick(emu, 90)
-            return (mem8(emu, w_cur_map), mem8(emu, w_y), mem8(emu, w_x))
-    return (mem8(emu, w_cur_map), mem8(emu, w_y), mem8(emu, w_x))
+    return {"frames": elapsed, "text_waits": handled_prompts}
 
 
 def find_lab_by_exploration(emu, symbols, out):
@@ -358,9 +345,9 @@ def main():
         result["frames_to_debug_menu"] = enter_debug_menu(emu, symbols, out)
 
         # Select the DEBUG row and prove its entry routine executes.
-        result["frames_through_debug_intro"] = choose_debug_new_game(
-            emu, symbols, out
-        )
+        intro = choose_debug_new_game(emu, symbols, out)
+        result["frames_through_debug_intro"] = intro["frames"]
+        result["debug_intro_text_waits"] = intro["text_waits"]
 
         start_map = wait_for_map(
             emu, symbols["wCurMap"], {REDS_HOUSE_2F, REDS_HOUSE_1F}, 4000
