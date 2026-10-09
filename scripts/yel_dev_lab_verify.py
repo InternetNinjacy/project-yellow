@@ -162,6 +162,13 @@ def choose_debug_new_game(emu, symbols, out, limit=3600):
         raise AssertionError("DEBUG Oak intro never reached ManualTextScroll")
 
     screenshot(emu, out / "debug_intro_prompt.png")
+
+    # ManualTextScroll uses JoypadLowSensitivity and requires a NEW A/B edge.
+    # Ensure the A used to choose DEBUG has been observed as released before
+    # creating the confirmation edge for OakSpeechText3.
+    emu.button_release("a")
+    tick(emu, 12)
+    elapsed += 12
     tap(emu, "a", hold=4, settle=24)
     elapsed += 28
 
