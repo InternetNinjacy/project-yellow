@@ -10,7 +10,7 @@ Run `pokeyellow_debug.gbc`. At the title screen, press **Select** to enter Yello
 
 ## Deterministic emulator verification
 
-`scripts/yel_dev_lab_verify.py` is the YEL-TEST-003 visual verifier. It does not teleport or patch the active map. After selecting the existing DEBUG new-game path, it reads RGBDS WRAM symbols and uses PyBoy savestates to explore the small upstairs room until an actual player movement crosses the real warp into Red's House 1F.
+`scripts/yel_dev_lab_verify.py` is the YEL-TEST-003 visual verifier. It does not teleport or patch the active map. After selecting the existing DEBUG new-game path, it reads RGBDS WRAM symbols and uses PyBoy savestates to explore from the observed DEBUG starting point until actual player movement crosses into Red's House 1F.
 
 Inside the lab it checks:
 
@@ -20,9 +20,12 @@ Inside the lab it checks:
 - live shadow OAM references Bulbasaur's loaded tiles;
 - disabling OBJ rendering reveals both changed sprite pixels and unchanged background pixels inside the Bulbasaur OAM bounds, validating visible sprite/background transparency behavior;
 - `WALK` movement status and at least two object positions are observed;
-- all four documented engine facings (down, up, left, right) occur naturally, each with four on-screen OAM tiles and a distinct full-frame native 160×144 screenshot; screenshot distinctness by itself is not conclusive proof of pose shape because the sprite moves between shots;\n- the real Red's House 1F television text event opens and closes, the engine runs `CloseTextDisplay`, and the exact 192 sprite bytes are present in VRAM after dialogue exits.
+- all four documented engine facings (down, up, left, right) occur naturally, each with four on-screen OAM tiles and a distinct full-frame native 160×144 screenshot; screenshot distinctness by itself is not conclusive proof of pose shape because the sprite moves between shots;
+- the real Red's House 1F television text event opens and closes, the engine runs `CloseTextDisplay`, and the exact 192 sprite bytes are present in VRAM after dialogue exits.
 
-The CI test passed in GitHub Actions run 37996923403 (commit `2a33116`), with `dialogue_reload.reload_hook_count=1` and `vram_192_byte_restored=true`. The four directional screenshots were inspected from the archived visual-evidence artifact; they demonstrate an in-game Bulbasaur object but do not isolate pose pixels from position or occlusion changes. A stricter sprite-localized pose check remains recommended before treating individual directional artwork as finally visually approved.\n\nThe CI still builds both release and DEBUG ROMs. Release isolation remains a required gate. The visual verifier's result is not considered a pass until its GitHub Actions run and archived report/screenshots are inspected.
+The CI test passed in GitHub Actions run 37996923403 (commit `2a33116`), with `dialogue_reload.reload_hook_count=1` and `vram_192_byte_restored=true`. The four directional screenshots were inspected from the archived visual-evidence artifact; they demonstrate an in-game Bulbasaur object but do not isolate pose pixels from position or occlusion changes. A stricter sprite-localized pose check remains recommended before treating individual directional artwork as finally visually approved.
+
+The CI still builds both release and DEBUG ROMs. Release isolation remains a required gate. The visual verifier's result is not considered a pass until its GitHub Actions run and archived report/screenshots are inspected.
 
 ## Still outstanding after the Bulbasaur visual gate
 
