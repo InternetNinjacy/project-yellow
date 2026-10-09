@@ -17,7 +17,6 @@ a deterministic capture; run once for each approved edge case.
 """
 import argparse
 import hashlib
-import io
 import json
 from pathlib import Path
 from pyboy import PyBoy
@@ -87,11 +86,17 @@ def main():
                 emu.button_release(button)
             emu.tick(int(step.get('after', 0)))
         after = snapshot()
+        # Preserve complete working-box bytes for offline per-Pokémon field audits.
+        # This is not equivalent to reading all twelve SRAM boxes.
+        (out / 'before_working_box.bin').write_bytes(bytes.fromhex(before['working_box_hex']))
+        (out / 'after_working_box.bin').write_bytes(bytes.fromhex(after['working_box_hex']))
         report.update(before={k:v for k,v in before.items() if k!='working_box_hex'},
                       after={k:v for k,v in after.items() if k!='working_box_hex'})
         assert after['active_box'] == args.expected_active_box, 'Unexpected selected box'
         if before['active_box'] == after['active_box']:
             assert after['count'] - before['count'] == args.expected_count_delta, 'Wrong box count delta'
+            if args.expected_count_delta == 0:
+                assert before['working_box_hex'] == after['working_box_hex'], ('Failed capture altered working box data')
         else:
             assert args.expected_count_delta == 1, 'Selection changed without a successful capture'
             assert after['count'] > 0, 'Switched to empty box but new capture was not stored'
