@@ -5889,17 +5889,12 @@ ApplyProjectYellowCriticalDamage:
 	ld h, d
 	ld l, e
 	add hl, hl
-	ld b, 0
-	ld c, e
-	ld a, h
-	add b
-	ld h, a
 	ld a, l
-	add c
+	add e
 	ld l, a
-	jr nc, .noCarry
-	inc h
-.noCarry
+	ld a, h
+	adc d
+	ld h, a
 	srl h
 	rr l
 	ld a, h
