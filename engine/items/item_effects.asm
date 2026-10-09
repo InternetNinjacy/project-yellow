@@ -122,8 +122,10 @@ ItemUseBall:
 	ld a, [wPartyCount] ; is party full?
 	cp PARTY_LENGTH
 	jr nz, .canUseBall
-	ld a, [wBoxCount] ; is box full?
-	cp MONS_PER_BOX
+	; Rotate to the next non-full box only when capture needs storage.
+	; A = 0 when every box is full.
+	callfar AutoSwitchBoxForCapture
+	and a
 	jp z, BoxFullCannotThrowBall
 
 .canUseBall
