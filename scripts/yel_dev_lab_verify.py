@@ -527,14 +527,31 @@ def main():
             # The lab-entry snapshot is saved at map arrival below.
             load_state_bytes(emu, lab_entry_state)
             tick(emu, 40)
-            for _ in range(4):
-                new_map, ny, nx = move_one_step(
-                    emu, "left", symbols["wCurMap"], symbols["wYCoord"], symbols["wXCoord"]
-                )
-            if (new_map, ny, nx) != (REDS_HOUSE_1F, 2, 3):
-                raise AssertionError(
-                    f"Could not approach real TV dialogue event; at {(new_map, ny, nx)}"
-                )
+            map_addr, y_addr, x_addr = (
+                symbols["wCurMap"], symbols["wYCoord"], symbols["wXCoord"]
+            )
+            first_state = save_state_bytes(emu)
+            start = (mem8(emu, y_addr), mem8(emu, x_addr))
+            search = deque([(start, first_state, [])])
+            visited = {start}
+            approach_path = None
+            while search and len(visited) < 90:
+                pos, state, route = search.popleft()
+                if pos == (2, 3):
+                    load_state_bytes(emu, state)
+                    approach_path = route
+                    break
+                for direction in DIRECTIONS:
+                    load_state_bytes(emu, state)
+                    m, yy, xx = move_one_step(emu, direction, map_addr, y_addr, x_addr)
+                    dest = (yy, xx)
+                    if m != REDS_HOUSE_1F or dest == pos or dest in visited:
+                        continue
+                    visited.add(dest)
+                    search.append((dest, save_state_bytes(emu), route + [direction]))
+            if approach_path is None:
+                raise AssertionError(f"Cannot reach TV tile (2, 3) from {start}")
+            result["dialogue_approach_path"] = approach_path
             tap(emu, "up", hold=2, settle=12)
             tap(emu, "a", hold=3, settle=20)
             screenshot(emu, out / "dialogue_opened.png")
