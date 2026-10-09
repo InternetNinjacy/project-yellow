@@ -28,7 +28,7 @@ jobs:
         run: make -C .toolchain/sameboy -j2 sdl CONF=release
       - name: Compile isolated DEBUG ROM
         run: |
-          rm -rf .toolchain
+          # Keep the SameBoy build; deleting .toolchain would remove the emulator.
           make -j2 pokeyellow_debug.gbc
           mkdir -p test-results/sgb-smoke
           sha256sum pokeyellow_debug.gbc > test-results/sgb-smoke/rom.sha256
