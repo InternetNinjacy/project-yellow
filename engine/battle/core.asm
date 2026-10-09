@@ -1767,7 +1767,39 @@ LoadEnemyMonFromParty:
 ; This is a compatibility fallback until independently derived Sp. Def
 ; calculations and six-stat species bases are integrated. Party/box record
 ; sizes remain unchanged. Both caches use the same big-endian stat format.
+; Supplemental Sp. Def is recalculated at switch-in, using the same
+; DV / stat-exp arithmetic as original Yellow's Special calculation.
 InitPlayerSpecialDefenseCache:
+	push af
+	push bc
+	push de
+	push hl
+	ld a, [wMonHBaseSpecial]
+	push af
+	ld a, [wBattleMonSpecies]
+	call LoadSpecialDefenseBase
+	jr c, .fallback
+	ld a, [wCurEnemyLevel]
+	push af
+	ld a, [wBattleMonLevel]
+	ld [wCurEnemyLevel], a
+	ld a, [wPlayerMonNumber]
+	ld hl, wPartyMon1HPExp - 1
+	ld bc, PARTYMON_STRUCT_LENGTH
+	call AddNTimes
+	ld b, 1
+	ld c, STAT_SPECIAL
+	call CalcStat
+	pop af
+	ld [wCurEnemyLevel], a
+	ldh a, [hMultiplicand + 1]
+	ld [wPlayerSpecialDefense], a
+	ld [wPlayerUnmodifiedSpecialDefense], a
+	ldh a, [hMultiplicand + 2]
+	ld [wPlayerSpecialDefense + 1], a
+	ld [wPlayerUnmodifiedSpecialDefense + 1], a
+	jr .reset
+.fallback
 	ld hl, wBattleMonSpecial
 	ld de, wPlayerSpecialDefense
 	ld bc, 2
@@ -1776,11 +1808,60 @@ InitPlayerSpecialDefenseCache:
 	ld de, wPlayerUnmodifiedSpecialDefense
 	ld bc, 2
 	call CopyData
+.reset
+	pop af
+	ld [wMonHBaseSpecial], a
 	ld a, BASE_STAT_LEVEL
 	ld [wPlayerSpecialDefenseMod], a
+	pop hl
+	pop de
+	pop bc
+	pop af
 	ret
 
 InitEnemySpecialDefenseCache:
+	push af
+	push bc
+	push de
+	push hl
+	ld a, [wMonHBaseSpecial]
+	push af
+	ld a, [wEnemyMonSpecies]
+	call LoadSpecialDefenseBase
+	jr c, .fallback
+	ld a, [wCurEnemyLevel]
+	push af
+	ld a, [wEnemyMonLevel]
+	ld [wCurEnemyLevel], a
+	ld a, [wLinkState]
+	cp LINK_STATE_BATTLING
+	jr z, .partyExp
+	ld a, [wIsInBattle]
+	cp TRAINER_BATTLE
+	jr z, .partyExp
+	; Wild opponent lacks stat experience. Point CalcStat at its DVs.
+	ld hl, wEnemyMonDVs - (MON_DVS - (MON_HP_EXP - 1))
+	ld b, 0
+	jr .calculate
+.partyExp
+	ld a, [wEnemyMonPartyPos]
+	ld hl, wEnemyMon1HPExp - 1
+	ld bc, PARTYMON_STRUCT_LENGTH
+	call AddNTimes
+	ld b, 1
+.calculate
+	ld c, STAT_SPECIAL
+	call CalcStat
+	pop af
+	ld [wCurEnemyLevel], a
+	ldh a, [hMultiplicand + 1]
+	ld [wEnemySpecialDefense], a
+	ld [wEnemyUnmodifiedSpecialDefense], a
+	ldh a, [hMultiplicand + 2]
+	ld [wEnemySpecialDefense + 1], a
+	ld [wEnemyUnmodifiedSpecialDefense + 1], a
+	jr .reset
+.fallback
 	ld hl, wEnemyMonSpecial
 	ld de, wEnemySpecialDefense
 	ld bc, 2
@@ -1789,8 +1870,52 @@ InitEnemySpecialDefenseCache:
 	ld de, wEnemyUnmodifiedSpecialDefense
 	ld bc, 2
 	call CopyData
+.reset
+	pop af
+	ld [wMonHBaseSpecial], a
 	ld a, BASE_STAT_LEVEL
 	ld [wEnemySpecialDefenseMod], a
+	pop hl
+	pop de
+	pop bc
+	pop af
+	ret
+
+; Input A: internal species. On success, temporarily replaces the Special
+; base in wMonHeader with the historical Special Defense base.
+; Carry set means the species has no entry (safe legacy fallback).
+LoadSpecialDefenseBase:
+	push bc
+	push de
+	push hl
+	ld [wPokedexNum], a
+	predef IndexToPokedex
+	ld a, [wPokedexNum]
+	and a
+	jr z, .notFound
+	cp 152
+	jr nc, .notFound
+	dec a
+	ld c, a
+	ld b, 0
+	sla c
+	rl b
+	ld hl, BaseSpecialStats + 1
+	add hl, bc
+	ld de, wBuffer
+	ld bc, 1
+	ld a, BANK(BaseSpecialStats)
+	call FarCopyData
+	ld a, [wBuffer]
+	ld [wMonHBaseSpecial], a
+	and a
+	jr .done
+.notFound
+	scf
+.done
+	pop hl
+	pop de
+	pop bc
 	ret
 
 SendOutMon:
