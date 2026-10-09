@@ -18,7 +18,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y bison libpng-dev pkg-config build-essential
-          python -m pip install pyboy
+          python -m pip install pyboy Pillow
       - name: Build pinned RGBDS
         working-directory: .toolchain/rgbds
         run: sudo make -j2 install
