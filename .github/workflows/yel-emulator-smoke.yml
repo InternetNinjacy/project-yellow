@@ -1,0 +1,37 @@
+name: Project Yellow DMG emulator smoke
+on:
+  push:
+    branches: [yel-test-002-emulator]
+  pull_request:
+  workflow_dispatch:
+jobs:
+  emulator-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: gbdev/rgbds
+          ref: v1.0.3
+          path: .toolchain/rgbds
+      - name: Install prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bison libpng-dev pkg-config build-essential
+          python -m pip install pyboy Pillow
+      - name: Build pinned RGBDS
+        working-directory: .toolchain/rgbds
+        run: sudo make -j2 install
+      - name: Build Yellow test ROM
+        run: |
+          rm -rf .toolchain
+          make -j2 pokeyellow.gbc
+      - name: Run DMG boot smoke test
+        run: python scripts/yel_emulator_smoke.py
+      - name: Upload emulator test evidence, never ROM
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yel-test-002-emulator-boot-evidence
+          path: test-results/emulator/
+          if-no-files-found: warn
