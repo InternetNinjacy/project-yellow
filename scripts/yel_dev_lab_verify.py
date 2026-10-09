@@ -520,7 +520,7 @@ def main():
         reload_hit = {"count": 0}
         def on_reload(ctx):
             ctx["count"] += 1
-        emu.hook_register(None, "ReloadMapSpriteTilePatterns", on_reload, reload_hit)
+        emu.hook_register(None, "CloseTextDisplay", on_reload, reload_hit)
         try:
             # Reset to the valid lab entry before natural NPC wandering and
             # approach the built-in TV text event without writing map state.
@@ -561,7 +561,7 @@ def main():
                 tap(emu, "a", hold=3, settle=32)
             if not reload_hit["count"]:
                 raise AssertionError(
-                    "TV text interaction did not execute ReloadMapSpriteTilePatterns"
+                    "TV text interaction did not execute CloseTextDisplay"
                 )
             tick(emu, 90)
             after_text = mem_bytes(emu, vram_addr, len(expected))
@@ -576,7 +576,7 @@ def main():
             }
             screenshot(emu, out / "dialogue_sprite_restored.png")
         finally:
-            emu.hook_deregister(None, "ReloadMapSpriteTilePatterns")
+            emu.hook_deregister(None, "CloseTextDisplay")
 
         # Record hashes for all screenshots as immutable evidence references.
         result["screenshot_sha256"] = {
