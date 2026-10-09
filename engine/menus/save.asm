@@ -342,6 +342,33 @@ BoxSRAMPointerTable:
 ; YEL-QOL-011: prepare storage silently before throwing a ball with a full party.
 ; Returns A=1 if a box has room, A=0 if all boxes are full.
 ; Leave the active box unchanged if it has room.
+; Non-mutating availability check used before consuming a thrown ball.
+; A=1 if the current box or any other box has space, A=0 otherwise.
+CheckBoxSpaceForCapture::
+	ld a, [wBoxCount]
+	cp MONS_PER_BOX
+	jr nc, .checkOtherBoxes
+	ld a, 1
+	ret
+.checkOtherBoxes
+	ld hl, wCurrentBoxNum
+	bit BIT_HAS_CHANGED_BOXES, [hl]
+	call z, EmptyAllSRAMBoxes
+	call GetMonCountsForAllBoxes
+	ld hl, wBoxMonCounts
+	ld b, NUM_BOXES
+.scan
+	ld a, [hli]
+	cp MONS_PER_BOX
+	jr c, .available
+	dec b
+	jr nz, .scan
+	xor a
+	ret
+.available
+	ld a, 1
+	ret
+
 AutoSwitchBoxForCapture::
 	ld a, [wBoxCount]
 	cp MONS_PER_BOX
