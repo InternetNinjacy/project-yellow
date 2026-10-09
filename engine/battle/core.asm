@@ -4567,7 +4567,6 @@ GetDamageVarsForPlayerAttack:
 	jr nc, .scaleStats
 	ld hl, wPlayerMonUnmodifiedSpecial
 	jr .scaleStats
-.scaleStats
 ; if either the offensive or defensive stat is too large to store in a byte, scale both stats by dividing them by 4
 ; this allows values with up to 10 bits (values up to 1023) to be handled
 ; anything larger will wrap around
@@ -4664,7 +4663,6 @@ GetDamageVarsForEnemyAttack:
 	jr nc, .scaleStats
 	ld hl, wEnemyMonUnmodifiedSpecial
 	jr .scaleStats
-.scaleStats
 ; if either the offensive or defensive stat is too large to store in a byte, scale both stats by dividing them by 4
 ; this allows values with up to 10 bits (values up to 1023) to be handled
 ; anything larger will wrap around
