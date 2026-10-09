@@ -415,6 +415,7 @@ def main():
         if result["lab_map_id"] != REDS_HOUSE_1F:
             raise AssertionError("Exploration did not end in REDS_HOUSE_1F")
 
+        lab_entry_state = save_state_bytes(emu)
         tick(emu, 120)
         s1 = symbols["wSprite01StateData1"]
         s2 = symbols["wSprite01StateData2"]
@@ -512,6 +513,53 @@ def main():
             raise AssertionError(
                 "Four distinct on-screen rendered facing screenshots were not captured"
             )
+
+        # Exercise a genuine in-map text event (the television at x=3, y=1).
+        # Text tile patterns overwrite sprite VRAM; the engine must restore
+        # Bulbasaur via its normal ReloadMapSpriteTilePatterns path.
+        reload_hit = {"count": 0}
+        def on_reload(ctx):
+            ctx["count"] += 1
+        emu.hook_register(None, "ReloadMapSpriteTilePatterns", on_reload, reload_hit)
+        try:
+            # Reset to the valid lab entry before natural NPC wandering and
+            # approach the built-in TV text event without writing map state.
+            # The lab-entry snapshot is saved at map arrival below.
+            load_state_bytes(emu, lab_entry_state)
+            tick(emu, 40)
+            for _ in range(4):
+                new_map, ny, nx = move_one_step(
+                    emu, "left", symbols["wCurMap"], symbols["wYCoord"], symbols["wXCoord"]
+                )
+            if (new_map, ny, nx) != (REDS_HOUSE_1F, 2, 3):
+                raise AssertionError(
+                    f"Could not approach real TV dialogue event; at {(new_map, ny, nx)}"
+                )
+            tap(emu, "up", hold=2, settle=12)
+            tap(emu, "a", hold=3, settle=20)
+            screenshot(emu, out / "dialogue_opened.png")
+            for _ in range(20):
+                if reload_hit["count"]:
+                    break
+                tap(emu, "a", hold=3, settle=32)
+            if not reload_hit["count"]:
+                raise AssertionError(
+                    "TV text interaction did not execute ReloadMapSpriteTilePatterns"
+                )
+            tick(emu, 90)
+            after_text = mem_bytes(emu, vram_addr, len(expected))
+            if after_text != expected:
+                raise AssertionError(
+                    "Bulbasaur's exact 192-byte sprite data was not restored after text"
+                )
+            result["dialogue_reload"] = {
+                "event": "Red's House 1F television",
+                "reload_hook_count": reload_hit["count"],
+                "vram_192_byte_restored": True,
+            }
+            screenshot(emu, out / "dialogue_sprite_restored.png")
+        finally:
+            emu.hook_deregister(None, "ReloadMapSpriteTilePatterns")
 
         # Record hashes for all screenshots as immutable evidence references.
         result["screenshot_sha256"] = {
