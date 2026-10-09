@@ -32,3 +32,7 @@ Independent DMG, GBC, and SGB screenshot/report evidence for each species; GBC p
 ## Remaining gate
 
 Obtain separate authentic SGB-renderer screenshot/packet behavior proof for both species. Keep PR draft and milestone partial until SGB coverage and final review, or explicitly split out a GBC-only verified PR.
+
+## Planned SGB test implementation
+
+Use an actual SGB-capable renderer, rather than PyBoy's CGB mode, for the remaining gate. SameBoy is an appropriate candidate because it explicitly supports `sgb-ntsc`, `sgb-pal`, and `sgb2` hardware models (https://sameboy.github.io/features/). A test must confirm the ROM's SGB handshake/packet path, real overworld palette assignment, and each species' native in-game screenshot under SGB emulation. Select a reproducible model/version, archive screenshots and emulator settings, then compare map palette behavior to the DMG/GBC baselines. Do not count untested source packet analysis as an SGB PASS.
