@@ -2529,3 +2529,17 @@ SECTION "Stack", WRAM0
 wStack:: db
 
 ENDSECTION
+
+; YEL-BAL-002: supplemental transient six-stat battle state.
+; Do not add these fields to party_struct or box_struct: those records are
+; serialized and must retain their original lengths for save compatibility.
+; These values are only storage reservations; producers and consumers have
+; not been wired in yet. Initialization, stat-stage updates, Transform, and
+; player/enemy switch handling must be implemented before enabling them.
+SECTION "Six Stat Battle Cache", WRAM0
+wPlayerSpecialDefense:: dw
+wEnemySpecialDefense:: dw
+wPlayerUnmodifiedSpecialDefense:: dw
+wEnemyUnmodifiedSpecialDefense:: dw
+wPlayerSpecialDefenseMod:: db
+wEnemySpecialDefenseMod:: db
