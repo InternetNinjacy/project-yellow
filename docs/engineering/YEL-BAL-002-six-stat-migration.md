@@ -114,3 +114,13 @@ Integration rules: maintain legacy five-stat ROM species layout and existing box
 - Verified by re-fetch: 151 source rows, table INCLUDE, helper label and all three caller paths.
 
 **Validation restrictions / remaining work:** Assembly has NOT been compiled or run, so build linkage/bank placement, register side effects, and compatibility across switching, Transform, stat-stage effects, original saves and linked battles remain unverified. This change ONLY derives Sp. Def on battler load: damage calculation still uses legacy Special, and Sp. Atk has not been migrated to its split species base. Do not merge until RGBDS build plus battle/save tests and category-driven damage wiring pass.
+
+## BAL-07: Special Attack calculation and move-category damage routing (2026-10-09)
+
+On draft PR #5:
+- Added a 165-row `MoveCategories` registry in `data/moves/moves.asm` from modern damage categories, preserving the existing six-byte move records. Locked exceptions applied: Razor Leaf Physical, Lick Special. Constants `MOVE_CATEGORY_PHYSICAL/SPECIAL/STATUS` defined in `constants/battle_constants.asm`.
+- Added `GetBattleMoveCategory` in `engine/battle/core.asm` and replaced both player and opponent ordinary damage type-threshold selection with per-move category lookups.
+- Added `InitPlayerSpecialAttack` and `InitEnemySpecialAttack`: on battler load, derive 16-bit Sp. Atk using the split species base and existing Special DV/experience via Yellow `CalcStat`; update active Special and unmodified Special snapshot without expanding saved party or boxed records.
+- Ordinary Special damage defense pointer now loads new `wEnemySpecialDefense`/`wPlayerSpecialDefense` caches rather than legacy combined Special.
+
+**Not ready to merge:** GitHub CI is queued; builds and game testing not yet verified. Legacy critical-hit handling still temporarily substitutes legacy Special and doubles level, and screen handling still doubles defense, both contrary to approved modernized mechanics. Status categories are available but the full effects engine and unusual moves are not yet migrated. Stat stages, Transform/Haze, link battle consistency and temporary cache refresh on moves need further work. Do not report full correct split battle behavior until these are addressed and emulator tested.
