@@ -120,17 +120,21 @@ def enter_debug_menu(emu, symbols, out, limit=6000):
     return elapsed
 
 
-def choose_debug_new_game(emu, symbols, out, limit=600):
-    """Select the DEBUG row and prove StartNewGameDebug executes."""
-    state = {"seen": False}
+def choose_debug_new_game(emu, symbols, out, limit=3600):
+    """Select DEBUG and drive the stock debug intro to SpecialEnterMap."""
+    state = {"start_seen": False, "enter_seen": False}
 
     def hit_start_debug(ctx):
-        ctx["seen"] = True
+        ctx["start_seen"] = True
 
+    def hit_special_enter(ctx):
+        ctx["enter_seen"] = True
+
+    # Hook both ends of the stock path. The existing DEBUG new game still shows
+    # OakSpeechText3, so A pulses are needed after StartNewGameDebug begins.
     emu.hook_register(None, "StartNewGameDebug", hit_start_debug, state)
+    emu.hook_register(None, "SpecialEnterMap", hit_special_enter, state)
 
-    # Move from FIGHT (0) to DEBUG (1), confirming the menu index rather than
-    # assuming one key pulse was accepted.
     for _ in range(8):
         if mem8(emu, symbols["wCurrentMenuItem"]) == 1:
             break
@@ -142,14 +146,27 @@ def choose_debug_new_game(emu, symbols, out, limit=600):
     screenshot(emu, out / "debug_selected.png")
     tap(emu, "a", hold=3, settle=8)
 
-    for _ in range(limit):
-        if state["seen"]:
+    elapsed = 0
+    while elapsed < limit and not state["enter_seen"]:
+        # First A accepts the remaining Oak debug text; subsequent pulses are
+        # harmless during fades/delays and make this resilient to text timing.
+        tap(emu, "a", hold=2, settle=18)
+        elapsed += 20
+        if state["enter_seen"]:
             break
-        emu.tick(1)
+        tick(emu, 20)
+        elapsed += 20
 
     emu.hook_deregister(None, "StartNewGameDebug")
-    if not state["seen"]:
+    emu.hook_deregister(None, "SpecialEnterMap")
+
+    if not state["start_seen"]:
         raise AssertionError("A press did not execute StartNewGameDebug")
+    if not state["enter_seen"]:
+        screenshot(emu, out / "debug_intro_not_finished.png")
+        raise AssertionError("DEBUG new-game intro never reached SpecialEnterMap")
+
+    return elapsed
 
 
 def move_one_step(emu, button, w_cur_map, w_y, w_x):
@@ -323,7 +340,9 @@ def main():
         result["frames_to_debug_menu"] = enter_debug_menu(emu, symbols, out)
 
         # Select the DEBUG row and prove its entry routine executes.
-        choose_debug_new_game(emu, symbols, out)
+        result["frames_through_debug_intro"] = choose_debug_new_game(
+            emu, symbols, out
+        )
 
         start_map = wait_for_map(
             emu, symbols["wCurMap"], {REDS_HOUSE_2F, REDS_HOUSE_1F}, 4000
