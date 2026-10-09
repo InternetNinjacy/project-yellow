@@ -36,3 +36,10 @@ Obtain separate authentic SGB-renderer screenshot/packet behavior proof for both
 ## Planned SGB test implementation
 
 Use an actual SGB-capable renderer, rather than PyBoy's CGB mode, for the remaining gate. SameBoy is an appropriate candidate because it explicitly supports `sgb-ntsc`, `sgb-pal`, and `sgb2` hardware models (https://sameboy.github.io/features/). A test must confirm the ROM's SGB handshake/packet path, real overworld palette assignment, and each species' native in-game screenshot under SGB emulation. Select a reproducible model/version, archive screenshots and emulator settings, then compare map palette behavior to the DMG/GBC baselines. Do not count untested source packet analysis as an SGB PASS.
+
+## Actual SameBoy Super Game Boy renderer: boot smoke (2026-10-09)
+
+- A reproducible GitHub Actions SGB smoke job was implemented as .github/workflows/yel-test-004-sgb.yml, building pinned SameBoy v1.0.3 from source because the Ubuntu Actions environment does not provide its apt package, and launching its actual `--model sgb-ntsc` under Xvfb.
+- Run 38006042395 passed SameBoy initialization, SGB model startup, and an authentic Pikachu SGB border screenshot. Run 38006382886 passed staged console-input navigation/screenshots. Run 38006611551 passed staged shots with later entry timing; visible screenshots still show startup/Pikachu intro and not in-map species.
+- SGB archive https://drive.google.com/file/d/13ZBI9ZtTOwCp2gPacSc404jj2SYMrhQb/view is stored under QA & Integration Reports, not misrepresented as evidence for Bulbasaur or Ivysaur sprite colors.
+- Next engineering step is a deterministic method of getting into the DEBUG lab on this actual SGB emulator, then capture the on-screen Bulbasaur and Ivysaur frames separately, verify palette behavior and SGB data packets. This gate is NOT completed by the boot smoke; do not mark either species SGB-verified or merge PR #8 on this basis alone.
