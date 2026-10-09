@@ -4520,53 +4520,53 @@ GetDamageVarsForPlayerAttack:
 	call GetBattleMoveCategory
 	cp MOVE_CATEGORY_SPECIAL
 	jr z, .specialAttack
-; physical attack
+; Physical and Special select independent offensive/defensive stages.
+; Critical hits ignore offensive penalties and defensive bonuses only.
 	ld hl, wEnemyMonDefense
+	ld a, [wCriticalHitOrOHKO]
+	cp 1
+	jr nz, .physicalDefSelected
+	ld a, [wEnemyMonDefenseMod]
+	cp BASE_STAT_LEVEL
+	jr c, .physicalDefSelected
+	jr z, .physicalDefSelected
+	ld hl, wEnemyMonUnmodifiedDefense
+.physicalDefSelected
 	ld a, [hli]
 	ld b, a
-	ld c, [hl] ; bc = enemy defense
-.physicalAttackCritCheck
+	ld c, [hl]
 	ld hl, wBattleMonAttack
 	ld a, [wCriticalHitOrOHKO]
-	and a ; check for critical hit
-	jr z, .scaleStats
-; in the case of a critical hit, reset the player's attack and the enemy's defense to their base values
-	ld c, STAT_DEFENSE
-	call GetEnemyMonStat
-	ldh a, [hProduct + 2]
-	ld b, a
-	ldh a, [hProduct + 3]
-	ld c, a
-	push bc
-	ld hl, wPartyMon1Attack
-	ld a, [wPlayerMonNumber]
-	ld bc, PARTYMON_STRUCT_LENGTH
-	call AddNTimes
-	pop bc
+	cp 1
+	jr nz, .scaleStats
+	ld a, [wPlayerMonAttackMod]
+	cp BASE_STAT_LEVEL
+	jr nc, .scaleStats
+	ld hl, wPlayerMonUnmodifiedAttack
 	jr .scaleStats
 .specialAttack
 	ld hl, wEnemySpecialDefense
+	ld a, [wCriticalHitOrOHKO]
+	cp 1
+	jr nz, .specialDefSelected
+	ld a, [wEnemySpecialDefenseMod]
+	cp BASE_STAT_LEVEL
+	jr c, .specialDefSelected
+	jr z, .specialDefSelected
+	ld hl, wEnemyUnmodifiedSpecialDefense
+.specialDefSelected
 	ld a, [hli]
 	ld b, a
-	ld c, [hl] ; bc = enemy special
-.specialAttackCritCheck
+	ld c, [hl]
 	ld hl, wBattleMonSpecial
 	ld a, [wCriticalHitOrOHKO]
-	and a ; check for critical hit
-	jr z, .scaleStats
-; in the case of a critical hit, reset the player's and enemy's specials to their base values
-	ld c, STAT_SPECIAL
-	call GetEnemyMonStat
-	ldh a, [hProduct + 2]
-	ld b, a
-	ldh a, [hProduct + 3]
-	ld c, a
-	push bc
-	ld hl, wPartyMon1Special
-	ld a, [wPlayerMonNumber]
-	ld bc, PARTYMON_STRUCT_LENGTH
-	call AddNTimes
-	pop bc
+	cp 1
+	jr nz, .scaleStats
+	ld a, [wPlayerMonSpecialMod]
+	cp BASE_STAT_LEVEL
+	jr nc, .scaleStats
+	ld hl, wPlayerMonUnmodifiedSpecial
+	jr .scaleStats
 ; if either the offensive or defensive stat is too large to store in a byte, scale both stats by dividing them by 4
 ; this allows values with up to 10 bits (values up to 1023) to be handled
 ; anything larger will wrap around
@@ -4616,53 +4616,53 @@ GetDamageVarsForEnemyAttack:
 	call GetBattleMoveCategory
 	cp MOVE_CATEGORY_SPECIAL
 	jr z, .specialAttack
-; physical attack
+; Physical and Special select independent offensive/defensive stages.
+; Critical hits ignore offensive penalties and defensive bonuses only.
 	ld hl, wBattleMonDefense
-	ld a, [hli]
-	ld b, a
-	ld c, [hl] ; bc = player defense
-.physicalAttackCritCheck
-	ld hl, wEnemyMonAttack
 	ld a, [wCriticalHitOrOHKO]
-	and a ; check for critical hit
-	jr z, .scaleStats
-; in the case of a critical hit, reset the player's defense and the enemy's attack to their base values
-	ld hl, wPartyMon1Defense
-	ld a, [wPlayerMonNumber]
-	ld bc, PARTYMON_STRUCT_LENGTH
-	call AddNTimes
+	cp 1
+	jr nz, .physicalDefSelected
+	ld a, [wPlayerMonDefenseMod]
+	cp BASE_STAT_LEVEL
+	jr c, .physicalDefSelected
+	jr z, .physicalDefSelected
+	ld hl, wPlayerMonUnmodifiedDefense
+.physicalDefSelected
 	ld a, [hli]
 	ld b, a
 	ld c, [hl]
-	push bc
-	ld c, STAT_ATTACK
-	call GetEnemyMonStat
-	ld hl, hProduct + 2
-	pop bc
+	ld hl, wEnemyMonAttack
+	ld a, [wCriticalHitOrOHKO]
+	cp 1
+	jr nz, .scaleStats
+	ld a, [wEnemyMonAttackMod]
+	cp BASE_STAT_LEVEL
+	jr nc, .scaleStats
+	ld hl, wEnemyMonUnmodifiedAttack
 	jr .scaleStats
 .specialAttack
 	ld hl, wPlayerSpecialDefense
+	ld a, [wCriticalHitOrOHKO]
+	cp 1
+	jr nz, .specialDefSelected
+	ld a, [wPlayerSpecialDefenseMod]
+	cp BASE_STAT_LEVEL
+	jr c, .specialDefSelected
+	jr z, .specialDefSelected
+	ld hl, wPlayerUnmodifiedSpecialDefense
+.specialDefSelected
 	ld a, [hli]
 	ld b, a
 	ld c, [hl]
-.specialAttackCritCheck
 	ld hl, wEnemyMonSpecial
 	ld a, [wCriticalHitOrOHKO]
-	and a ; check for critical hit
-	jr z, .scaleStats
-; in the case of a critical hit, reset the player's and enemy's specials to their base values
-	ld hl, wPartyMon1Special
-	ld a, [wPlayerMonNumber]
-	ld bc, PARTYMON_STRUCT_LENGTH
-	call AddNTimes
-	ld a, [hli]
-	ld b, a
-	ld c, [hl]
-	push bc
-	ld c, STAT_SPECIAL
-	call GetEnemyMonStat
-	ld hl, hProduct + 2
-	pop bc
+	cp 1
+	jr nz, .scaleStats
+	ld a, [wEnemyMonSpecialMod]
+	cp BASE_STAT_LEVEL
+	jr nc, .scaleStats
+	ld hl, wEnemyMonUnmodifiedSpecial
+	jr .scaleStats
 ; if either the offensive or defensive stat is too large to store in a byte, scale both stats by dividing them by 4
 ; this allows values with up to 10 bits (values up to 1023) to be handled
 ; anything larger will wrap around
