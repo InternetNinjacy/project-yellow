@@ -85,33 +85,71 @@ def wait_for_map(emu, w_cur_map, wanted, limit):
 
 
 def enter_debug_menu(emu, symbols, out, limit=6000):
-    """Reach the actual DEBUG menu without assuming a boot-frame duration."""
-    w_top_y = symbols["wTopMenuItemY"]
-    w_max = symbols["wMaxMenuItem"]
-    w_watched = symbols["wMenuWatchedKeys"]
+    """Reach the real DebugMenu routine using a symbol-resolved CPU hook."""
+    state = {"seen": False}
+
+    def hit_debug_menu(ctx):
+        ctx["seen"] = True
+
+    emu.hook_register(None, "DebugMenu", hit_debug_menu, state)
 
     elapsed = 0
-    while elapsed < limit:
-        # Select is harmless during the startup movie. Once TitleScreen's
-        # _DEBUG input loop is active it transfers control to DebugMenu.
+    while elapsed < limit and not state["seen"]:
+        # Select is harmless during startup. On the actual _DEBUG title loop it
+        # jumps into DebugMenu, where the hook proves execution reached it.
         tap(emu, "select", hold=2, settle=18)
         elapsed += 20
-
-        # DebugMenu configures a unique two-item menu at Y=7 watching A/B/Start.
-        # This makes the test state-based rather than timing/screenshot-based.
-        if (
-            mem8(emu, w_top_y) == 7
-            and mem8(emu, w_max) == 1
-            and mem8(emu, w_watched) == 0x0B
-        ):
-            screenshot(emu, out / "debug_menu.png")
-            return elapsed
-
+        if state["seen"]:
+            break
         tick(emu, 40)
         elapsed += 40
 
-    screenshot(emu, out / "debug_menu_not_reached.png")
-    raise AssertionError("Timed out waiting for the actual DEBUG menu WRAM signature")
+    emu.hook_deregister(None, "DebugMenu")
+    if not state["seen"]:
+        screenshot(emu, out / "debug_menu_not_reached.png")
+        raise AssertionError("Timed out before CPU executed DebugMenu")
+
+    # Let DebugMenu finish drawing and enter HandleMenuInput.
+    tick(emu, 45)
+    if (
+        mem8(emu, symbols["wTopMenuItemY"]) != 7
+        or mem8(emu, symbols["wMaxMenuItem"]) != 1
+    ):
+        raise AssertionError("CPU hit DebugMenu but its two-item menu did not initialize")
+    screenshot(emu, out / "debug_menu.png")
+    return elapsed
+
+
+def choose_debug_new_game(emu, symbols, out, limit=600):
+    """Select the DEBUG row and prove StartNewGameDebug executes."""
+    state = {"seen": False}
+
+    def hit_start_debug(ctx):
+        ctx["seen"] = True
+
+    emu.hook_register(None, "StartNewGameDebug", hit_start_debug, state)
+
+    # Move from FIGHT (0) to DEBUG (1), confirming the menu index rather than
+    # assuming one key pulse was accepted.
+    for _ in range(8):
+        if mem8(emu, symbols["wCurrentMenuItem"]) == 1:
+            break
+        tap(emu, "down", hold=3, settle=8)
+    if mem8(emu, symbols["wCurrentMenuItem"]) != 1:
+        screenshot(emu, out / "debug_row_not_selected.png")
+        raise AssertionError("Could not select DEBUG row in DebugMenu")
+
+    screenshot(emu, out / "debug_selected.png")
+    tap(emu, "a", hold=3, settle=8)
+
+    for _ in range(limit):
+        if state["seen"]:
+            break
+        emu.tick(1)
+
+    emu.hook_deregister(None, "StartNewGameDebug")
+    if not state["seen"]:
+        raise AssertionError("A press did not execute StartNewGameDebug")
 
 
 def move_one_step(emu, button, w_cur_map, w_y, w_x):
@@ -250,6 +288,7 @@ def main():
         "wCurMap", "wYCoord", "wXCoord", "wSprite01StateData1",
         "wSprite01StateData2", "wShadowOAM", "vSprites",
         "wTopMenuItemY", "wMaxMenuItem", "wMenuWatchedKeys",
+        "wCurrentMenuItem",
     ]
     missing = [name for name in required if name not in symbols]
     if missing:
@@ -273,16 +312,18 @@ def main():
 
     emu = None
     try:
-        emu = PyBoy(str(rom), window="null", cgb=False, sound_emulated=False)
+        emu = PyBoy(
+            str(rom), window="null", cgb=False, sound_emulated=False,
+            symbols=str(sym),
+        )
         emu.set_emulation_speed(0)
 
         # Reach the actual DEBUG menu by its WRAM menu signature, not a fixed
         # frame count. Boot/intro duration can vary with emulator/audio behavior.
         result["frames_to_debug_menu"] = enter_debug_menu(emu, symbols, out)
 
-        # DEBUG is the second menu entry.
-        tap(emu, "down", hold=2, settle=20)
-        tap(emu, "a", hold=2, settle=20)
+        # Select the DEBUG row and prove its entry routine executes.
+        choose_debug_new_game(emu, symbols, out)
 
         start_map = wait_for_map(
             emu, symbols["wCurMap"], {REDS_HOUSE_2F, REDS_HOUSE_1F}, 4000
