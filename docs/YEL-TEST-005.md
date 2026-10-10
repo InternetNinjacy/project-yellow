@@ -46,3 +46,9 @@ Original per-species workflow shell failure diagnosed and repaired; new shared C
 - Both universal matrix cases completed FAILURE in live SGB VRAM/OAM verifier, after compilation, debugger probe, native capture, and SGB border tests had passed. GitHub job logs independently show a Python SyntaxError at line 94 of scripts/yel_test_004_sgb_live_integrity.py, from a literal escaped newline embedded in a dictionary source line. This is a verification-script syntax bug, NOT a Pokémon sprite defect or failed live OAM assertion.
 - Removed the literal backslash-n and added an early `python -m py_compile` step for all SGB verifiers in the shared matrix and both legacy workflows, before toolchain/emulator setup. No relaxation of exact VRAM or simultaneous OAM thresholds.
 - New CI triggered by the commits, but new passing evidence is still pending. Third species is blocked until both seed cases pass. PR #8 remains draft; no artwork or recognition threshold modifications.
+
+## Early syntax-gate result and repair — 2026-10-10
+
+- Universal matrix run 38090056235 failed the new Python compile precheck for BOTH species. The blocked file was scripts/yel_test_004_sgb_direction_gate.py at its --frames / --sym argument declarations: a literal escaped newline made the source syntactically invalid. This was NOT a live VRAM/OAM failure; those emulator steps were skipped.
+- Fixed the real newline and also corrected double-escaped whitespace tokens in the SameBoy address-row regex, preserving strict five-symbol ordered evidence matching. Source commits ebbc690 and 8e28b93. No art or threshold changes.
+- New CI has been triggered; both syntax and live VRAM/OAM verification remain pending until completed jobs are inspected. No third species until both seed cases fully pass; draft PR #8 remains unmerged.
