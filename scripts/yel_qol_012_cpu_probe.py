@@ -50,7 +50,7 @@ def main():
     out=Path(args.out);out.parent.mkdir(parents=True,exist_ok=True)
     sym=symbols(args.sym)
     names=['Yel012BeginTransaction','Yel012StageWindow','Yel012CommitStagedWindow',
-           'Yel012ReadBoxRecord','wBoxCount','wBoxSpecies','wBoxMons','wBoxMonOT','wBoxMonNicks',
+           'Yel012ReadBoxRecord','Yel012FindCaptureBox','wBoxCount','wBoxSpecies','wBoxMons','wBoxMonOT','wBoxMonNicks',
            'Yel012PrepareCaptureInsert','Yel012CommitTransaction','Yel012AbortTransaction',
            'wCurrentBoxNum','wBoxDataStart','sYel012TransactionStatus',
            'sYel012TransactionNewRecord','sYel012TransactionShadow','sYel012TransactionBackup']
@@ -230,6 +230,45 @@ def main():
             assert physical[NICK_OFFSET+(index+1)*11:NICK_OFFSET+(index+2)*11]==starting[NICK_OFFSET+index*11:NICK_OFFSET+(index+1)*11]
         results.append({'box':2,'bank':physicalBank,'mode':'bridge-stubbed-legacy',
                         'status':'PASS_ASSEMBLY_CPU_WITH_STUBBED_LEGACY_BUILDER'})
+        # Physically grounded selection matrix. Fill all 12 boxes in the
+        # three SRAM banks; the selector must not consult partial WRAM count.
+        all_full=seed(30,20)
+        for idx in range(12):
+            set_sram(2+idx//4,get('sBox1')+(idx%4)*BOX,all_full)
+        def set_count(idx,count):
+            set_sram(2+idx//4,get('sBox1')+(idx%4)*BOX,seed(count,idx+70))
+        em.memory[get('wBoxCount')]=0
+        em.memory[get('wCurrentBoxNum')]=0x80
+        flag=call('Yel012FindCaptureBox')
+        assert flag&16,('all-full unexpectedly available',flag)
+        for label,active,available in (
+            ('current',3,3),('next',0,1),('skip-full',0,3),
+            ('wrap',11,0),('wrap-skip',10,1)):
+            for idx in range(12):
+                set_sram(2+idx//4,get('sBox1')+(idx%4)*BOX,all_full)
+            set_count(available,29)
+            em.memory[get('wCurrentBoxNum')]=active|0x80
+            selected_before=em.memory[get('wCurrentBoxNum')]
+            flag=call('Yel012FindCaptureBox')
+            assert flag&16==0,(label,'unexpected selector failure',flag)
+            assert regs.A==available,(label,'wrong box selected',regs.A,available)
+            assert em.memory[get('wCurrentBoxNum')]==selected_before,(label,'selection mutated before commit')
+            results.append({'mode':'physical-selector-'+label,
+                            'selected_box':available+1,'status':'PASS_ASSEMBLY_CPU'})
+        # A corrupt sentinel must reject rather than interpret as free.
+        for idx in range(12):
+            set_sram(2+idx//4,get('sBox1')+(idx%4)*BOX,all_full)
+        bad=bytearray(seed(29,7));bad[30]=0
+        set_sram(2,get('sBox1'),bad)
+        em.memory[get('wCurrentBoxNum')]=0x80
+        flag=call('Yel012FindCaptureBox')
+        assert flag&16,('corrupt sentinel accepted',flag)
+        # Zero flag on current-box number means physical initialization
+        # has never been verified. Fail closed.
+        em.memory[get('wCurrentBoxNum')]=0
+        flag=call('Yel012FindCaptureBox')
+        assert flag&16,('uninitialized storage accepted',flag)
+        results.append({'mode':'physical-selector-failure-cases','status':'PASS_ASSEMBLY_CPU'})
         status='PASS_ISOLATED_ASSEMBLY_TRANSACTION_NOT_SAVE_VERIFIED'
     except Exception as exc:
         status='FAIL'
