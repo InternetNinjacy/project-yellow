@@ -36,15 +36,17 @@ jobs:
         run: |
           xvfb-run --auto-servernum --server-args='-screen 0 1024x768x24' bash -euxo pipefail -c '
             export SDL_AUDIODRIVER=dummy
-            timeout 100s .toolchain/sameboy/build/bin/SDL/sameboy --nogl --model sgb-ntsc pokeyellow_debug.gbc >test-results/sgb-smoke/sameboy.log 2>&1 &
+            timeout 150s .toolchain/sameboy/build/bin/SDL/sameboy --nogl --model sgb-ntsc pokeyellow_debug.gbc >test-results/sgb-smoke/sameboy.log 2>&1 &
             pid=$!
-            sleep 30
+            sleep 65
             wid=$(xdotool search --name "SameBoy" | head -1)
             test -n "$wid"
             xdotool windowactivate --sync "$wid" || true
             import -window "$wid" test-results/sgb-smoke/sgb_title.png
-            xdotool key --window "$wid" BackSpace
-            sleep 3
+            xdotool keydown --window "$wid" BackSpace
+            sleep 0.35
+            xdotool keyup --window "$wid" BackSpace
+            sleep 4
             import -window "$wid" test-results/sgb-smoke/sgb_select.png
             xdotool key --window "$wid" Down
             sleep 1
