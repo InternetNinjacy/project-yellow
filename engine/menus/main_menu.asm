@@ -153,6 +153,13 @@ StartNewGame:
 	; fallthrough
 StartNewGameDebug:
 	call OakSpeech
+	; This path is reached only after explicitly choosing NEW GAME (or
+	; debug new game), never by CONTINUE. PrepareOakSpeech cleared WRAM.
+	; Initialize all twelve versioned physical SRAM boxes and set a
+	; valid physical current-box selection for subsequent preflight.
+	callfar Yel012InitializeFreshStorage
+	ld a, 1 << BIT_HAS_CHANGED_BOXES
+	ld [wCurrentBoxNum], a
 	ld a, PLAYER_DIR_UP
 	ld [wPlayerMovingDirection], a
 	ld c, 20
