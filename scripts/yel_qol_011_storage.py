@@ -103,6 +103,11 @@ def main():
                 result.append({'box':idx,'count':count,'records':values,'sha256':hashlib.sha256(raw).hexdigest()})
             return result
         all_before = all_boxes() if args.assert_all_boxes else None
+        report['pre_throw'] = {name: read(name) for name in ('wBattleType', 'wPartyCount', 'wBoxCount', 'wCurrentBoxNum') if name in sym}
+        if args.assert_all_boxes:
+            report['pre_throw']['box_counts'] = [box['count'] for box in all_before]
+            if any(box['count'] > 20 for box in all_before):
+                raise AssertionError('Fixture started with over-capacity box')
         before = snapshot()
         for step in steps:
             frames = int(step.get('frames', 0))
@@ -116,6 +121,7 @@ def main():
                 emu.button_release(button)
             emu.tick(int(step.get('after', 0)))
         after = snapshot()
+        report['post_throw'] = {name: read(name) for name in ('wBattleType', 'wPartyCount', 'wBoxCount', 'wCurrentBoxNum', 'wIsInBattle') if name in sym}
         # Preserve complete working-box bytes for offline per-Pokémon field audits.
         # This is not equivalent to reading all twelve SRAM boxes.
         (out / 'before_working_box.bin').write_bytes(bytes.fromhex(before['working_box_hex']))
