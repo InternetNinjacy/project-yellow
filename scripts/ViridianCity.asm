@@ -1,8 +1,19 @@
 ViridianCity_Script:
+	call ViridianCitySyncMartSchoolGuard
 	call EnableAutoTextBoxDrawing
 	ld hl, ViridianCity_ScriptPointers
 	ld a, [wViridianCityCurScript]
 	call CallFunctionInTable
+	ret
+
+; The object is ON by default for fresh saves. After the school lesson,
+; its persistent event flag hides the guard on return to Viridian.
+ViridianCitySyncMartSchoolGuard:
+	CheckEvent EVENT_VIRIDIAN_SCHOOL_LESSON_COMPLETE
+	ret z
+	ld a, TOGGLE_VIRIDIAN_MART_SCHOOL_GUARD
+	ld [wToggleableObjectIndex], a
+	predef HideObject
 	ret
 
 ViridianCity_ScriptPointers:
@@ -273,6 +284,11 @@ ViridianCity_TextPointers:
 	dw_const ViridianCityGymSignText,                        TEXT_VIRIDIANCITY_GYM_SIGN
 	dw_const ViridianCityGymLockedText,                      TEXT_VIRIDIANCITY_GYM_LOCKED
 	dw_const ViridianCityOldManYouNeedToWeakenTheTargetText, TEXT_VIRIDIANCITY_OLD_MAN_YOU_NEED_TO_WEAKEN_THE_TARGET
+	dw_const ViridianCityMartSchoolGuardText, TEXT_VIRIDIANCITY_MART_SCHOOL_GUARD
+
+ViridianCityMartSchoolGuardText:
+	text_far _ViridianCityMartSchoolGuardText
+	text_end
 
 ViridianCityYoungster1Text:
 	text_asm
