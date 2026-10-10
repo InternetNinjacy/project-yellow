@@ -91,6 +91,14 @@ def main():
             raise FileNotFoundError("Missing real battle savestate: " + str(state_path))
         if case.get("rom_sha256") != digest:
             raise AssertionError(name + ": state/ROM provenance SHA mismatch")
+        provenance_path = state_path.parent / (state_path.name + ".json")
+        if not provenance_path.is_file():
+            raise AssertionError(name + ": missing capture.py provenance sidecar")
+        provenance = json.loads(provenance_path.read_text())
+        if provenance.get("rom_sha256") != digest or not provenance.get("trace_sha256"):
+            raise AssertionError(name + ": invalid capture.py ROM/trace provenance")
+        if not provenance.get("battle_flag") or not provenance.get("player_species_internal_id") or not provenance.get("enemy_species_internal_id"):
+            raise AssertionError(name + ": capture provenance lacks validated live battle")
         pb = PyBoy(str(opt.rom), window="null")
         try:
             with state_path.open("rb") as handle:
