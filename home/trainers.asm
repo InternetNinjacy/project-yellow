@@ -224,28 +224,7 @@ TrainerWalkUpToPlayer_Bank0::
 
 ; sets opponent trainer class and party level based on the engaging trainer data
 InitBattleEnemyParameters::
-	ld a, [wEngagedTrainerClass]
-	ld [wCurOpponent], a
-	ld [wEnemyMonOrTrainerClass], a
-	cp OPP_ID_OFFSET
-	jr c, .noTrainer
-	; Trainer number bit 7 is presentation metadata, not party index.
-	; The opponent ID and class remain the original one-byte values.
-	ld a, [wEngagedTrainerSet]
-	push af
-	rlca ; bit 7 becomes bit 0
-	and 1
-	ld [wTrainerGenderVariant], a
-	pop af
-	and TRAINER_PARTY_INDEX_MASK
-	ld [wTrainerNo], a
-	ret
-.noTrainer
-	xor a
-	ld [wTrainerGenderVariant], a
-	ld a, [wEngagedTrainerSet]
-	ld [wCurEnemyLevel], a
-	ret
+	farjp InitBattleEnemyParameters_
 
 GetSpritePosition1::
 	ld hl, _GetSpritePosition1
