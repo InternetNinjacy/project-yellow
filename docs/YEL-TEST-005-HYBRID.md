@@ -165,3 +165,6 @@ directory. The earlier artifact must be deleted from the GitHub Actions UI;
 a separate connector action to delete artifacts was not available.
 No ROM was included, but private state/box binary files were.
 Native in-game save/restart/load remains untested.
+
+## All-full diagnostic update
+PR #6 now records pre/post wBattleType, wPartyCount, wCurrentBoxNum and all 12 pre-throw box counts; do not reinterpret the 21 count as a fix. Re-run the exact feature-branch matrix and inspect the source of the bypass before changing capacity constants.
