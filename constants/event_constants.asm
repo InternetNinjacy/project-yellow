@@ -31,7 +31,11 @@
 	const EVENT_COMPLETED_CATCH_TRAINING
 	const EVENT_COMPLETED_CATCH_TRAINING_AGAIN
 	const EVENT_INITIAL_CATCH_TRAINING
-	const_skip 8
+	; YEL-CHALLENGE-001: persistent Viridian school progression flags.
+	; Reserve formerly unused Viridian event bits; no save-layout expansion.
+	const EVENT_VIRIDIAN_SCHOOL_GIFT_CLAIMED
+	const EVENT_VIRIDIAN_SCHOOL_LESSON_COMPLETE
+	const_skip 6
 	const EVENT_OAK_GOT_PARCEL
 	const EVENT_GOT_OAKS_PARCEL
 	const_skip 22
