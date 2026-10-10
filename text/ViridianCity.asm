@@ -193,3 +193,12 @@ _ViridianCityGymLockedText::
 	text "The GYM's doors"
 	line "are locked..."
 	done
+
+_ViridianCityMartSchoolGuardText::
+	text "MART's closed!"
+	line "Our clerk is at"
+	cont "the DOUBLE BATTLE"
+	cont "SCHOOL watching!"
+
+	para "Go have a look!"
+	done

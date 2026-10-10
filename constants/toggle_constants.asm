@@ -22,6 +22,7 @@ ENDM
 	const TOGGLE_LYING_OLD_MAN                 ; 01
 	const TOGGLE_OLD_MAN_1                     ; 02
 	const TOGGLE_OLD_MAN_2                     ; 03
+	const TOGGLE_VIRIDIAN_MART_SCHOOL_GUARD    ; school intro gate
 
 	toggle_consts_for PEWTER_CITY
 	const TOGGLE_MUSEUM_GUY                    ; 04

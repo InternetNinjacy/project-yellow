@@ -27,6 +27,11 @@ ViridianMart_ScriptPointers:
 	dw_const ViridianMartScript2,          SCRIPT_VIRIDIANMART_SCRIPT2
 
 ViridianMartDefaultScript:
+	; The school lesson must be complete before Oak's parcel sequence starts.
+	; The exterior guard NPC will prevent normal entry; keep this internal
+	; check as a second defense against alternate entrance/loading states.
+	CheckEvent EVENT_VIRIDIAN_SCHOOL_LESSON_COMPLETE
+	ret z
 	call UpdateSprites
 	ld a, TEXT_VIRIDIANMART_CLERK_YOU_CAME_FROM_PALLET_TOWN
 	ldh [hTextID], a

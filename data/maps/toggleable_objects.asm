@@ -49,6 +49,7 @@ ToggleableObjectStates:
 	toggle_object_state VIRIDIANCITY_OLD_MAN_SLEEPY, ON
 	toggle_object_state VIRIDIANCITY_OLD_MAN,        OFF
 	toggle_object_state VIRIDIANCITY_OLD_MAN2,       OFF
+	toggle_object_state VIRIDIANCITY_MART_SCHOOL_GUARD, ON
 
 	toggleable_objects_for PEWTER_CITY
 	toggle_object_state PEWTERCITY_SUPER_NERD1, ON
