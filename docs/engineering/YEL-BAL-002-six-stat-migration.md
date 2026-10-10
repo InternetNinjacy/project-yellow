@@ -160,3 +160,14 @@ The selective critical-stage selection patch `c184fddbb43682f3491014cc9516932836
 Commit `efaff938367060c79e1211ad65c40d778821766b` adds a bounded Growth hook to `StatModifierUpEffect` in `engine/battle/effects.asm`. When the existing Special Attack increase succeeds, the hook increments the separate player/enemy Special Defense modifier (up to +6) and recalculates the derived current Special Defense using the unmodified supplemental cache and the existing StatModifierRatios multiplication/division path, capped at 999. Party/box record sizes and save data are unchanged.
 
 This is source integration only. It has NOT been proven through a successful new build or in-game emulator assertions. Known gap: when Special Attack is already at +6 but Special Defense is not, legacy effect rejection prevents Growth from increasing Special Defense; the final combined move handler must handle this case. Amnesia still incorrectly affects Special Attack, Psychic still lowers Special Attack, and Haze/Transform/switch propagation remain pending. Do not merge.
+
+## BAL-12: Growth/Amnesia/Psychic independent Special Defense stage routing (2026-10-09)
+
+Branch code commits `9d7fbbf934e2fd757f76965599e43c1aaa6edcf8` and `17bc044561548add1c992c60741791da8ff07094` modify `engine/battle/effects.asm`:
+- Amnesia routes exclusively to supplemental Special Defense (+2, capped at +6); original Special Attack remains unchanged.
+- Growth independently advances supplemental Special Defense (+1) and the existing Special Attack (+1). Either stage can advance when the other is already +6.
+- Psychic's `SPECIAL_DOWN_SIDE_EFFECT` routes to supplemental target Special Defense (-1) rather than old Special Attack after the existing secondary-effect chance/substitute checks.
+- The supplemental calculation reuses the original battle stat-stage ratio table, floor division, minimum one, maximum 999 and separate player/enemy derived base caches.
+- Existing party and box serialized records are unchanged.
+
+Verification: all four workflows passed at earlier Growth-only commit efaff938, **not** evidence for this new source. New RGBDS/DMG CI is required. Deterministic emulator battle-state fixtures have not been run and cannot be claimed; minimum required fixtures: each move from both player/enemy perspectives, +6/-6 mixed boundaries, independent stage/state reads and output damage, secondary-effect trigger and miss, switching, Haze and Transform. This change does not yet implement Haze, Transform, screens or double-battle architecture. PR stays draft.
