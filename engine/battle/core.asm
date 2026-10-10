@@ -133,7 +133,10 @@ SetScrollXForSlidingPlayerBodyLeft:
 	ret
 
 StartBattle:
+	; True doubles setup will explicitly opt in after initializing both slots.
+	; Legacy battles must never inherit the previous battle's format.
 	xor a
+	ld [wBattleFormat], a
 	ld [wPlayerReflectTurns], a
 	ld [wPlayerLightScreenTurns], a
 	ld [wEnemyReflectTurns], a
