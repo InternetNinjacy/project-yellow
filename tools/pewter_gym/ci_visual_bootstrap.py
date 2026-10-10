@@ -56,8 +56,18 @@ def main():
         else:
             shot("bootstrap_failed.png")
             raise RuntimeError(f"Test build never reached Pewter City; map={location():#04x}")
+        # The map ID can be assigned before the overworld finishes loading.
+        tick(180)
+        _, xaddr = emulator.symbol_lookup("wXCoord")
+        _, yaddr = emulator.symbol_lookup("wYCoord")
+        def coords():
+            return (int(emulator.memory[xaddr]), int(emulator.memory[yaddr]))
+        print(f"City loaded: map={location():#04x}, player={coords()}", flush=True)
         shot("pewter_city_before_entry.png")
-        # Startup coordinate is (16,18), directly south of the real warp.
+        # Spawn coordinates should be (16,18), directly south of the real warp.
+        # Report unexpected locations rather than silently claiming a warp test.
+        if coords() != (16, 18):
+            raise RuntimeError(f"CI-only startup did not retain test coordinates: {coords()}")
         # Directional input must perform the original game warp.
         for _ in range(8):
             press("up", n=10, settle=20)
@@ -65,7 +75,7 @@ def main():
                 break
         if location() != GYM:
             shot("entry_failed.png")
-            raise RuntimeError(f"Gym warp did not activate, map={location():#04x}")
+            raise RuntimeError(f"Gym warp did not activate, map={location():#04x}, player={coords()}")
         tick(90)
         if location() != GYM:
             raise RuntimeError("Entered Gym but could not remain in it")
