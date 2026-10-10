@@ -428,3 +428,4 @@ INCLUDE "engine/debug/debug_menu.asm"
 SECTION "YEL012 SRAM Transaction Engine", ROMX
 INCLUDE "engine/menus/yel_qol_012_record_access.asm"
 INCLUDE "engine/menus/yel_qol_012_transaction.asm"
+INCLUDE "engine/menus/yel_qol_012_capture_bridge.asm"
