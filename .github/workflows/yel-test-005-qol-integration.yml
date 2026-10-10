@@ -1,0 +1,81 @@
+name: YEL-TEST-005 x QOL-011 feature capture integration
+on:
+  push:
+    branches: [yel-test-005-shared-emulator]
+    paths:
+      - '.github/workflows/yel-test-005-qol-integration.yml'
+      - 'scripts/yel_test_005_capture_probe.py'
+      - 'tests/traces/yel-test-005-debug-entry.json'
+  workflow_dispatch:
+jobs:
+  feature-replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: harness
+      - uses: actions/checkout@v4
+        with:
+          ref: yel-qol-011-auto-box-capture
+          path: feature
+      - uses: actions/checkout@v4
+        with:
+          repository: gbdev/rgbds
+          ref: v1.0.3
+          path: rgbds
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bison libpng-dev pkg-config build-essential
+          python -m pip install 'pyboy==2.6.0' Pillow
+      - name: Install pinned RGBDS
+        working-directory: rgbds
+        run: sudo make -j2 install
+      - name: Apply isolated DEBUG fixture overlay to feature worktree
+        run: |
+          cp harness/engine/debug/debug_party.asm feature/engine/debug/debug_party.asm
+          cp harness/scripts/PalletTown.asm feature/scripts/PalletTown.asm
+          git -C feature rev-parse HEAD > feature-source-sha.txt
+          git -C harness rev-parse HEAD > harness-source-sha.txt
+      - name: Build exact feature implementation with test-only DEBUG overlay
+        working-directory: feature
+        run: |
+          make -j2 pokeyellow_debug.gbc
+          mkdir -p ../evidence/qol011
+          sha256sum pokeyellow_debug.gbc pokeyellow_debug.sym > ../evidence/qol011/hashes.txt
+      - name: Reproduce clean-boot six-party wild encounter on feature ROM
+        run: |
+          python harness/scripts/yel_test_005_replay.py \
+            --rom feature/pokeyellow_debug.gbc --sym feature/pokeyellow_debug.sym \
+            --trace harness/tests/traces/yel-test-005-debug-entry.json \
+            --out evidence/qol011/base --checkpoint
+          python harness/scripts/yel_test_005_capture_audit.py \
+            --rom feature/pokeyellow_debug.gbc --sym feature/pokeyellow_debug.sym \
+            --state evidence/qol011/base/checkpoint.state \
+            --out evidence/qol011/base/audit.json
+      - name: Probe controller-driven catch sequences, do not claim storage pass
+        run: |
+          PYTHONPATH=harness/scripts python harness/scripts/yel_test_005_capture_probe.py \
+            --rom feature/pokeyellow_debug.gbc --sym feature/pokeyellow_debug.sym \
+            --state evidence/qol011/base/checkpoint.state \
+            --out evidence/qol011/capture-probe
+      - name: Record exact source provenance
+        if: always()
+        run: |
+          mkdir -p evidence/qol011
+          cp feature-source-sha.txt evidence/qol011/feature-source-sha.txt || true
+          cp harness-source-sha.txt evidence/qol011/harness-source-sha.txt || true
+      - name: Remove all private emulator states and raw Pokémon dumps
+        if: always()
+        run: |
+          find evidence -name '*.state' -delete
+          find evidence -name '*.sav' -delete
+          find evidence -name '*.bin' -delete
+      - name: Upload manifest and screenshots only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yel-test-005-qol011-capture-probe
+          path: evidence/qol011/
+          if-no-files-found: warn
