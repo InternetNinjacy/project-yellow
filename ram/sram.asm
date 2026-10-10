@@ -54,6 +54,10 @@ sYel012TransactionStatus:: db
 sYel012TransactionPage:: db
 sYel012TransactionBox:: db
 sYel012TransactionPagePending:: db
+; Version marker is written LAST by explicit new-game initialization only.
+; Never infer an empty/new save from an erased or corrupt marker.
+sYel012StorageVersion:: db
+sYel012StorageVersionCheck:: db
 
 SECTION "Saved Boxes 3", SRAM
 	boxes 4
