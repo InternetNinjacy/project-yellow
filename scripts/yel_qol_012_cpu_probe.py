@@ -77,6 +77,8 @@ def main():
         # Prime mapped ROMX directly, a valid LR35902 return stack, and
         # a distinct CPU entrypoint on each invocation.
         em.memory[0x2000]=bank
+        if 'hLoadedROMBank' in sym:
+            em.memory[sym['hLoadedROMBank'][1]]=bank
         em.memory[0xffff]=0
         em.memory[0xff0f]=0
         em.memory[0xcfee]=0x00
@@ -193,7 +195,7 @@ def main():
         base=get('sBox1')+BOX
         starting=seed(29,57)
         set_sram(physicalBank,base,starting)
-        set_sram(5,get('sYel012TransactionStatus'),b'\\x00')
+        set_sram(5,get('sYel012TransactionStatus'),bytes([0]))
         em.memory[get('wCurrentBoxNum')]=boxid|0x80
         expectedNew=record(150,57)
         called={'count':0}
