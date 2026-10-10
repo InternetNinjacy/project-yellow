@@ -121,7 +121,7 @@ jobs:
             ypos_addr=$(printf "%04x" $((16#$state2 + 5)))
             printf "continue\n" >&3
             sleep 1
-            for i in $(seq 0 39); do
+            for i in $(seq 0 119); do
               import -window "$wid" "test-results/sgb-smoke/directions/direction_$(printf %02d "$i").png"
               kill -INT "$pid"
               sleep 0.22
