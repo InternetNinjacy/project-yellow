@@ -78,8 +78,10 @@ def main():
         if not isinstance(spec.get(key), list) or not spec[key]:
             raise ValueError(f"replay must include real {key} controller actions")
     destination = spec["destination_box"]
+    if type(destination) is not int or not 0 <= destination < 12:
+        raise ValueError("destination_box must be integer 0..11")
     starting_count = spec.get("starting_count", 29)
-    if starting_count != 29:
+    if type(starting_count) is not int or starting_count != 29:
         raise ValueError("acceptance replay must exercise 29 -> 30")
     syms = symbol_table(args.sym)
     for symbol in ("sBox1", "wPartyCount", "sYel012StorageVersion", "sYel012StorageVersionCheck"):
@@ -98,6 +100,7 @@ def main():
             if em.memory[syms["wPartyCount"][1]] != 6:
                 raise AssertionError("replay did not prepare a six-Pokémon party")
             before = assert_storage(em, syms, destination, starting_count)
+            prior_boxes = [box_bytes(em, syms, i) for i in range(12)]
             play(em, spec["capture"])
             after = assert_storage(em, syms, destination, 30)
             if record(after, 0) == record(before, 0):
@@ -105,6 +108,9 @@ def main():
             for index in range(29):
                 if record(after, index + 1) != record(before, index):
                     raise AssertionError(f"existing record {index} changed during capture")
+            for idx in range(12):
+                if idx != destination and box_bytes(em, syms, idx) != prior_boxes[idx]:
+                    raise AssertionError(f"capture unexpectedly modified box {idx + 1}")
             captured = record(after, 0)
             if len(captured) != 55 or captured[0] in (0, 255):
                 raise AssertionError("invalid captured species/record")
@@ -112,9 +118,14 @@ def main():
             em.stop(save=True)
             em = boot()  # New emulator instance, battery SRAM loaded from disk
             play(em, spec["continue"])
+            if em.memory[syms["wPartyCount"][1]] != 6:
+                raise AssertionError("CONTINUE did not restore the six-Pokémon party")
             restored = assert_storage(em, syms, destination, 30)
             if restored != after or record(restored, 0) != captured:
                 raise AssertionError("SAVE/CONTINUE failed to retain exact physical box data")
+            for idx in range(12):
+                if idx != destination and box_bytes(em, syms, idx) != prior_boxes[idx]:
+                    raise AssertionError(f"reboot changed unrelated box {idx + 1}")
             report = {"contract": "YEL-QOL-012-REAL-GAMEPLAY/1", "status": "PASS",
                       "destination_box": destination + 1, "before": 29, "after": 30,
                       "captured_record_hex": captured.hex(),
