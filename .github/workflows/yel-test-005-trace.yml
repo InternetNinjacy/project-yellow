@@ -1,0 +1,27 @@
+name: YEL-TEST-005 shared trace contract
+on:
+  push:
+    paths:
+      - 'scripts/yel_test_005_replay.py'
+      - 'tests/test_yel_test_005_trace.py'
+      - '.github/workflows/yel-test-005-trace.yml'
+  pull_request:
+    paths:
+      - 'scripts/yel_test_005_replay.py'
+      - 'tests/test_yel_test_005_trace.py'
+      - '.github/workflows/yel-test-005-trace.yml'
+  workflow_dispatch:
+jobs:
+  trace-schema:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Syntax check
+        run: python -m py_compile scripts/yel_test_005_replay.py tests/test_yel_test_005_trace.py
+      - name: Test controller trace schema
+        run: python -m unittest discover -s tests -p 'test_yel_test_005_trace.py' -v
+      - name: Evidence boundary
+        run: echo 'TRACE_SCHEMA_ONLY; NO ROM BOOT, GAMEPLAY OR CAPTURE VERIFICATION'
