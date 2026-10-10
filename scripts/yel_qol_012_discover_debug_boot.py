@@ -29,7 +29,7 @@ def main():
     em=PyBoy(a.rom,window="null",cgb=False,sound_emulated=False)
     em.set_emulation_speed(0)
     # Hooks fire on real CPU execution; no breakpoint RAM seeding.
-    targets=("StartNewGameDebug","Yel012InitializeFreshStorage",
+    targets=("DebugMenu","StartNewGameDebug","Yel012InitializeFreshStorage",
              "SetDebugNewGameParty","AddPartyMon","PrepareNewGameDebug")
     def snapshot(label):
         def visit(_context):
@@ -57,9 +57,9 @@ def main():
             c=em.memory[5,sym["sYel012StorageVersionCheck"][1]]
             return n==6 and (v,c)==(1,0xfe)
         # Title accepts SELECT, opens DEBUG menu. Its second choice is DEBUG.
-        step(frames=1100)
-        step("select",frames=40)
-        step(frames=80)
+        step(frames=420)
+        step("select",frames=90)
+        step(frames=40)
         step("down",frames=12)
         step(frames=25)
         step("a",frames=12)
@@ -75,6 +75,7 @@ def main():
                 "cpu_pc":em.register_file.PC,
                 "frames_recorded":sum(e["frames"] for e in events),
                 "routine_trace":trace,
+                "entered_debug_menu":any(t["routine"]=="DebugMenu" for t in trace),
                 "last_checkpoint":trace[-1]["routine"] if trace else "no-traced-entry"}
         out.write_text(json.dumps(result,indent=2)+"\n")
         if status!="PASS_DEBUG_NEW_GAME_CONTROLLER_BOOT":
