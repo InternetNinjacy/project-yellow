@@ -336,6 +336,42 @@ NEXTU
 wcbea:: dw
 ENDU
 wcbec:: ds 1 tiles
+
+; YEL-DBL-001: secondary active battlers in the existing overworld/scratch
+; WRAM0 union. This allocates NO new party, box, SRAM, or save data.
+; Never access these aliases outside a battle. Their overlay lifetime
+; must be audited against overworld-map refresh and printer/graphics scratch
+; before enabling real two-active-slot battles.
+NEXTU
+wDoublesSecondaryBattleDataStart::
+wDoublesPlayer2Nick:: ds NAME_LENGTH
+wDoublesPlayer2:: battle_struct wDoublesPlayer2
+wDoublesPlayer2UnmodifiedAttack:: dw
+wDoublesPlayer2UnmodifiedDefense:: dw
+wDoublesPlayer2UnmodifiedSpeed:: dw
+wDoublesPlayer2UnmodifiedSpecial:: dw
+wDoublesPlayer2SpecialDefense:: dw
+wDoublesPlayer2UnmodifiedSpecialDefense:: dw
+wDoublesPlayer2StatMods:: ds NUM_STAT_MODS
+wDoublesPlayer2SpecialDefenseMod:: db
+wDoublesPlayer2BattleStatus:: ds 3
+wDoublesPlayer2PartyIndex:: db
+wDoublesPlayer2SelectedMove:: db
+wDoublesEnemy2Nick:: ds NAME_LENGTH
+wDoublesEnemy2:: battle_struct wDoublesEnemy2
+wDoublesEnemy2UnmodifiedAttack:: dw
+wDoublesEnemy2UnmodifiedDefense:: dw
+wDoublesEnemy2UnmodifiedSpeed:: dw
+wDoublesEnemy2UnmodifiedSpecial:: dw
+wDoublesEnemy2SpecialDefense:: dw
+wDoublesEnemy2UnmodifiedSpecialDefense:: dw
+wDoublesEnemy2StatMods:: ds NUM_STAT_MODS
+wDoublesEnemy2SpecialDefenseMod:: db
+wDoublesEnemy2BattleStatus:: ds 3
+wDoublesEnemy2PartyIndex:: db
+wDoublesEnemy2SelectedMove:: db
+wDoublesSecondaryBattleDataEnd::
+ASSERT wDoublesSecondaryBattleDataEnd - wDoublesSecondaryBattleDataStart <= 1300
 ENDU
 
 
