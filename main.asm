@@ -170,11 +170,13 @@ INCLUDE "engine/pokemon/evos_moves.asm"
 SECTION "Battle Core", ROMX
 
 INCLUDE "engine/battle/core.asm"
-INCLUDE "engine/battle/doubles_secondary.asm"
 INCLUDE "engine/battle/effects.asm"
 
 
 SECTION "bank10", ROMX
+
+; Non-active secondary battler staging helpers live outside crowded Battle Core.
+INCLUDE "engine/battle/doubles_secondary.asm"
 
 INCLUDE "engine/menus/pokedex.asm"
 INCLUDE "engine/overworld/emotion_bubbles.asm"
