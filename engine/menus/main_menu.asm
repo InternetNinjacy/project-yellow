@@ -157,6 +157,13 @@ ENDC
 	; fallthrough
 StartNewGameDebug:
 	call OakSpeech
+IF DEF(_DEBUG)
+	; OakSpeech/InitPlayerData clears party storage before this point.
+	; Only initialize fixture Pokémon after that reset, when DEBUG mode is set.
+	ld hl, wStatusFlags6
+	bit BIT_DEBUG_MODE, [hl]
+	call nz, PrepareNewGameDebug
+ENDC
 	ld a, PLAYER_DIR_UP
 	ld [wPlayerMovingDirection], a
 	ld c, 20
