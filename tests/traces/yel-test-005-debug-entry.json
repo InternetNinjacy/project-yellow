@@ -1,6 +1,6 @@
 [
   {
-    "frames": 360
+    "frames": 1750
   },
   {
     "buttons": [
@@ -8,18 +8,18 @@
       "select",
       "b"
     ],
-    "frames": 3,
-    "after": 180
+    "frames": 4,
+    "after": 100
   },
   {
     "button": "down",
     "frames": 2,
-    "after": 30
+    "after": 40
   },
   {
     "button": "a",
     "frames": 2,
-    "after": 120
+    "after": 240
   },
   {
     "frames": 900
