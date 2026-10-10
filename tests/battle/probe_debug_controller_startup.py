@@ -47,7 +47,7 @@ def parse_symbols(path):
 def run(rom, symbols, output):
     from pyboy import PyBoy
     pb = PyBoy(str(rom), window="null")
-    trace, checkpoints = [], []
+    trace, checkpoints = [{"frames": 240}], []
     try:
         total_frames = 0
         def record(phase):
