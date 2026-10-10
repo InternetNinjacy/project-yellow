@@ -300,7 +300,7 @@ CalcIndividualBoxCheckSums:
 .loop
 	push bc
 	push de
-	ld bc, wBoxDataEnd - wBoxDataStart
+	ld bc, sBox2 - sBox1
 	call CalcCheckSum
 	pop de
 	ld [de], a
