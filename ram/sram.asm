@@ -44,6 +44,10 @@ SECTION "Saved Boxes 2", SRAM
 sBank3AllBoxesChecksum:: db
 sBank3IndividualBoxChecksums:: ds 4
 
+SECTION "YEL012 Transaction Backup", SRAM
+sYel012TransactionBackup:: ds 1682
+sYel012TransactionNewRecord:: ds 55
+
 SECTION "Saved Boxes 3", SRAM
 	boxes 4
 sBank4AllBoxesChecksum:: db
