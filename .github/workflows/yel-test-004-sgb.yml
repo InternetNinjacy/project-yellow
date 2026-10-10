@@ -48,9 +48,14 @@ jobs:
             xdotool keyup --window "$wid" BackSpace
             sleep 4
             import -window "$wid" test-results/sgb-smoke/sgb_select.png
-            xdotool key --window "$wid" Down
-            sleep 1
-            xdotool key --window "$wid" x
+            xdotool keydown --window "$wid" Down
+            sleep 0.4
+            xdotool keyup --window "$wid" Down
+            sleep 2
+            import -window "$wid" test-results/sgb-smoke/sgb_debug_selected.png
+            xdotool keydown --window "$wid" x
+            sleep 0.4
+            xdotool keyup --window "$wid" x
             sleep 5
             import -window "$wid" test-results/sgb-smoke/sgb_intro.png
             for n in $(seq 1 10); do
