@@ -1,0 +1,70 @@
+name: YEL-TEST-005 gameplay route diagnostic
+on:
+  push:
+    branches: [yel-test-005-shared-emulator]
+    paths:
+      - '.github/workflows/yel-test-005-route.yml'
+      - 'scripts/yel_test_005_*.py'
+      - 'tests/traces/yel-test-005-*.json'
+  pull_request:
+    paths:
+      - '.github/workflows/yel-test-005-route.yml'
+      - 'scripts/yel_test_005_*.py'
+      - 'tests/traces/yel-test-005-*.json'
+  workflow_dispatch:
+jobs:
+  replay-diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: gbdev/rgbds
+          ref: v1.0.3
+          path: .toolchain/rgbds
+      - name: Install runtime and RGBDS dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bison libpng-dev pkg-config build-essential
+          python -m pip install 'pyboy==2.6.0' Pillow
+      - name: Install pinned RGBDS
+        working-directory: .toolchain/rgbds
+        run: sudo make -j2 install
+      - name: Assemble ROM and symbols
+        run: |
+          rm -rf .toolchain
+          rgbasm --version
+          python -c 'import importlib.metadata;print("PyBoy",importlib.metadata.version("pyboy"))'
+          make -j2 pokeyellow.gbc
+          sha256sum pokeyellow.gbc pokeyellow.sym
+          mkdir -p test-results/yel-test-005
+          printf 'commit=%s\n' "$GITHUB_SHA" > test-results/yel-test-005/build.txt
+          rgbasm --version >> test-results/yel-test-005/build.txt
+          sha256sum pokeyellow.gbc pokeyellow.sym >> test-results/yel-test-005/build.txt
+      - name: Replay starter diagnostic (not six-member route)
+        run: |
+          python scripts/yel_test_005_replay.py \
+            --rom pokeyellow.gbc --sym pokeyellow.sym \
+            --trace tests/traces/yel-test-005-startup-probe.json \
+            --out test-results/yel-test-005/startup --checkpoint
+      - name: Audit actual game state (expected fail until full route exists)
+        continue-on-error: true
+        run: |
+          python scripts/yel_test_005_capture_audit.py \
+            --rom pokeyellow.gbc --sym pokeyellow.sym \
+            --state test-results/yel-test-005/startup/checkpoint.state \
+            --out test-results/yel-test-005/startup/capture-audit.json
+      - name: Remove private binaries before evidence upload
+        if: always()
+        run: |
+          find test-results/yel-test-005 -name '*.state' -delete
+          find test-results/yel-test-005 -name '*.sav' -delete
+          find test-results/yel-test-005 -name '*.srm' -delete
+      - name: Upload non-ROM diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yel-test-005-route-diagnostics
+          path: test-results/yel-test-005/
+          if-no-files-found: warn
