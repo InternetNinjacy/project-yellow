@@ -113,6 +113,8 @@ PoisonEffect:
 	cp POISON_SIDE_EFFECT2
 	ld b, 40 percent + 1 ; chance of poisoning
 	jr z, .sideEffectTest
+	cp POISON_FANG_EFFECT
+	jr z, .poisonFangChance
 	push hl
 	push de
 	call MoveHitTest ; apply accuracy tests
@@ -125,6 +127,11 @@ PoisonEffect:
 .sideEffectTest
 	call BattleRandom
 	cp b ; was side effect successful?
+	ret nc
+	jr .inflictPoison
+.poisonFangChance
+	call BattleRandom
+	cp 128 ; exactly 50% of 256 rolls
 	ret nc
 .inflictPoison
 	dec hl
@@ -143,7 +150,10 @@ PoisonEffect:
 	ld de, wEnemyToxicCounter
 .ok
 	cp TOXIC
-	jr nz, .normalPoison ; done if move is not Toxic
+	jr z, .badPoison
+	cp POISON_FANG_EFFECT
+	jr nz, .normalPoison
+.badPoison
 	set BADLY_POISONED, [hl] ; else set Toxic battstatus
 	xor a
 	ld [de], a
@@ -732,6 +742,8 @@ StatModifierDownEffect:
 	call CheckTargetSubstitute ; can't hit through substitute
 	jp nz, MoveMissed
 	ld a, [de]
+	cp CRUNCH_EFFECT
+	jr z, .crunchChance
 	cp ATTACK_DOWN_SIDE_EFFECT
 	jr c, .nonSideEffect
 	call BattleRandom
@@ -741,6 +753,17 @@ StatModifierDownEffect:
 	cp SPECIAL_DOWN_SIDE_EFFECT
 	jp z, .psychicSpD
 	sub ATTACK_DOWN_SIDE_EFFECT ; map each stat to 0-3
+	jr .decrementStatMod
+.crunchChance
+	; Uniform 0..199 via rejection sampling, then exactly 78/200 = 39%.
+	; Avoid 8-bit percentage rounding (100/256 approximations).
+.random
+	call BattleRandom
+	cp 200
+	jr nc, .random
+	cp 78
+	jp nc, CantLowerAnymore
+	ld a, 1 ; Defense stage index, same as DEFENSE_DOWN_SIDE_EFFECT
 	jr .decrementStatMod
 .nonSideEffect ; non-side effects only
 	push hl
