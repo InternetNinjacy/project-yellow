@@ -336,6 +336,10 @@ YelTest005DebugCaptureEncounter:
 	ld a, [wYCoord]
 	cp 7
 	ret nz
+	; Explicitly use standard wild-battle rules, not an inherited
+	; special battle type that may bypass capacity checks.
+	xor a
+	ld [wBattleType], a
 	ld a, PIDGEY
 	ld [wCurOpponent], a
 	ld a, 3
