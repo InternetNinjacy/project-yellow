@@ -13,6 +13,7 @@ from PIL import Image, ImageStat
 
 def main():
     p=argparse.ArgumentParser()
+    p.add_argument("--species",choices=["Ivysaur","Bulbasaur"],default="Ivysaur")
     p.add_argument("--log",required=True,type=Path)
     p.add_argument("--frame",required=True,type=Path)
     p.add_argument("--reference",required=True,type=Path)
@@ -29,13 +30,13 @@ def main():
     if image.size != (512,448):
         raise AssertionError(f"Unexpected SGB framebuffer: {image.size}")
     game=image.crop((96,80,416,368)).resize((160,144))
-    out_image=a.out.with_name("ivysaur_map25_viewport.png")
+    out_image=a.out.with_name(a.species.lower()+"_map25_viewport.png")
     game.save(out_image)
     colors=len(game.getcolors(160*144) or [])
     std=[round(x,2) for x in ImageStat.Stat(game).stddev]
     report={
         "status":"SGB_MAP25_FRAME_CAPTURED",
-        "species_candidate":"Ivysaur",
+        "species_candidate":a.species,
         "map_ram":loc,
         "source":"SameBoy sgb-ntsc native debugger; immediate preceding frame",
         "emulator_frame":str(a.frame),
