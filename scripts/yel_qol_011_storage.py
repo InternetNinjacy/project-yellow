@@ -140,6 +140,20 @@ def main():
                 raise AssertionError(f'Existing Pokémon records lost or altered: {dict(lost)}')
             if sum(added.values()) != args.expected_count_delta:
                 raise AssertionError(f'Unexpected new Pokémon count: {sum(added.values())} vs {args.expected_count_delta}')
+            # Stronger than a global multiset: every original Pokémon must
+            # remain in the same numbered box, byte-for-byte. Only the chosen
+            # destination may gain one new record at the end.
+            destination = args.expected_active_box
+            for idx, (previous, current) in enumerate(zip(all_before, all_after)):
+                expected_added = args.expected_count_delta if idx == destination else 0
+                if current['count'] != previous['count'] + expected_added:
+                    raise AssertionError(f'Box {idx+1} count unexpectedly changed')
+                if current['records'][:previous['count']] != previous['records']:
+                    raise AssertionError(f'Box {idx+1} moved or corrupted existing records')
+            if args.expected_count_delta == 0:
+                for previous, current in zip(all_before, all_after):
+                    if previous['sha256'] != current['sha256']:
+                        raise AssertionError(f'Failed or blocked catch changed box {previous["box"]+1}')
             report['all_boxes_before'] = [{'box': b['box']+1,'count':b['count'],'sha256':b['sha256']} for b in all_before]
             report['all_boxes_after'] = [{'box': b['box']+1,'count':b['count'],'sha256':b['sha256']} for b in all_after]
             report['added_records'] = list(added.elements())
