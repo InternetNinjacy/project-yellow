@@ -1,5 +1,6 @@
 name: Project Yellow universal sprite regression (pilot)
 on:
+  pull_request:
   workflow_dispatch:
 jobs:
   sprite-lab:
