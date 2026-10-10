@@ -30,5 +30,13 @@
   },
   {
     "frames": 300
+  },
+  {
+    "button": "down",
+    "frames": 8,
+    "after": 120
+  },
+  {
+    "frames": 500
   }
 ]
