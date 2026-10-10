@@ -175,6 +175,9 @@ INCLUDE "engine/battle/effects.asm"
 
 SECTION "bank10", ROMX
 
+; Non-active secondary battler staging helpers live outside crowded Battle Core.
+INCLUDE "engine/battle/doubles_secondary.asm"
+
 INCLUDE "engine/menus/pokedex.asm"
 INCLUDE "engine/overworld/emotion_bubbles.asm"
 INCLUDE "engine/movie/trade.asm"

@@ -385,6 +385,44 @@ FireDefrostedText:
 	text_end
 
 StatModifierUpEffect:
+	ldh a, [hWhoseTurn]
+	and a
+	ld a, [wPlayerMoveNum]
+	jr z, .checkSplit
+	ld a, [wEnemyMoveNum]
+.checkSplit
+	cp AMNESIA
+	jp z, .amnesia
+	cp GROWTH
+	jp z, .growth
+	jr .legacy
+.amnesia
+	ld b, 2
+	call AdjustIndependentSpecialDefense
+	jp nc, PrintNothingHappenedText
+	ld c, 3
+	jp UpdateStatDone
+.growth
+	ld b, 1
+	call AdjustIndependentSpecialDefense
+	push af
+	ld hl, wPlayerMonSpecialMod
+	ldh a, [hWhoseTurn]
+	and a
+	jr z, .growthStage
+	ld hl, wEnemyMonSpecialMod
+.growthStage
+	ld a, [hl]
+	cp 13
+	jr nc, .spAMax
+	pop af
+	jr .legacy
+.spAMax
+	pop af
+	jp nc, PrintNothingHappenedText
+	ld c, 3
+	jp UpdateStatDone
+.legacy
 	ld hl, wPlayerMonStatMods
 	ld de, wPlayerMoveEffect
 	ldh a, [hWhoseTurn]
@@ -541,6 +579,108 @@ UpdateStatDone:
 	call QuarterSpeedDueToParalysis ; apply speed penalty to the player whose turn is not, if it's paralyzed
 	jp HalveAttackDueToBurn ; apply attack penalty to the player whose turn is not, if it's burned
 
+; B = +1, +2, or $ff (-1). Carry set if stage changed.
+; Supplemental battle cache only: no serialized Pokémon structure changes.
+AdjustIndependentSpecialDefense:
+	push bc
+	push de
+	push hl
+	ld a, b
+	push af
+	ld hl, wPlayerSpecialDefenseMod
+	ld de, wPlayerUnmodifiedSpecialDefense
+	ld bc, wPlayerSpecialDefense
+	ldh a, [hWhoseTurn]
+	and a
+	jr z, .selected
+	ld hl, wEnemySpecialDefenseMod
+	ld de, wEnemyUnmodifiedSpecialDefense
+	ld bc, wEnemySpecialDefense
+.selected
+	pop af
+	cp $ff
+	jr z, .decrease
+	cp 2
+	jr z, .raiseTwo
+	ld a, [hl]
+	cp 13
+	jr nc, .unchanged
+	inc [hl]
+	jr .recalculate
+.raiseTwo
+	ld a, [hl]
+	cp 13
+	jr nc, .unchanged
+	inc [hl]
+	ld a, [hl]
+	cp 13
+	jr nc, .recalculate
+	inc [hl]
+	jr .recalculate
+.decrease
+	ld a, [hl]
+	cp 1
+	jr z, .unchanged
+	dec [hl]
+.recalculate
+	ld a, [hl]
+	dec a
+	add a
+	push bc
+	ld c, a
+	ld b, 0
+	ld hl, StatModifierRatios
+	add hl, bc
+	xor a
+	ldh [hMultiplicand], a
+	ld a, [de]
+	ldh [hMultiplicand + 1], a
+	inc de
+	ld a, [de]
+	ldh [hMultiplicand + 2], a
+	ld a, [hli]
+	ldh [hMultiplier], a
+	call Multiply
+	ld a, [hl]
+	ldh [hDivisor], a
+	ld b, 4
+	call Divide
+	pop hl
+	ldh a, [hProduct + 3]
+	sub LOW(MAX_STAT_VALUE)
+	ldh a, [hProduct + 2]
+	sbc HIGH(MAX_STAT_VALUE)
+	jr c, .checkMinimum
+	ld a, HIGH(MAX_STAT_VALUE)
+	ldh [hProduct + 2], a
+	ld a, LOW(MAX_STAT_VALUE)
+	ldh [hProduct + 3], a
+.checkMinimum
+	ldh a, [hProduct + 2]
+	and a
+	jr nz, .write
+	ldh a, [hProduct + 3]
+	and a
+	jr nz, .write
+	inc a
+	ldh [hProduct + 3], a
+.write
+	ldh a, [hProduct + 2]
+	ld [hli], a
+	ldh a, [hProduct + 3]
+	ld [hl], a
+	pop hl
+	pop de
+	pop bc
+	scf
+	ret
+.unchanged
+	pop hl
+	pop de
+	pop bc
+	and a
+	ret
+
 RestoreOriginalStatModifier:
 	pop hl
 	dec [hl]
@@ -598,6 +738,8 @@ StatModifierDownEffect:
 	cp 33 percent + 1 ; chance for side effects
 	jp nc, CantLowerAnymore
 	ld a, [de]
+	cp SPECIAL_DOWN_SIDE_EFFECT
+	jp z, .psychicSpD
 	sub ATTACK_DOWN_SIDE_EFFECT ; map each stat to 0-3
 	jr .decrementStatMod
 .nonSideEffect ; non-side effects only
@@ -619,6 +761,15 @@ StatModifierDownEffect:
 	cp EVASION_DOWN1_EFFECT + $3 - ATTACK_DOWN1_EFFECT ; covers all -1 effects
 	jr c, .decrementStatMod
 	sub ATTACK_DOWN2_EFFECT - ATTACK_DOWN1_EFFECT ; map -2 effects to corresponding -1 effect
+	jr .decrementStatMod
+.psychicSpD
+	push de
+	ld b, $ff
+	call AdjustIndependentSpecialDefense
+	pop de
+	jp nc, CantLowerAnymore
+	ld c, 3
+	jp UpdateLoweredStatDone
 .decrementStatMod
 	ld c, a
 	ld b, $0

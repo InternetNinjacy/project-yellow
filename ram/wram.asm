@@ -336,6 +336,42 @@ NEXTU
 wcbea:: dw
 ENDU
 wcbec:: ds 1 tiles
+
+; YEL-DBL-001: secondary active battlers in the existing overworld/scratch
+; WRAM0 union. This allocates NO new party, box, SRAM, or save data.
+; Never access these aliases outside a battle. Their overlay lifetime
+; must be audited against overworld-map refresh and printer/graphics scratch
+; before enabling real two-active-slot battles.
+NEXTU
+wDoublesSecondaryBattleDataStart::
+wDoublesPlayer2Nick:: ds NAME_LENGTH
+wDoublesPlayer2:: battle_struct wDoublesPlayer2
+wDoublesPlayer2UnmodifiedAttack:: dw
+wDoublesPlayer2UnmodifiedDefense:: dw
+wDoublesPlayer2UnmodifiedSpeed:: dw
+wDoublesPlayer2UnmodifiedSpecial:: dw
+wDoublesPlayer2SpecialDefense:: dw
+wDoublesPlayer2UnmodifiedSpecialDefense:: dw
+wDoublesPlayer2StatMods:: ds NUM_STAT_MODS
+wDoublesPlayer2SpecialDefenseMod:: db
+wDoublesPlayer2BattleStatus:: ds 3
+wDoublesPlayer2PartyIndex:: db
+wDoublesPlayer2SelectedMove:: db
+wDoublesEnemy2Nick:: ds NAME_LENGTH
+wDoublesEnemy2:: battle_struct wDoublesEnemy2
+wDoublesEnemy2UnmodifiedAttack:: dw
+wDoublesEnemy2UnmodifiedDefense:: dw
+wDoublesEnemy2UnmodifiedSpeed:: dw
+wDoublesEnemy2UnmodifiedSpecial:: dw
+wDoublesEnemy2SpecialDefense:: dw
+wDoublesEnemy2UnmodifiedSpecialDefense:: dw
+wDoublesEnemy2StatMods:: ds NUM_STAT_MODS
+wDoublesEnemy2SpecialDefenseMod:: db
+wDoublesEnemy2BattleStatus:: ds 3
+wDoublesEnemy2PartyIndex:: db
+wDoublesEnemy2SelectedMove:: db
+wDoublesSecondaryBattleDataEnd::
+ASSERT wDoublesSecondaryBattleDataEnd - wDoublesSecondaryBattleDataStart <= 1300
 ENDU
 
 
@@ -655,7 +691,17 @@ wLowHealthAlarmDisabled:: db
 
 wPlayerMonMinimized:: db
 
-	ds 13
+; YEL-BAL-002: reclaim ten bytes of an existing 13-byte unused gap in the
+; battle-temporary WRAM union. Does not shift subsequent addresses or SRAM.
+wPlayerSpecialDefense:: dw
+wEnemySpecialDefense:: dw
+wPlayerUnmodifiedSpecialDefense:: dw
+wEnemyUnmodifiedSpecialDefense:: dw
+wPlayerSpecialDefenseMod:: db
+wEnemySpecialDefenseMod:: db
+wPlayerReflectTurns:: db
+wPlayerLightScreenTurns:: db
+wEnemyReflectTurns:: db
 
 UNION
 ; the amount of damage accumulated by the enemy while biding
@@ -1498,7 +1544,7 @@ wEnemyToxicCounter:: db
 ; low nibble: disable turns left
 wEnemyDisabledMove:: db
 
-	ds 1
+wEnemyLightScreenTurns:: db
 
 UNION
 ; the amount of damage accumulated by the player while biding
@@ -1510,7 +1556,11 @@ NEXTU
 wUnknownSerialCounter2:: dw
 ENDU
 
-	ds 2
+; YEL-DBL-001: battle-only format discriminator, never serialized.
+; 0 = legacy single battle, 1 = true doubles after the engine initializes
+; both active slots. No battle may set 1 until two-active-slot setup exists.
+wBattleFormat:: db
+	ds 1
 wBattleStatusDataEnd::
 
 ; non-zero when an item or move that allows escape from battle was used

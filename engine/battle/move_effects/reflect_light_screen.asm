@@ -3,22 +3,40 @@ ReflectLightScreenEffect_:
 	ld de, wPlayerMoveEffect
 	ldh a, [hWhoseTurn]
 	and a
-	jr z, .reflectLightScreenEffect
+	jr z, .selectEffect
 	ld hl, wEnemyBattleStatus3
 	ld de, wEnemyMoveEffect
-.reflectLightScreenEffect
+.selectEffect
 	ld a, [de]
 	cp LIGHT_SCREEN_EFFECT
 	jr nz, .reflect
-	bit HAS_LIGHT_SCREEN_UP, [hl] ; is mon already protected by light screen?
+	ld de, wPlayerLightScreenTurns
+	ldh a, [hWhoseTurn]
+	and a
+	jr z, .checkLightScreen
+	ld de, wEnemyLightScreenTurns
+.checkLightScreen
+	ld a, [de]
+	and a
 	jr nz, .moveFailed
-	set HAS_LIGHT_SCREEN_UP, [hl] ; mon is now protected by light screen
+	set HAS_LIGHT_SCREEN_UP, [hl]
+	ld a, 5
+	ld [de], a
 	ld hl, LightScreenProtectedText
 	jr .playAnim
 .reflect
-	bit HAS_REFLECT_UP, [hl] ; is mon already protected by reflect?
+	ld de, wPlayerReflectTurns
+	ldh a, [hWhoseTurn]
+	and a
+	jr z, .checkReflect
+	ld de, wEnemyReflectTurns
+.checkReflect
+	ld a, [de]
+	and a
 	jr nz, .moveFailed
-	set HAS_REFLECT_UP, [hl] ; mon is now protected by reflect
+	set HAS_REFLECT_UP, [hl]
+	ld a, 5
+	ld [de], a
 	ld hl, ReflectGainedArmorText
 .playAnim
 	push hl

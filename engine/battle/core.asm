@@ -133,7 +133,14 @@ SetScrollXForSlidingPlayerBodyLeft:
 	ret
 
 StartBattle:
+	; True doubles setup will explicitly opt in after initializing both slots.
+	; Legacy battles must never inherit the previous battle's format.
 	xor a
+	ld [wBattleFormat], a
+	ld [wPlayerReflectTurns], a
+	ld [wPlayerLightScreenTurns], a
+	ld [wEnemyReflectTurns], a
+	ld [wEnemyLightScreenTurns], a
 	ld [wPartyGainExpFlags], a
 	ld [wPartyFoughtCurrentEnemyFlags], a
 	ld [wActionResultOrTookBattleTurn], a
@@ -446,6 +453,7 @@ MainInBattleLoop:
 	jp z, HandlePlayerMonFainted
 	call DrawHUDsAndHPBars
 	call CheckNumAttacksLeft
+	call TickProjectYellowScreens
 	jp MainInBattleLoop
 .playerMovesFirst
 	call ExecutePlayerMove
@@ -474,6 +482,7 @@ MainInBattleLoop:
 	jp z, HandleEnemyMonFainted
 	call DrawHUDsAndHPBars
 	call CheckNumAttacksLeft
+	call TickProjectYellowScreens
 	jp MainInBattleLoop
 
 HandlePoisonBurnLeechSeed:
@@ -689,6 +698,46 @@ UpdateCurMonHPBar:
 	pop bc
 	ret
 
+; Advance screens once at a completed two-sided battle round, not per attack.
+; Each active effect starts at five and expires after five round endings.
+TickProjectYellowScreens:
+	ld hl, wPlayerReflectTurns
+	ld a, [hl]
+	and a
+	jr z, .playerLight
+	dec [hl]
+	jr nz, .playerLight
+	ld hl, wPlayerBattleStatus3
+	res HAS_REFLECT_UP, [hl]
+.playerLight
+	ld hl, wPlayerLightScreenTurns
+	ld a, [hl]
+	and a
+	jr z, .enemyReflect
+	dec [hl]
+	jr nz, .enemyReflect
+	ld hl, wPlayerBattleStatus3
+	res HAS_LIGHT_SCREEN_UP, [hl]
+.enemyReflect
+	ld hl, wEnemyReflectTurns
+	ld a, [hl]
+	and a
+	jr z, .enemyLight
+	dec [hl]
+	jr nz, .enemyLight
+	ld hl, wEnemyBattleStatus3
+	res HAS_REFLECT_UP, [hl]
+.enemyLight
+	ld hl, wEnemyLightScreenTurns
+	ld a, [hl]
+	and a
+	ret z
+	dec [hl]
+	ret nz
+	ld hl, wEnemyBattleStatus3
+	res HAS_LIGHT_SCREEN_UP, [hl]
+	ret
+
 CheckNumAttacksLeft:
 	ld a, [wPlayerNumAttacksLeft]
 	and a
@@ -706,6 +755,8 @@ CheckNumAttacksLeft:
 	ret
 
 HandleEnemyMonFainted:
+	; An early knockout terminates the action round before the normal tick.
+	call TickProjectYellowScreens
 	xor a
 	ld [wInHandlePlayerMonFainted], a
 	call FaintEnemyPokemon
@@ -979,6 +1030,8 @@ PlayBattleVictoryMusic:
 	jp Delay3
 
 HandlePlayerMonFainted:
+	; An early knockout terminates the action round before the normal tick.
+	call TickProjectYellowScreens
 	ld a, 1
 	ld [wInHandlePlayerMonFainted], a
 	call RemoveFaintedPlayerMon
@@ -1705,6 +1758,8 @@ LoadBattleMonFromParty:
 	ld [hli], a
 	dec b
 	jr nz, .statModLoop
+	call InitPlayerSpecialAttack
+	call InitPlayerSpecialDefenseCache
 	ret
 
 ; copies from enemy party data to current enemy mon data when sending out a new enemy mon
@@ -1759,6 +1814,288 @@ LoadEnemyMonFromParty:
 	jr nz, .statModLoop
 	ld a, [wWhichPokemon]
 	ld [wEnemyMonPartyPos], a
+	call InitEnemySpecialAttack
+	call InitEnemySpecialDefenseCache
+	ret
+
+; Initialise supplemental Special Defense from the legacy Special value.
+; This is a compatibility fallback until independently derived Sp. Def
+; calculations and six-stat species bases are integrated. Party/box record
+; sizes remain unchanged. Both caches use the same big-endian stat format.
+; Use the historical split Sp. Atk base with Yellow's existing Special DV
+; and Special stat experience. Only the active battler and its unmodified
+; battle snapshot are changed; saved party and box records retain their format.
+InitPlayerSpecialAttack:
+	push af
+	push bc
+	push de
+	push hl
+	ld a, [wMonHBaseSpecial]
+	push af
+	ld a, [wBattleMonSpecies]
+	call LoadSpecialAttackBase
+	jr c, .resetHeader
+	ld a, [wCurEnemyLevel]
+	push af
+	ld a, [wBattleMonLevel]
+	ld [wCurEnemyLevel], a
+	ld a, [wPlayerMonNumber]
+	ld hl, wPartyMon1HPExp - 1
+	ld bc, PARTYMON_STRUCT_LENGTH
+	call AddNTimes
+	ld b, 1
+	ld c, STAT_SPECIAL
+	call CalcStat
+	pop af
+	ld [wCurEnemyLevel], a
+	ldh a, [hMultiplicand + 1]
+	ld [wBattleMonSpecial], a
+	ld [wPlayerMonUnmodifiedSpecial], a
+	ldh a, [hMultiplicand + 2]
+	ld [wBattleMonSpecial + 1], a
+	ld [wPlayerMonUnmodifiedSpecial + 1], a
+.resetHeader
+	pop af
+	ld [wMonHBaseSpecial], a
+	pop hl
+	pop de
+	pop bc
+	pop af
+	ret
+
+InitEnemySpecialAttack:
+	push af
+	push bc
+	push de
+	push hl
+	ld a, [wMonHBaseSpecial]
+	push af
+	ld a, [wEnemyMonSpecies]
+	call LoadSpecialAttackBase
+	jr c, .resetHeader
+	ld a, [wCurEnemyLevel]
+	push af
+	ld a, [wEnemyMonLevel]
+	ld [wCurEnemyLevel], a
+	ld a, [wLinkState]
+	cp LINK_STATE_BATTLING
+	jr z, .partyExp
+	ld a, [wIsInBattle]
+	cp TRAINER_BATTLE
+	jr z, .partyExp
+	ld hl, wEnemyMonDVs - (MON_DVS - (MON_HP_EXP - 1))
+	ld b, 0
+	jr .calculate
+.partyExp
+	ld a, [wEnemyMonPartyPos]
+	ld hl, wEnemyMon1HPExp - 1
+	ld bc, PARTYMON_STRUCT_LENGTH
+	call AddNTimes
+	ld b, 1
+.calculate
+	ld c, STAT_SPECIAL
+	call CalcStat
+	pop af
+	ld [wCurEnemyLevel], a
+	ldh a, [hMultiplicand + 1]
+	ld [wEnemyMonSpecial], a
+	ld [wEnemyMonUnmodifiedSpecial], a
+	ldh a, [hMultiplicand + 2]
+	ld [wEnemyMonSpecial + 1], a
+	ld [wEnemyMonUnmodifiedSpecial + 1], a
+.resetHeader
+	pop af
+	ld [wMonHBaseSpecial], a
+	pop hl
+	pop de
+	pop bc
+	pop af
+	ret
+
+; Load species base Sp. Atk (table's first column).
+LoadSpecialAttackBase:
+	push bc
+	push de
+	push hl
+	ld [wPokedexNum], a
+	predef IndexToPokedex
+	ld a, [wPokedexNum]
+	and a
+	jr z, .notFound
+	cp 152
+	jr nc, .notFound
+	dec a
+	ld c, a
+	ld b, 0
+	sla c
+	rl b
+	ld hl, BaseSpecialStats
+	add hl, bc
+	ld de, wBuffer
+	ld bc, 1
+	ld a, BANK(BaseSpecialStats)
+	call FarCopyData
+	ld a, [wBuffer]
+	ld [wMonHBaseSpecial], a
+	and a
+	jr .done
+.notFound
+	scf
+.done
+	pop hl
+	pop de
+	pop bc
+	ret
+
+; Supplemental Sp. Def is recalculated at switch-in, using the same
+; DV / stat-exp arithmetic as original Yellow's Special calculation.
+InitPlayerSpecialDefenseCache:
+	push af
+	push bc
+	push de
+	push hl
+	ld a, [wMonHBaseSpecial]
+	push af
+	ld a, [wBattleMonSpecies]
+	call LoadSpecialDefenseBase
+	jr c, .fallback
+	ld a, [wCurEnemyLevel]
+	push af
+	ld a, [wBattleMonLevel]
+	ld [wCurEnemyLevel], a
+	ld a, [wPlayerMonNumber]
+	ld hl, wPartyMon1HPExp - 1
+	ld bc, PARTYMON_STRUCT_LENGTH
+	call AddNTimes
+	ld b, 1
+	ld c, STAT_SPECIAL
+	call CalcStat
+	pop af
+	ld [wCurEnemyLevel], a
+	ldh a, [hMultiplicand + 1]
+	ld [wPlayerSpecialDefense], a
+	ld [wPlayerUnmodifiedSpecialDefense], a
+	ldh a, [hMultiplicand + 2]
+	ld [wPlayerSpecialDefense + 1], a
+	ld [wPlayerUnmodifiedSpecialDefense + 1], a
+	jr .reset
+.fallback
+	ld hl, wBattleMonSpecial
+	ld de, wPlayerSpecialDefense
+	ld bc, 2
+	call CopyData
+	ld hl, wBattleMonSpecial
+	ld de, wPlayerUnmodifiedSpecialDefense
+	ld bc, 2
+	call CopyData
+.reset
+	pop af
+	ld [wMonHBaseSpecial], a
+	ld a, BASE_STAT_LEVEL
+	ld [wPlayerSpecialDefenseMod], a
+	pop hl
+	pop de
+	pop bc
+	pop af
+	ret
+
+InitEnemySpecialDefenseCache:
+	push af
+	push bc
+	push de
+	push hl
+	ld a, [wMonHBaseSpecial]
+	push af
+	ld a, [wEnemyMonSpecies]
+	call LoadSpecialDefenseBase
+	jr c, .fallback
+	ld a, [wCurEnemyLevel]
+	push af
+	ld a, [wEnemyMonLevel]
+	ld [wCurEnemyLevel], a
+	ld a, [wLinkState]
+	cp LINK_STATE_BATTLING
+	jr z, .partyExp
+	ld a, [wIsInBattle]
+	cp TRAINER_BATTLE
+	jr z, .partyExp
+	; Wild opponent lacks stat experience. Point CalcStat at its DVs.
+	ld hl, wEnemyMonDVs - (MON_DVS - (MON_HP_EXP - 1))
+	ld b, 0
+	jr .calculate
+.partyExp
+	ld a, [wEnemyMonPartyPos]
+	ld hl, wEnemyMon1HPExp - 1
+	ld bc, PARTYMON_STRUCT_LENGTH
+	call AddNTimes
+	ld b, 1
+.calculate
+	ld c, STAT_SPECIAL
+	call CalcStat
+	pop af
+	ld [wCurEnemyLevel], a
+	ldh a, [hMultiplicand + 1]
+	ld [wEnemySpecialDefense], a
+	ld [wEnemyUnmodifiedSpecialDefense], a
+	ldh a, [hMultiplicand + 2]
+	ld [wEnemySpecialDefense + 1], a
+	ld [wEnemyUnmodifiedSpecialDefense + 1], a
+	jr .reset
+.fallback
+	ld hl, wEnemyMonSpecial
+	ld de, wEnemySpecialDefense
+	ld bc, 2
+	call CopyData
+	ld hl, wEnemyMonSpecial
+	ld de, wEnemyUnmodifiedSpecialDefense
+	ld bc, 2
+	call CopyData
+.reset
+	pop af
+	ld [wMonHBaseSpecial], a
+	ld a, BASE_STAT_LEVEL
+	ld [wEnemySpecialDefenseMod], a
+	pop hl
+	pop de
+	pop bc
+	pop af
+	ret
+
+; Input A: internal species. On success, temporarily replaces the Special
+; base in wMonHeader with the historical Special Defense base.
+; Carry set means the species has no entry (safe legacy fallback).
+LoadSpecialDefenseBase:
+	push bc
+	push de
+	push hl
+	ld [wPokedexNum], a
+	predef IndexToPokedex
+	ld a, [wPokedexNum]
+	and a
+	jr z, .notFound
+	cp 152
+	jr nc, .notFound
+	dec a
+	ld c, a
+	ld b, 0
+	sla c
+	rl b
+	ld hl, BaseSpecialStats + 1
+	add hl, bc
+	ld de, wBuffer
+	ld bc, 1
+	ld a, BANK(BaseSpecialStats)
+	call FarCopyData
+	ld a, [wBuffer]
+	ld [wMonHBaseSpecial], a
+	and a
+	jr .done
+.notFound
+	scf
+.done
+	pop hl
+	pop de
+	pop bc
 	ret
 
 SendOutMon:
@@ -3315,8 +3652,10 @@ PlayerCalcMoveDamage:
 	call CalculateDamage
 	jp z, PlayerCheckIfFlyOrChargeEffect ; for moves with 0 BP, skip any further damage calculation and, for now, skip MoveHitTest
 	               ; for these moves, accuracy tests will only occur if they are called as part of the effect itself
+	call ApplyProjectYellowCriticalDamage
 	call AdjustDamageForMoveType
 	call RandomizeDamage
+	call ApplyProjectYellowScreens
 .moveHitTest
 	call MoveHitTest
 HandleIfPlayerMoveMissed:
@@ -4197,6 +4536,28 @@ IgnoredOrdersText:
 	text_far _IgnoredOrdersText
 	text_end
 
+; Read the per-move damage category without modifying the six-byte move
+; records. Input: a = move ID (1..165); output: a = MOVE_CATEGORY_*.
+; Preserves BC, DE and HL for CalculateDamage input preparation.
+GetBattleMoveCategory:
+	push bc
+	push de
+	push hl
+	dec a
+	ld c, a
+	ld b, 0
+	ld hl, MoveCategories
+	add hl, bc
+	ld de, wBuffer
+	ld bc, 1
+	ld a, BANK(MoveCategories)
+	call FarCopyData
+	ld a, [wBuffer]
+	pop hl
+	pop de
+	pop bc
+	ret
+
 ; sets b, c, d, and e for the CalculateDamage routine in the case of an attack by the player mon
 GetDamageVarsForPlayerAttack:
 	xor a
@@ -4208,70 +4569,57 @@ GetDamageVarsForPlayerAttack:
 	and a
 	ld d, a ; d = move power
 	ret z ; return if move power is zero
-	ld a, [hl] ; a = [wPlayerMoveType]
-	cp SPECIAL ; types >= SPECIAL are all special
-	jr nc, .specialAttack
-; physical attack
+	ld a, [wPlayerMoveNum]
+	call GetBattleMoveCategory
+	cp MOVE_CATEGORY_SPECIAL
+	jr z, .specialAttack
+; Physical and Special select independent offensive/defensive stages.
+; Critical hits ignore offensive penalties and defensive bonuses only.
 	ld hl, wEnemyMonDefense
+	ld a, [wCriticalHitOrOHKO]
+	cp 1
+	jr nz, .physicalDefSelected
+	ld a, [wEnemyMonDefenseMod]
+	cp BASE_STAT_LEVEL
+	jr c, .physicalDefSelected
+	jr z, .physicalDefSelected
+	ld hl, wEnemyMonUnmodifiedDefense
+.physicalDefSelected
 	ld a, [hli]
 	ld b, a
-	ld c, [hl] ; bc = enemy defense
-	ld a, [wEnemyBattleStatus3]
-	bit HAS_REFLECT_UP, a ; check for Reflect
-	jr z, .physicalAttackCritCheck
-; if the enemy has used Reflect, double the enemy's defense
-	sla c
-	rl b
-.physicalAttackCritCheck
+	ld c, [hl]
 	ld hl, wBattleMonAttack
 	ld a, [wCriticalHitOrOHKO]
-	and a ; check for critical hit
-	jr z, .scaleStats
-; in the case of a critical hit, reset the player's attack and the enemy's defense to their base values
-	ld c, STAT_DEFENSE
-	call GetEnemyMonStat
-	ldh a, [hProduct + 2]
-	ld b, a
-	ldh a, [hProduct + 3]
-	ld c, a
-	push bc
-	ld hl, wPartyMon1Attack
-	ld a, [wPlayerMonNumber]
-	ld bc, PARTYMON_STRUCT_LENGTH
-	call AddNTimes
-	pop bc
+	cp 1
+	jr nz, .scaleStats
+	ld a, [wPlayerMonAttackMod]
+	cp BASE_STAT_LEVEL
+	jr nc, .scaleStats
+	ld hl, wPlayerMonUnmodifiedAttack
 	jr .scaleStats
 .specialAttack
-	ld hl, wEnemyMonSpecial
+	ld hl, wEnemySpecialDefense
+	ld a, [wCriticalHitOrOHKO]
+	cp 1
+	jr nz, .specialDefSelected
+	ld a, [wEnemySpecialDefenseMod]
+	cp BASE_STAT_LEVEL
+	jr c, .specialDefSelected
+	jr z, .specialDefSelected
+	ld hl, wEnemyUnmodifiedSpecialDefense
+.specialDefSelected
 	ld a, [hli]
 	ld b, a
-	ld c, [hl] ; bc = enemy special
-	ld a, [wEnemyBattleStatus3]
-	bit HAS_LIGHT_SCREEN_UP, a ; check for Light Screen
-	jr z, .specialAttackCritCheck
-; if the enemy has used Light Screen, double the enemy's special
-	sla c
-	rl b
-; reflect and light screen boosts do not cap the stat at MAX_STAT_VALUE, so weird things will happen during stats scaling
-; if a Pokemon with 512 or more Defense has used Reflect, or if a Pokemon with 512 or more Special has used Light Screen
-.specialAttackCritCheck
+	ld c, [hl]
 	ld hl, wBattleMonSpecial
 	ld a, [wCriticalHitOrOHKO]
-	and a ; check for critical hit
-	jr z, .scaleStats
-; in the case of a critical hit, reset the player's and enemy's specials to their base values
-	ld c, STAT_SPECIAL
-	call GetEnemyMonStat
-	ldh a, [hProduct + 2]
-	ld b, a
-	ldh a, [hProduct + 3]
-	ld c, a
-	push bc
-	ld hl, wPartyMon1Special
-	ld a, [wPlayerMonNumber]
-	ld bc, PARTYMON_STRUCT_LENGTH
-	call AddNTimes
-	pop bc
+	cp 1
+	jr nz, .scaleStats
+	ld a, [wPlayerMonSpecialMod]
+	cp BASE_STAT_LEVEL
+	jr nc, .scaleStats
+	ld hl, wPlayerMonUnmodifiedSpecial
+	jr .scaleStats
 ; if either the offensive or defensive stat is too large to store in a byte, scale both stats by dividing them by 4
 ; this allows values with up to 10 bits (values up to 1023) to be handled
 ; anything larger will wrap around
@@ -4301,10 +4649,6 @@ GetDamageVarsForPlayerAttack:
 	        ; (c already contains enemy's defensive stat (possibly scaled))
 	ld a, [wBattleMonLevel]
 	ld e, a ; e = level
-	ld a, [wCriticalHitOrOHKO]
-	and a ; check for critical hit
-	jr z, .done
-	sla e ; double level if it was a critical hit
 .done
 	ld a, 1
 	and a
@@ -4321,70 +4665,57 @@ GetDamageVarsForEnemyAttack:
 	ld d, a ; d = move power
 	and a
 	ret z ; return if move power is zero
-	ld a, [hl] ; a = [wEnemyMoveType]
-	cp SPECIAL ; types >= SPECIAL are all special
-	jr nc, .specialAttack
-; physical attack
+	ld a, [wEnemyMoveNum]
+	call GetBattleMoveCategory
+	cp MOVE_CATEGORY_SPECIAL
+	jr z, .specialAttack
+; Physical and Special select independent offensive/defensive stages.
+; Critical hits ignore offensive penalties and defensive bonuses only.
 	ld hl, wBattleMonDefense
+	ld a, [wCriticalHitOrOHKO]
+	cp 1
+	jr nz, .physicalDefSelected
+	ld a, [wPlayerMonDefenseMod]
+	cp BASE_STAT_LEVEL
+	jr c, .physicalDefSelected
+	jr z, .physicalDefSelected
+	ld hl, wPlayerMonUnmodifiedDefense
+.physicalDefSelected
 	ld a, [hli]
 	ld b, a
-	ld c, [hl] ; bc = player defense
-	ld a, [wPlayerBattleStatus3]
-	bit HAS_REFLECT_UP, a ; check for Reflect
-	jr z, .physicalAttackCritCheck
-; if the player has used Reflect, double the player's defense
-	sla c
-	rl b
-.physicalAttackCritCheck
+	ld c, [hl]
 	ld hl, wEnemyMonAttack
 	ld a, [wCriticalHitOrOHKO]
-	and a ; check for critical hit
-	jr z, .scaleStats
-; in the case of a critical hit, reset the player's defense and the enemy's attack to their base values
-	ld hl, wPartyMon1Defense
-	ld a, [wPlayerMonNumber]
-	ld bc, PARTYMON_STRUCT_LENGTH
-	call AddNTimes
-	ld a, [hli]
-	ld b, a
-	ld c, [hl]
-	push bc
-	ld c, STAT_ATTACK
-	call GetEnemyMonStat
-	ld hl, hProduct + 2
-	pop bc
+	cp 1
+	jr nz, .scaleStats
+	ld a, [wEnemyMonAttackMod]
+	cp BASE_STAT_LEVEL
+	jr nc, .scaleStats
+	ld hl, wEnemyMonUnmodifiedAttack
 	jr .scaleStats
 .specialAttack
-	ld hl, wBattleMonSpecial
+	ld hl, wPlayerSpecialDefense
+	ld a, [wCriticalHitOrOHKO]
+	cp 1
+	jr nz, .specialDefSelected
+	ld a, [wPlayerSpecialDefenseMod]
+	cp BASE_STAT_LEVEL
+	jr c, .specialDefSelected
+	jr z, .specialDefSelected
+	ld hl, wPlayerUnmodifiedSpecialDefense
+.specialDefSelected
 	ld a, [hli]
 	ld b, a
 	ld c, [hl]
-	ld a, [wPlayerBattleStatus3]
-	bit HAS_LIGHT_SCREEN_UP, a ; check for Light Screen
-	jr z, .specialAttackCritCheck
-; if the player has used Light Screen, double the player's special
-	sla c
-	rl b
-; reflect and light screen boosts do not cap the stat at MAX_STAT_VALUE, so weird things will happen during stats scaling
-; if a Pokemon with 512 or more Defense has used Reflect, or if a Pokemon with 512 or more Special has used Light Screen
-.specialAttackCritCheck
 	ld hl, wEnemyMonSpecial
 	ld a, [wCriticalHitOrOHKO]
-	and a ; check for critical hit
-	jr z, .scaleStats
-; in the case of a critical hit, reset the player's and enemy's specials to their base values
-	ld hl, wPartyMon1Special
-	ld a, [wPlayerMonNumber]
-	ld bc, PARTYMON_STRUCT_LENGTH
-	call AddNTimes
-	ld a, [hli]
-	ld b, a
-	ld c, [hl]
-	push bc
-	ld c, STAT_SPECIAL
-	call GetEnemyMonStat
-	ld hl, hProduct + 2
-	pop bc
+	cp 1
+	jr nz, .scaleStats
+	ld a, [wEnemyMonSpecialMod]
+	cp BASE_STAT_LEVEL
+	jr nc, .scaleStats
+	ld hl, wEnemyMonUnmodifiedSpecial
+	jr .scaleStats
 ; if either the offensive or defensive stat is too large to store in a byte, scale both stats by dividing them by 4
 ; this allows values with up to 10 bits (values up to 1023) to be handled
 ; anything larger will wrap around
@@ -4414,10 +4745,6 @@ GetDamageVarsForEnemyAttack:
 	        ; (c already contains player's defensive stat (possibly scaled))
 	ld a, [wEnemyMonLevel]
 	ld e, a
-	ld a, [wCriticalHitOrOHKO]
-	and a ; check for critical hit
-	jr z, .done
-	sla e ; double level if it was a critical hit
 .done
 	ld a, $1
 	and a
@@ -4647,69 +4974,79 @@ INCLUDE "data/battle/unused_critical_hit_moves.asm"
 ; Azure Heights claims "the fastest pokémon (who are, not coincidentally,
 ; among the most popular) tend to CH about 20 to 25% of the time."
 CriticalHitTest:
+; Project Yellow critical stages: ordinary 1/24, +1 1/8, +2 1/2, +3 guaranteed.
+; High-critical moves add one stage; Focus Energy adds two. Speed has no effect.
+; A zero-power status move cannot score an ordinary critical hit.
 	xor a
 	ld [wCriticalHitOrOHKO], a
 	ldh a, [hWhoseTurn]
 	and a
-	ld a, [wEnemyMonSpecies]
-	jr nz, .handleEnemy
-	ld a, [wBattleMonSpecies]
-.handleEnemy
-	ld [wCurSpecies], a
-	call GetMonHeader
-	ld a, [wMonHBaseSpeed]
-	ld b, a
-	srl b                        ; (effective (base speed/2))
-	ldh a, [hWhoseTurn]
-	and a
 	ld hl, wPlayerMovePower
 	ld de, wPlayerBattleStatus2
-	jr z, .calcCriticalHitProbability
+	jr z, .getMove
 	ld hl, wEnemyMovePower
 	ld de, wEnemyBattleStatus2
-.calcCriticalHitProbability
-	ld a, [hld]                  ; read base power from RAM
+.getMove
+	ld a, [hld]
 	and a
-	ret z                        ; do nothing if zero
+	ret z
 	dec hl
-	ld c, [hl]                   ; read move id
+	ld c, [hl]
+	ld b, 0
 	ld a, [de]
-	bit GETTING_PUMPED, a        ; test for focus energy
-	jr nz, .focusEnergyUsed      ; bug: using focus energy causes a shift to the right instead of left,
-	                             ; resulting in 1/4 the usual crit chance
-	sla b                        ; (effective (base speed/2)*2)
-	jr nc, .noFocusEnergyUsed
-	ld b, $ff                    ; cap at 255/256
-	jr .noFocusEnergyUsed
-.focusEnergyUsed
-	srl b
-.noFocusEnergyUsed
-	ld hl, HighCriticalMoves     ; table of high critical hit moves
-.Loop
-	ld a, [hli]                  ; read move from move table
-	cp c                         ; does it match the move about to be used?
-	jr z, .HighCritical          ; if so, the move about to be used is a high critical hit ratio move
-	inc a                        ; move on to the next move, FF terminates loop
-	jr nz, .Loop                 ; check the next move in HighCriticalMoves
-	srl b                        ; /2 for regular move (effective (base speed / 2))
-	jr .SkipHighCritical         ; continue as a normal move
-.HighCritical
-	sla b                        ; *2 for high critical hit moves
-	jr nc, .noCarry
-	ld b, $ff                    ; cap at 255/256
-.noCarry
-	sla b                        ; *4 for high critical move (effective (base speed/2)*8))
-	jr nc, .SkipHighCritical
-	ld b, $ff
-.SkipHighCritical
-	call BattleRandom            ; generates a random value, in "a"
-	rlc a
-	rlc a
-	rlc a
-	cp b                         ; check a against calculated crit rate
-	ret nc                       ; no critical hit if no borrow
-	ld a, $1
-	ld [wCriticalHitOrOHKO], a   ; set critical hit flag
+	bit GETTING_PUMPED, a
+	jr z, .checkHighCrit
+	inc b
+	inc b
+.checkHighCrit
+	ld hl, HighCriticalMoves
+.loop
+	ld a, [hli]
+	cp c
+	jr z, .highCrit
+	inc a
+	jr nz, .loop
+	jr .roll
+.highCrit
+	inc b
+.roll
+	ld a, b
+	cp 3
+	jr nc, .critical
+	call BattleRandom
+	ld c, a
+	ld a, b
+	and a
+	jr z, .stageZero
+	cp 1
+	jr z, .stageOne
+; Stage 2: 128/256 = 1/2.
+	ld a, c
+	cp 128
+	jr c, .critical
+	ret
+.stageOne
+; Stage 1: 32/256 = 1/8.
+	ld a, c
+	cp 32
+	jr c, .critical
+	ret
+.stageZero
+; Stage 0: exactly 1/24 via rejection of 256's four excess values.
+; Reject rolls >= 252, leaving 252 equally likely values (10.5/252 not integer).
+; Use 3-byte threshold sampling below instead for exact 1/24.
+; Reject >= 240 to sample uniformly from 240 values.
+.retry
+	call BattleRandom
+	cp 240
+	jr nc, .retry
+; 10 values out of 240 produce the 1/24 chance.
+	cp 10
+	jr c, .critical
+	ret
+.critical
+	ld a, 1
+	ld [wCriticalHitOrOHKO], a
 	ret
 
 INCLUDE "data/battle/critical_hit_moves.asm"
@@ -5598,6 +5935,107 @@ CalcHitChance:
 	ld [hl], a ; store the hit chance in the move accuracy variable
 	ret
 
+
+; YEL-BAL-002: apply floor(3 * damage / 2) before STAB/type/random.
+; Original Yellow's critical-level doubling is removed in both paths.
+ApplyProjectYellowCriticalDamage:
+	ld a, [wCriticalHitOrOHKO]
+	cp 1
+	ret nz
+	push bc
+	push de
+	push hl
+	ld hl, wDamage
+	ld a, [hli]
+	ld d, a
+	ld e, [hl]
+	ld h, d
+	ld l, e
+	add hl, hl
+	ld a, l
+	add e
+	ld l, a
+	ld a, h
+	adc d
+	ld h, a
+	srl h
+	rr l
+	ld a, h
+	ld [wDamage], a
+	ld a, l
+	ld [wDamage + 1], a
+	pop hl
+	pop de
+	pop bc
+	ret
+
+; Screen is a late damage modifier, not a defense-stat multiplier.
+; Existing singles retain 50% damage reduction, floor, crit bypass.
+; Double-battle 2/3 modifier is deferred until doubles turn-state exists.
+ApplyProjectYellowScreens:
+	ld a, [wCriticalHitOrOHKO]
+	cp 1
+	ret z
+	push af
+	push bc
+	push hl
+	ldh a, [hWhoseTurn]
+	and a
+	jr nz, .enemy
+	ld a, [wPlayerMoveNum]
+	call GetBattleMoveCategory
+	ld b, a
+	ld hl, wEnemyReflectTurns
+	jr .select
+.enemy
+	ld a, [wEnemyMoveNum]
+	call GetBattleMoveCategory
+	ld b, a
+	ld hl, wPlayerReflectTurns
+.select
+	ld a, b
+	cp MOVE_CATEGORY_SPECIAL
+	jr z, .special
+	cp MOVE_CATEGORY_PHYSICAL
+	jr nz, .done
+		ld a, [hl]
+	and a
+	jr z, .done
+	jr .halve
+.special
+		push hl
+	ld a, h
+	cp HIGH(wEnemyReflectTurns)
+	jr nz, .playerLightTimer
+	ld a, l
+	cp LOW(wEnemyReflectTurns)
+	jr nz, .playerLightTimer
+	ld hl, wEnemyLightScreenTurns
+	jr .readLightTimer
+.playerLightTimer
+	ld hl, wPlayerLightScreenTurns
+.readLightTimer
+	ld a, [hl]
+	pop hl
+	and a
+	jr z, .done
+.halve
+	ld hl, wDamage
+	ld a, [hli]
+	ld b, a
+	ld c, [hl]
+	srl b
+	rr c
+	ld a, b
+	ld [wDamage], a
+	ld a, c
+	ld [wDamage + 1], a
+.done
+	pop hl
+	pop bc
+	pop af
+	ret
+
 ; multiplies damage by a random percentage from ~85% to 100%
 RandomizeDamage:
 	ld hl, wDamage
@@ -5718,8 +6156,10 @@ EnemyCalcMoveDamage:
 	call SwapPlayerAndEnemyLevels
 	call CalculateDamage
 	jp z, EnemyCheckIfFlyOrChargeEffect
+	call ApplyProjectYellowCriticalDamage
 	call AdjustDamageForMoveType
 	call RandomizeDamage
+	call ApplyProjectYellowScreens
 
 EnemyMoveHitTest:
 	call MoveHitTest
@@ -6328,6 +6768,8 @@ LoadEnemyMonData:
 	ld [hli], a
 	dec b
 	jr nz, .statModLoop
+	call InitEnemySpecialAttack
+	call InitEnemySpecialDefenseCache
 	ret
 
 ; calls BattleTransition to show the battle transition animation and initializes some battle variables
