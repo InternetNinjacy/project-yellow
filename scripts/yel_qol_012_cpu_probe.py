@@ -61,6 +61,10 @@ def main():
     results=[]
     context={'call':None,'done':False,'started':False,'flags':None}
     regs=em.register_file
+    # Isolated CPU calls have no initialized VBlank/joypad handlers;
+    # keep IME harmless by masking IE and acknowledging IF.
+    em.memory[0xffff]=0
+    em.memory[0xff0f]=0
     # Park execution in an inert WRAM JR -2, preventing Game Freak's
     # real startup from corrupting CPU state between isolated calls.
     em.memory[0xc000]=0x18
@@ -91,6 +95,8 @@ def main():
     em.hook_register(0,0x100,boot,context)
     def call(n,a=0,de=0):
         context.update(call=n,started=False,done=False,flags=None,a=a,de=de)
+        em.memory[0xffff]=0
+        em.memory[0xff0f]=0
         regs.PC=0x0100
         for _ in range(350):
             em.tick(1,render=False,sound=False)
