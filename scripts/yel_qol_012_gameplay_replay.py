@@ -12,6 +12,7 @@ import shutil
 import tempfile
 from pathlib import Path
 from pyboy import PyBoy
+from yel_qol_012_fixture import seed_scenario
 
 BOX_SIZE = 1682
 MON_BYTES = 33
@@ -99,6 +100,17 @@ def main():
             play(em, spec["prepare"])
             if em.memory[syms["wPartyCount"][1]] != 6:
                 raise AssertionError("replay did not prepare a six-Pokémon party")
+            # Opt-in synthetic SRAM staging after a real debug new-game.
+            # The actual battle, ball, SAVE and CONTINUE phases must still
+            # run using controller input, never direct memory writes.
+            if spec.get("fixture_mode") == "synthetic-physical-29":
+                for name in ("sBank2AllBoxesChecksum", "sBank2IndividualBoxChecksums"):
+                    if name not in syms:
+                        raise ValueError("missing fixture checksum symbol " + name)
+                seed_scenario(em.memory, syms, destination, 29,
+                              bool(spec.get("other_boxes_full", False)))
+            elif "fixture_mode" in spec:
+                raise ValueError("unsupported fixture_mode")
             before = assert_storage(em, syms, destination, starting_count)
             prior_boxes = [box_bytes(em, syms, i) for i in range(12)]
             play(em, spec["capture"])
@@ -126,7 +138,7 @@ def main():
             for idx in range(12):
                 if idx != destination and box_bytes(em, syms, idx) != prior_boxes[idx]:
                     raise AssertionError(f"reboot changed unrelated box {idx + 1}")
-            report = {"contract": "YEL-QOL-012-REAL-GAMEPLAY/1", "status": "PASS",
+            report = {"fixture_mode": spec.get("fixture_mode", "controller-only"), "contract": "YEL-QOL-012-REAL-GAMEPLAY/1", "status": "PASS",
                       "destination_box": destination + 1, "before": 29, "after": 30,
                       "captured_record_hex": captured.hex(),
                       "reboot": "new PyBoy instance; actual battery SRAM"}
