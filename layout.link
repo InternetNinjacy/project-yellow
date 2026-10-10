@@ -253,6 +253,8 @@ SRAM $2
 	"Saved Boxes 1"
 SRAM $3
 	"Saved Boxes 2"
+SRAM $4
+	"Saved Boxes 3"
 HRAM
 	"OAM DMA"
 	"HRAM"
