@@ -17,6 +17,9 @@ DebugNewGameParty: ; unreferenced except in _DEBUG
 	db PERSIAN, 80
 	db JIGGLYPUFF, 15
 	db STARTER_PIKACHU, 5
+	; Six-member party for DEBUG-only live capture regression.
+	db PIDGEY, 7
+	db RATTATA, 7
 	db -1 ; end
 
 PrepareNewGameDebug: ; dummy except in _DEBUG
