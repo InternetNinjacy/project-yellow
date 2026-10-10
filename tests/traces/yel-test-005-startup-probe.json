@@ -311,5 +311,60 @@
     "button": "a",
     "frames": 2,
     "after": 90
+  },
+  {
+    "button": "b",
+    "frames": 2,
+    "after": 60
+  },
+  {
+    "button": "b",
+    "frames": 2,
+    "after": 60
+  },
+  {
+    "button": "right",
+    "frames": 8,
+    "after": 16
+  },
+  {
+    "button": "right",
+    "frames": 8,
+    "after": 16
+  },
+  {
+    "button": "right",
+    "frames": 8,
+    "after": 16
+  },
+  {
+    "button": "right",
+    "frames": 8,
+    "after": 16
+  },
+  {
+    "button": "up",
+    "frames": 8,
+    "after": 16
+  },
+  {
+    "button": "up",
+    "frames": 8,
+    "after": 16
+  },
+  {
+    "button": "up",
+    "frames": 8,
+    "after": 16
+  },
+  {
+    "button": "up",
+    "frames": 8,
+    "after": 16
+  },
+  {
+    "button": "up",
+    "frames": 8,
+    "after": 16
   }
 ]
