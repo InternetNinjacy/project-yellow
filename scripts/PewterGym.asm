@@ -48,11 +48,6 @@ PewterGymScriptReceiveTM34:
 	; TM34 is now Safari Zone Poison Fang, never awarded by Brock.
 	SetEvent EVENT_BEAT_BROCK
 .gymVictory
-.BagFull
-	ld a, TEXT_PEWTERGYM_TM34_NO_ROOM
-	ldh [hTextID], a
-	call DisplayTextID
-.gymVictory
 	ld hl, wObtainedBadges
 	set BIT_BOULDERBADGE, [hl]
 	ld hl, wBeatGymFlags
