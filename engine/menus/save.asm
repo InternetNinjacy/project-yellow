@@ -339,6 +339,100 @@ BoxSRAMPointerTable:
 	dw sBox5 ; sBox11
 	dw sBox6 ; sBox12
 
+; YEL-QOL-011: prepare storage silently before throwing a ball with a full party.
+; Returns A=1 if a box has room, A=0 if all boxes are full.
+; Leave the active box unchanged if it has room.
+; Non-mutating availability check used before consuming a thrown ball.
+; A=1 if the current box or any other box has space, A=0 otherwise.
+CheckBoxSpaceForCapture::
+	ld a, [wBoxCount]
+	cp MONS_PER_BOX
+	jr nc, .checkOtherBoxes
+	ld a, 1
+	and a ; preserve nonzero as Z=0 across Bankswitch
+	ret
+.checkOtherBoxes
+	ld hl, wCurrentBoxNum
+	bit BIT_HAS_CHANGED_BOXES, [hl]
+	call z, EmptyAllSRAMBoxes
+	call GetMonCountsForAllBoxes
+	ld hl, wBoxMonCounts
+	ld b, NUM_BOXES
+.scan
+	ld a, [hli]
+	cp MONS_PER_BOX
+	jr c, .available
+	dec b
+	jr nz, .scan
+	xor a
+	ret
+.available
+	ld a, 1
+	and a ; preserve nonzero as Z=0 across Bankswitch
+	ret
+
+AutoSwitchBoxForCapture::
+	ld a, [wBoxCount]
+	cp MONS_PER_BOX
+	jr nc, .findBox
+	ld a, 1
+	ret
+
+.findBox
+	; The other SRAM boxes are uninitialized before the first manual
+	; box change. Initialize them before inspecting their counts.
+	ld hl, wCurrentBoxNum
+	bit BIT_HAS_CHANGED_BOXES, [hl]
+	call z, EmptyAllSRAMBoxes
+	call GetMonCountsForAllBoxes
+
+	ld a, [wCurrentBoxNum]
+	and BOX_NUM_MASK
+	ld c, a
+	ld b, NUM_BOXES - 1
+.checkNextBox
+	inc c
+	ld a, c
+	cp NUM_BOXES
+	jr c, .inRange
+	ld c, 0
+.inRange
+	ld hl, wBoxMonCounts
+	ld e, c
+	ld d, 0
+	add hl, de
+	ld a, [hl]
+	cp MONS_PER_BOX
+	jr c, .switchBox
+	dec b
+	jr nz, .checkNextBox
+	; Every box is full. Do not touch current storage selection/data.
+	xor a
+	ret
+
+.switchBox
+	push bc
+	; Persist the previous working box to its own SRAM slot.
+	call GetBoxSRAMLocation
+	ld d, h
+	ld e, l
+	ld hl, wBoxDataStart
+	call CopyBoxToOrFromSRAM
+	pop bc
+
+	; The selected box is now the working box, persistently.
+	ld a, c
+	set BIT_HAS_CHANGED_BOXES, a
+	ld [wCurrentBoxNum], a
+	call GetBoxSRAMLocation
+	ld de, wBoxDataStart
+	call CopyBoxToOrFromSRAM
+
+	; Do not call SaveGameData during battle: the normal save path
+	; persists selection and active working box on the next save.
+	ld a, 1
+	ret
+
 ChangeBox::
 	ld hl, WhenYouChangeBoxText
 	call PrintText

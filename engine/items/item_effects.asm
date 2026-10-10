@@ -122,8 +122,11 @@ ItemUseBall:
 	ld a, [wPartyCount] ; is party full?
 	cp PARTY_LENGTH
 	jr nz, .canUseBall
-	ld a, [wBoxCount] ; is box full?
-	cp MONS_PER_BOX
+	; Rotate to the next non-full box only when capture needs storage.
+	; A = 0 when every box is full.
+	; Bankswitch restores the previous ROM bank into A. The callee's
+	; zero flag survives the far call, but its A return value does not.
+	callfar CheckBoxSpaceForCapture
 	jp z, BoxFullCannotThrowBall
 
 .canUseBall
@@ -529,7 +532,7 @@ ItemUseBall:
 	cp BATTLE_TYPE_OLD_MAN ; is this the old man battle?
 	jp z, .oldManCaughtMon ; if so, don't give the player the caught Pokémon
 	cp BATTLE_TYPE_PIKACHU
-	jr z, .oldManCaughtMon ; same with Pikachu battle
+	jp z, .oldManCaughtMon ; same with Pikachu battle
 	ld hl, ItemUseBallText05
 	call PrintText
 
@@ -578,6 +581,8 @@ ItemUseBall:
 
 .sendToBox
 	call ClearSprites
+	; A successful catch now requires storage: switch only at this point.
+	callfar AutoSwitchBoxForCapture
 	call SendNewMonToBox
 	ld hl, ItemUseBallText07
 	CheckEvent EVENT_MET_BILL
