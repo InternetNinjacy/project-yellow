@@ -1415,7 +1415,7 @@ BeedrillEvosMoves:
 	db 20, TWINEEDLE
 	db 25, RAGE
 	db 30, PIN_MISSILE
-	db 35, AGILITY
+	db 44, WHIRLWIND
 	db 0
 
 MissingNo73EvosMoves:
