@@ -232,13 +232,11 @@ InitBattleEnemyParameters::
 	; Trainer number bit 7 is presentation metadata, not party index.
 	; The opponent ID and class remain the original one-byte values.
 	ld a, [wEngagedTrainerSet]
-	ld b, a
-	and TRAINER_VARIANT_BIT
-	jr z, .baseTrainer
-	ld a, 1
-.baseTrainer
+	push af
+	rlca ; bit 7 becomes bit 0
+	and 1
 	ld [wTrainerGenderVariant], a
-	ld a, b
+	pop af
 	and TRAINER_PARTY_INDEX_MASK
 	ld [wTrainerNo], a
 	ret
