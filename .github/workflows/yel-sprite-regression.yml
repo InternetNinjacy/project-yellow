@@ -9,7 +9,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { case_id: dex-001-bulbasaur-sgb, species: ${{ matrix.species }}, key: ${{ matrix.key }} }
+          - { case_id: dex-001-bulbasaur-sgb, species: Bulbasaur, key: bulbasaur }
           - { case_id: dex-002-ivysaur-sgb, species: Ivysaur, key: ivysaur }
     timeout-minutes: 12
     steps:
