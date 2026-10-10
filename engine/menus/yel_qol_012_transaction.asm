@@ -104,6 +104,8 @@ Yel012BeginTransaction::
 	jp nz, .failed
 	call Yel012CopyPhysicalAndSnapshotZero
 	jp c, .failed
+	call Yel012ValidateShadow
+	jp c, .failed
 	ld a, 5
 	call OpenSRAM
 	ld a, [wCurrentBoxNum]
@@ -455,6 +457,65 @@ Yel012ValidateShadow:
 	and a
 	ret
 .corrupt
+	scf
+	ret
+
+; Stage a single occupied 0..29 record into the transaction shadow.
+; A slot, DE complete 55-byte WRAM record; carry on invalid status,
+; pending page, invalid species or unoccupied index.
+; The authoritative SRAM box is not touched until final commit.
+Yel012StageRecordReplacement::
+	cp MONS_PER_BOX
+	ret nc
+	push af
+	push de
+	ld a, 5
+	call OpenSRAM
+	ld a, [sYel012TransactionStatus]
+	cp 1
+	jp nz, .badStack
+	ld a, [sYel012TransactionPagePending]
+	and a
+	jp nz, .badStack
+	pop hl
+	ld a, [hl]
+	and a
+	jp z, .badSlotStack
+	cp $ff
+	jp z, .badSlotStack
+	ld de, sYel012TransactionNewRecord
+	ld bc, YEL012_RECORD_BUFFER_SIZE
+	call CopyData
+	pop af
+	ld b, a
+	ld a, [sYel012TransactionShadow]
+	cp b
+	jp c, .invalidOpen
+	jp z, .invalidOpen
+	ld a, b
+	ld c, 1
+	ld hl, sYel012TransactionShadow
+	ld de, sYel012TransactionNewRecord
+	YEL012_COPY_FIELD YEL012_SRAM_MON_OFFSET, BOXMON_STRUCT_LENGTH, BOXMON_STRUCT_LENGTH
+	YEL012_COPY_FIELD YEL012_SRAM_OT_OFFSET, NAME_LENGTH, NAME_LENGTH
+	YEL012_COPY_FIELD YEL012_SRAM_NICK_OFFSET, NAME_LENGTH, NAME_LENGTH
+	ld e, b
+	ld d, 0
+	ld hl, sYel012TransactionShadow + 1
+	add hl, de
+	ld a, [sYel012TransactionNewRecord]
+	ld [hl], a
+	call Yel012ValidateShadow
+	push af
+	call CloseSRAM
+	pop af
+	ret
+.badStack
+	pop de
+.badSlotStack
+	pop af
+.invalidOpen
+	call CloseSRAM
 	scf
 	ret
 
