@@ -53,7 +53,7 @@ jobs:
           python scripts/yel_test_005_route_probe.py \
             --rom pokeyellow.gbc --sym pokeyellow.sym \
             --trace tests/traces/yel-test-005-startup-probe.json \
-            --out test-results/yel-test-005/step-probe
+            --out test-results/yel-test-005/step-probe --require-movement
       - name: Audit actual game state (expected fail until full route exists)
         continue-on-error: true
         run: |
