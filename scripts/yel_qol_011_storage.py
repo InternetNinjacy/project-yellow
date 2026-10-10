@@ -148,7 +148,13 @@ def main():
                 expected_added = args.expected_count_delta if idx == destination else 0
                 if current['count'] != previous['count'] + expected_added:
                     raise AssertionError(f'Box {idx+1} count unexpectedly changed')
-                if current['records'][:previous['count']] != previous['records']:
+                if expected_added:
+                    # Gen I SendNewMonToBox prepends newly caught Pokémon.
+                    # Keep that native ordering; preserve every old record
+                    # byte-for-byte in its previous relative order.
+                    if current['records'][1:] != previous['records']:
+                        raise AssertionError(f'Box {idx+1} lost/reordered old records on prepend')
+                elif current['records'] != previous['records']:
                     raise AssertionError(f'Box {idx+1} moved or corrupted existing records')
             if args.expected_count_delta == 0:
                 for previous, current in zip(all_before, all_after):
