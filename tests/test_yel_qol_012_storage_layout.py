@@ -14,13 +14,13 @@ class ExpandedPCLayout(unittest.TestCase):
         mod.check_layout()
     def test_capacity(self):
         self.assertEqual(mod.BOXES*mod.SLOTS,360)
-        self.assertEqual(mod.BOX_BYTES,1672)
+        self.assertEqual(mod.BOX_BYTES,1682)
     def test_banking_boundaries(self):
         self.assertEqual((mod.box_location(0).bank,mod.box_location(0).offset),(2,0))
-        self.assertEqual((mod.box_location(3).bank,mod.box_location(3).offset),(2,5016))
+        self.assertEqual((mod.box_location(3).bank,mod.box_location(3).offset),(2,5046))
         self.assertEqual((mod.box_location(4).bank,mod.box_location(4).offset),(3,0))
         self.assertEqual((mod.box_location(8).bank,mod.box_location(8).offset),(4,0))
-        self.assertEqual((mod.box_location(11).bank,mod.box_location(11).offset),(4,5016))
+        self.assertEqual((mod.box_location(11).bank,mod.box_location(11).offset),(4,5046))
     def test_invalid(self):
         with self.assertRaises(ValueError):mod.box_location(12)
 
