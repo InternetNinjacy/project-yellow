@@ -57,6 +57,15 @@ jobs:
           mkdir -p test-results/yel-qol-012
           python3 scripts/yel_qol_012_cpu_probe.py --rom pokeyellow_debug.gbc --sym pokeyellow_debug.sym --out test-results/yel-qol-012/cpu-transaction.json
 
+      - name: Archive allowlisted YEL-QOL-012 CPU evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yel-qol-012-cpu-evidence
+          path: test-results/yel-qol-012/cpu-transaction.json
+          if-no-files-found: warn
+          retention-days: 30
+
       - name: Discord webhook
         if: ${{ github.event_name == 'push' && github.repository_owner == 'pret' }}
         env:
