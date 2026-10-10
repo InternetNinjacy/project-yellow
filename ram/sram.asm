@@ -52,4 +52,15 @@ sBank3IndividualBoxChecksums:: ds 6
 	ASSERT box_n == NUM_BOXES, \
 		"boxes: Expected {d:NUM_BOXES} total boxes, got {d:box_n}"
 
+
+; YEL-DBL-001: Dedicated volatile battle workspace, on a NEW MBC5 RAM bank.
+; Banks 0-3 remain assigned to existing save/box records. This fifth bank
+; requires 128 KiB RAM hardware (header RAM size $04) and bank-aware access.
+; Never include this range in normal SAVE checksums or save serialization.
+SECTION "Doubles Battle Workspace", SRAM, BANK[4]
+sDoublesSecondaryBattleDataStart::
+sDoublesSecondaryBattleData:: ds wDoublesSecondaryBattleDataEnd - wDoublesSecondaryBattleDataStart
+sDoublesSecondaryBattleDataEnd::
+ASSERT sDoublesSecondaryBattleDataEnd - sDoublesSecondaryBattleDataStart <= $2000
+
 ENDSECTION
