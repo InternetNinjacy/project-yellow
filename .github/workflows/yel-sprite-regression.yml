@@ -138,12 +138,12 @@ jobs:
               printf "examine/1 \$%s\nexamine/1 \$%s\nexamine/1 \$%s\nexamine/1 \$%s\nexamine/1 \$%s\n" \
                 "$map_addr" "$facing_addr" "$status_addr" "$xpos_addr" "$ypos_addr" >&3
               if (( i % 8 == 0 )); then
-                printf "examine/160 \\$fe00\\nexamine/160 %s\\n" "$shadow_addr" >&3
+                printf "examine/160 \$fe00\nexamine/160 %s\n" "$shadow_addr" >&3
                 sleep 0.65
               else
                 sleep 0.32
               fi
-              printf "continue\\n" >&3
+              printf "continue\n" >&3
               sleep 0.55
             done
             sleep 2
