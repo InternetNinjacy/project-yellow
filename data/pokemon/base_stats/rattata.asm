@@ -15,7 +15,7 @@
 
 	; tm/hm learnset (approved set; TM34 pending Poison Fang remap)
 	tmhm BODY_SLAM, DOUBLE_EDGE, HYPER_BEAM, RAGE, DIG, \
-	     TOXIC, MIMIC, DOUBLE_TEAM, REST, SUBSTITUTE, \
+	     TOXIC, MIMIC, DOUBLE_TEAM, REST, SUBSTITUTE, POISON_FANG, \
 	     CUT
 	; end
 
