@@ -93,7 +93,7 @@ def main():
         (args.out / "symbols.json").write_text(json.dumps(addrs, indent=2)+"\n")
         snapshot = {}
         for name, address in addrs.items():
-            match = re.search(rf"(?im)^\\s*{address:04x}:\\s*([0-9a-f]{{2}})\\b", log)
+            match = re.search(rf"(?im)^\s*{address:04x}:\s*([0-9a-f]{{2}})\b", log)
             if not match:
                 raise AssertionError(f"SameBoy did not return a memory value for {name} at ${address:04x}")
             snapshot[name] = int(match.group(1), 16)
@@ -116,7 +116,7 @@ def main():
         (args.out / "debugger_after_up.txt").write_text(follow)
         after = {}
         for name, address in addrs.items():
-            match = re.search(rf"(?im)^\\s*{address:04x}:\\s*([0-9a-f]{{2}})\\b", follow)
+            match = re.search(rf"(?im)^\s*{address:04x}:\s*([0-9a-f]{{2}})\b", follow)
             if not match:
                 raise AssertionError(f"No post-movement RAM reading for {name}")
             after[name] = int(match.group(1), 16)
