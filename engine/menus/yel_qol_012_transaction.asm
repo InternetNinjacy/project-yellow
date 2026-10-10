@@ -84,6 +84,10 @@ Yel012BeginTransaction::
 	ld de, sYel012TransactionWindowBackup
 	ld bc, YEL012_WINDOW_SIZE
 	call CopyData
+	ld a, [wCurrentBoxNum]
+	and BOX_NUM_MASK
+	cp NUM_BOXES
+	jr nc, .failed
 	call Yel012GetBoxSRAMLocation
 	ld a, b
 	call OpenSRAM
@@ -231,6 +235,9 @@ Yel012StageWindow::
 	ld a, [sYel012TransactionStatus]
 	cp 1
 	jr nz, .badPop
+	ld a, [sYel012TransactionPagePending]
+	and a
+	jr nz, .badPop
 	pop af
 	ld [sYel012TransactionPage], a
 	ld b, a
@@ -303,7 +310,9 @@ Yel012CommitStagedWindow::
 	jr z, .badItem
 	cp $ff
 	jr z, .badItem
-	cp [de]
+	ld c, a
+	ld a, [de]
+	cp c
 	jr nz, .badItem
 	push hl
 	ld hl, BOXMON_STRUCT_LENGTH
