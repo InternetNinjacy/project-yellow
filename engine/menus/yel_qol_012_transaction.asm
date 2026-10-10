@@ -167,25 +167,25 @@ Yel012RestoreWindow:
 ; Transfer species, mons, OT and nicknames into wBox... in correct
 ; 20-slot WRAM layout, NOT a raw physical 1682-byte memcpy.
 MACRO YEL012_STAGE_FIELD
-	ld hl, sYel012TransactionShadow + \\1
+	ld hl, sYel012TransactionShadow + \1
 	ld a, [sYel012TransactionPage]
 	and a
-	jr z, .start\\@
-	ld bc, 20 * \\2
+	jr z, .start\@
+	ld bc, 20 * \2
 	add hl, bc
-.start\\@
-	ld de, \\3
+.start\@
+	ld de, \3
 	ld a, [wBoxCount]
-.loop\\@
+.loop\@
 	and a
-	jr z, .done\\@
+	jr z, .done\@
 	push af
-	ld bc, \\2
+	ld bc, \2
 	call CopyData
 	pop af
 	dec a
-	jr .loop\\@
-.done\\@
+	jr .loop\@
+.done\@
 ENDM
 
 Yel012StageWindow::
