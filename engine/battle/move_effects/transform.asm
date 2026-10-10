@@ -123,8 +123,43 @@ TransformEffect_:
 	ld hl, wEnemyMonStatMods
 	ld de, wPlayerMonStatMods
 	call .copyBasedOnTurn ; stat mods
+	; YEL-BAL-002: supplemental Sp. Def is stored outside battle_struct.
+	; Mirror both current and unmodified values plus the independent stage.
+	; Copy FROM the target TO the transformer, for either turn.
+	ld hl, wEnemySpecialDefense
+	ld de, wPlayerSpecialDefense
+	call .copySupplementalBasedOnTurn
+	ld hl, wEnemyUnmodifiedSpecialDefense
+	ld de, wPlayerUnmodifiedSpecialDefense
+	call .copySupplementalBasedOnTurn
+	ld hl, wEnemySpecialDefenseMod
+	ld de, wPlayerSpecialDefenseMod
+	ldh a, [hWhoseTurn]
+	and a
+	jr z, .copySpDStage
+	push hl
+	ld h, d
+	ld l, e
+	pop de
+.copySpDStage
+	ld a, [hl]
+	ld [de], a
 	ld hl, TransformedText
 	jp PrintText
+
+; Copy a two-byte supplemental Special Defense value, unlike the legacy
+; four-stat copy. Does not alter any saved party or box record.
+.copySupplementalBasedOnTurn
+	ldh a, [hWhoseTurn]
+	and a
+	jr z, .copySupplemental
+	push hl
+	ld h, d
+	ld l, e
+	pop de
+.copySupplemental
+	ld bc, 2
+	jp CopyData
 
 .copyBasedOnTurn
 	ldh a, [hWhoseTurn]
