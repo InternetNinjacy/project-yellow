@@ -48,6 +48,19 @@ jobs:
             --rom pokeyellow_debug.gbc --sym pokeyellow_debug.sym \
             --trace tests/traces/yel-test-005-debug-entry.json \
             --out test-results/yel-test-005-debug/new-game --require-debug-setup --require-debug-encounter
+      - name: Replay DEBUG battle into private checkpoint
+        run: |
+          python scripts/yel_test_005_replay.py \
+            --rom pokeyellow_debug.gbc --sym pokeyellow_debug.sym \
+            --trace tests/traces/yel-test-005-debug-entry.json \
+            --out test-results/yel-test-005-debug/capture --checkpoint
+          python scripts/yel_test_005_capture_audit.py \
+            --rom pokeyellow_debug.gbc --sym pokeyellow_debug.sym \
+            --state test-results/yel-test-005-debug/capture/checkpoint.state \
+            --out test-results/yel-test-005-debug/capture/audit.json
+      - name: Remove private PyBoy state before artifact upload
+        if: always()
+        run: find test-results/yel-test-005-debug -name '*.state' -delete
       - name: Upload manifests and screenshots only
         if: always()
         uses: actions/upload-artifact@v4
