@@ -190,6 +190,7 @@ PokedexEntryPointers:
 	dw BellsproutDexEntry
 	dw WeepinbellDexEntry
 	dw VictreebelDexEntry
+	dw RattakingDexEntry
 	assert_table_length NUM_POKEMON_INDEXES
 
 ; string: species name
@@ -1259,3 +1260,11 @@ MissingNoDexEntry:
 	db 10 ; 1.0 m
 	dw 100 ; 10.0 kg
 	db "コメント　さくせいちゅう@" ; コメント作成中 (Comment to be written)
+
+; Temporary Pokédex entry shares Raticate text until original copy and art are approved.
+RattakingDexEntry:
+	db "RAT@"
+	db 5,0
+	dw 410 ; placeholder weight pending approval
+	text_far _RaticateDexEntry
+	text_end
