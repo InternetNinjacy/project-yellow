@@ -22,3 +22,23 @@ The runner fails closed on missing phases, missing six-member party, wrong occup
 - A battery SRAM reboot equality check must be coupled with observed game SAVE and CONTINUE actions. The script cannot identify text/menu state on its own and should not be treated as a UI assertion.
 - The game's legacy save and PC menu routines continue to use 20-slot assumptions. A passing low-level CPU or generic emulator smoke test does not establish persistence, normal player PC usage or migration.
 - Do not run this as a required CI job until the recorded trace exists and has been independently executed. PR #12 remains draft.
+
+## 2026-10-10 deterministic setup, fixture-vs-gameplay boundary
+
+The DEBUG-only new-game party now has six species (commit 9dc83b7).
+`scripts/yel_qol_012_fixture.py` seeds a complete 29-record physical
+destination box and bank checksums **only from the emulator harness**, after
+real debug new-game controls have established six party members. Other boxes
+can optionally be full to force bank crossings. This is not naturally earned
+game progress and must never be represented as such.
+
+The replay runner accepts `"fixture_mode":"synthetic-physical-29"`
+and optionally `"other_boxes_full":true`. The fixture preparation is
+synthetic, but all `capture`, `save`, and `continue` actions are still
+real controller events, not scripted SRAM writes. The runner checks entire
+physical boxes before and after reload.
+
+There is STILL NO recorded, verified replay JSON in the repository.
+The `tests/replays/yel_qol_012_full_party_29_to_30.json` CI gate remains
+skipped until a real controlled trace is discovered. No captured-mon
+gameplay success or save persistence is asserted by these commits.
