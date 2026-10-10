@@ -732,6 +732,9 @@ StatModifierDownEffect:
 	ld hl, wPlayerMonStatMods
 	ld de, wEnemyMoveEffect
 	ld bc, wPlayerBattleStatus1
+	ld a, [wEnemyMoveEffect]
+	cp CRUNCH_EFFECT ; damaging move's proc should not trigger the AI's status-move miss roll
+	jr z, .statModifierDownEffect
 	ld a, [wLinkState]
 	cp LINK_STATE_BATTLING
 	jr z, .statModifierDownEffect
