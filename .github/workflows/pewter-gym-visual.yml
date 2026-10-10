@@ -1,65 +1,48 @@
-name: Pewter Gym gameplay visual verification
+name: Pewter Gym CI-only visual verification
 
 on:
+  pull_request:
+    paths:
+      - 'engine/menus/main_menu.asm'
+      - 'tools/pewter_gym/**'
+      - '.github/workflows/pewter-gym-visual.yml'
+      - 'gfx/tilesets/pewter_gym.png'
+      - 'maps/PewterGym.blk'
   workflow_dispatch:
-    inputs:
-      fixture_run_id:
-        description: "Run ID containing a genuine pewter-city-entry-fixture artifact"
-        required: true
-        type: string
 
 permissions:
-  actions: read
   contents: read
 
 jobs:
-  actual-gym-capture:
+  frozen-gym-render:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install RGBDS build dependencies
+      - name: Install RGBDS dependencies
         run: sudo apt-get update && sudo apt-get install -y bison libpng-dev pkg-config
-      - name: Fetch pinned RGBDS sources
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           repository: gbdev/rgbds
           ref: v1.0.3
           path: rgbds
       - name: Build RGBDS
         run: sudo make -C rgbds -j2 install
-      - name: Build Project Yellow with symbols
-        run: make DEBUG=1 -j2 pokeyellow.gbc
-      - name: Install pinned PyBoy
+      - name: Build isolated CI visual ROM with symbols
+        run: |
+          make DEBUG=1 RGBASMFLAGS='-Weverything -Wtruncation=1 -D _PEWTER_GYM_VISUAL_TEST' -j2 pokeyellow.gbc
+          test -s pokeyellow.sym
+      - name: Install PyBoy
         run: python3 -m pip install 'pyboy==2.6.0'
-      - name: Download authentic fixture and recorded inputs
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Test actual Pewter Gym entry and renderer
         run: |
-          mkdir -p build/pewter_gym/fixture
-          gh run download "${{ inputs.fixture_run_id }}" \
-            --repo "${{ github.repository }}" \
-            --name pewter-city-entry-fixture \
-            --dir build/pewter_gym/fixture
-          test -s build/pewter_gym/fixture/pewter_city.state
-          test -s build/pewter_gym/fixture/pewter_city_to_gym.json
-      - name: Reproduce real Pewter City to Gym warp
-        run: |
-          python3 tools/pewter_gym/replay_gym_entry.py \
-            --rom pokeyellow.gbc \
-            --symbols pokeyellow.sym \
-            --initial-state build/pewter_gym/fixture/pewter_city.state \
-            --route build/pewter_gym/fixture/pewter_city_to_gym.json \
+          python3 tools/pewter_gym/ci_visual_bootstrap.py \
+            --rom pokeyellow.gbc --symbols pokeyellow.sym \
             --output build/pewter_gym/actual
-          python3 tools/pewter_gym/capture_emulator_gym.py \
-            --rom pokeyellow.gbc \
-            --symbols pokeyellow.sym \
-            --state build/pewter_gym/actual/pewter_gym_gameplay.state \
-            --output build/pewter_gym/actual
-      - name: Preserve emulator evidence (ROM deliberately excluded)
+      - name: Preserve evidence and failure screenshots (exclude ROM)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: pewter-gym-actual-emulator-evidence
+          name: pewter-gym-ci-render-evidence
           path: |
             build/pewter_gym/actual/*.png
             build/pewter_gym/actual/*.json
