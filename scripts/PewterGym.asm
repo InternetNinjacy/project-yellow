@@ -45,18 +45,9 @@ PewterGymBrockPostBattle:
 	ld [wJoyIgnore], a
 ; fallthrough
 PewterGymScriptReceiveTM34:
-	ld a, TEXT_PEWTERGYM_BROCK_WAIT_TAKE_THIS
-	ldh [hTextID], a
-	call DisplayTextID
+	; TM34 is now Safari Zone Poison Fang, never awarded by Brock.
 	SetEvent EVENT_BEAT_BROCK
-	lb bc, TM_BIDE, 1
-	call GiveItem
-	jr nc, .BagFull
-	ld a, TEXT_PEWTERGYM_RECEIVED_TM34
-	ldh [hTextID], a
-	call DisplayTextID
-	SetEvent EVENT_GOT_TM34
-	jr .gymVictory
+.gymVictory
 .BagFull
 	ld a, TEXT_PEWTERGYM_TM34_NO_ROOM
 	ldh [hTextID], a
@@ -100,11 +91,7 @@ PewterGymBrockText:
 	text_asm
 	CheckEvent EVENT_BEAT_BROCK
 	jr z, .beforeBeat
-	CheckEventReuseA EVENT_GOT_TM34
-	jr nz, .afterBeat
-	call z, PewterGymScriptReceiveTM34
-	call DisableWaitingAfterTextDisplay
-	jr .done
+	jr .afterBeat
 .afterBeat
 	ld hl, .PostBattleAdviceText
 	call PrintText
