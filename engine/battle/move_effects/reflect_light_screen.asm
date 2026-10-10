@@ -13,12 +13,28 @@ ReflectLightScreenEffect_:
 	bit HAS_LIGHT_SCREEN_UP, [hl] ; is mon already protected by light screen?
 	jr nz, .moveFailed
 	set HAS_LIGHT_SCREEN_UP, [hl] ; mon is now protected by light screen
+	ld de, wPlayerLightScreenTurns
+	ldh a, [hWhoseTurn]
+	and a
+	jr z, .startLightScreen
+	ld de, wEnemyLightScreenTurns
+.startLightScreen
+	ld a, 5
+	ld [de], a
 	ld hl, LightScreenProtectedText
 	jr .playAnim
 .reflect
 	bit HAS_REFLECT_UP, [hl] ; is mon already protected by reflect?
 	jr nz, .moveFailed
 	set HAS_REFLECT_UP, [hl] ; mon is now protected by reflect
+	ld de, wPlayerReflectTurns
+	ldh a, [hWhoseTurn]
+	and a
+	jr z, .startReflect
+	ld de, wEnemyReflectTurns
+.startReflect
+	ld a, 5
+	ld [de], a
 	ld hl, ReflectGainedArmorText
 .playAnim
 	push hl
