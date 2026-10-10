@@ -11,8 +11,8 @@ from pathlib import Path
 from PIL import Image, ImageChops
 
 FACINGS = {0: "down", 4: "up", 8: "left", 12: "right"}
-SNAPSHOT = re.compile(r"^YEL_FRAME_(\\d+)$", re.M)
-READING = re.compile(r"(?im)^\\s*[0-9a-f]{4}:\\s*([0-9a-f]{2})\\b")
+SNAPSHOT = re.compile(r"^YEL_FRAME_(\d+)$", re.M)
+READING = re.compile(r"(?im)^\s*[0-9a-f]{4}:\s*([0-9a-f]{2})\b")
 
 
 def main():
@@ -66,7 +66,7 @@ def main():
             "palette_transparency_compositing":"PENDING",
             "real_hardware":"NOT_TESTED"}
     args.out.parent.mkdir(parents=True,exist_ok=True)
-    args.out.write_text(json.dumps(report,indent=2)+"\\n")
+    args.out.write_text(json.dumps(report,indent=2)+"\n")
     print(json.dumps({"status":report["status"],"species":args.species,
                       "facings":list(frames),"samples":len(evidence)}))
 
