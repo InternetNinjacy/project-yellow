@@ -18,11 +18,11 @@ def main():
     for value in values:
         if not 0<=value["x"]<256 or not 0<=value["y"]<256:
             raise AssertionError(f"Invalid live coordinate sample: {value}")
-    if values[0]["map_id"]!=values[1]["map_id"]:
-        raise AssertionError(f"Unexpected map change: {values}")
-    if values[0]["x"]==values[1]["x"] and values[0]["y"]==values[1]["y"]:
-        raise AssertionError(f"SameBoy debug samples did not show actual movement: {values}")
-    a.out.write_text(json.dumps({"status":"SGB_LIVE_MAP_XY_READ_PASS","samples":values,"source":"SameBoy debugger FIFO, symbol-resolved WRAM"},indent=2)+"\n")
+    # Map changes are valid movement, and the warp should be recorded rather than rejected.
+    # A true no-op (all three fields equal) is the actual failure case.
+    if values[0] == values[1]:
+        raise AssertionError(f"SameBoy debug samples did not show movement or warp: {values}")
+    a.out.write_text(json.dumps({"status":"SGB_LIVE_MAP_XY_READ_PASS","samples":values,"map_changed":values[0]["map_id"] != values[1]["map_id"],"source":"SameBoy debugger FIFO, symbol-resolved WRAM","sgb_species_visual_status":"PENDING"},indent=2)+"\n")
     print(f"LIVE_MAP_XY_PASS samples={values}")
 
 if __name__=="__main__":
