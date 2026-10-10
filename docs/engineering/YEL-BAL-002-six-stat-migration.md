@@ -191,3 +191,9 @@ Resume bounded battle mechanics implementation: (1) Haze resets all active stat 
 Commit `845e6aa5ad67f649f80844cf19d58ccb3392ec30` modifies `engine/battle/move_effects/haze.asm`. The move restores active player and enemy Attack, Defense, Speed and SpA, resets their existing accuracy/evasion and other legacy stat-stage bytes to neutral (7), and additionally restores both battle-only SpD caches from unmodified SpD while setting both independent SpD stages to neutral. It intentionally removes the old Haze side effects which cured target major status and cleared disable/confusion/other volatile flags, bad poison and Reflect/Light Screen. This is a mechanics-source change, not an emulator-proven result.
 
 No persistent Pokémon record sizes changed. Build and in-game checks are required: paired split stages with divergent bases and +6/-6 modifiers, accuracy/evasion, active status unchanged, team screens unchanged, transformed battlers, and switch followup. Keep PR #5 draft. Emulator fixture execution is owned by the separate testing workstream.
+
+## BAL-16: Transform copies independent Special Defense (2026-10-10)
+
+Commit `57ca47222fba26a936804ade3a791114d4dec9ca` extends `engine/battle/move_effects/transform.asm` so Transform copies target's **current** supplemental Special Defense, **unmodified** supplemental Special Defense, and independent Special Defense stage, correctly selecting source/destination for either acting side. The legacy four-stat and stage copy, DVs, species, moves and original transformation flow remain in place. No change to persistent party/box record layout.
+
+This is SOURCE IMPLEMENTATION only. Verify fresh Actions compilation, then assign actual emulator cases to YEL-TEST for player and enemy Transform, opposing divergent SpA/SpD and stage cases, Transform followed by stat changes/Haze, and switch/reversion. Do not claim actual battle verification or merge PR #5 without tests.
