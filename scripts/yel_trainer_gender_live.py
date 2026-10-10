@@ -99,6 +99,14 @@ def main():
             raise AssertionError("Wrong trainer party number")
         name=mem_bytes(emu,symbols["wTrainerName"],13)
         result["name_raw_hex"]=name.hex()
+        # Fetch expected 13-byte name directly from the built ROM's symbol.
+        name_bank=int(next(line[:2] for line in Path(args.sym).read_text().splitlines()
+                           if line.strip().endswith(" TrainerVariantNames")),16)
+        name_addr=symbols["TrainerVariantNames"] + 13  # Bug Catcher is entry 2
+        expected_name=bytes(int(emu.memory[name_bank,name_addr+i]) for i in range(13))
+        result["expected_name_raw_hex"]=expected_name.hex()
+        if name!=expected_name:
+            raise AssertionError("Battle name bytes do not match BUG CATCHR female lookup entry")
         # The rendered screenshot is retained, and byte exact name is compared
         # to the encoded table by the game; verify chosen variant and display.
         result["trainer_class"]=mem8(emu,symbols["wTrainerClass"])
@@ -110,9 +118,14 @@ def main():
         screenshot(emu,out/"bug_catcher_f_battle.png")
         if result["enemy_party_count"]!=2:
             raise AssertionError("Expected two Caterpie in original Bug Catcher #1 party")
-        result["status"]="PARTIAL_BATTLE_EVIDENCE"
-        # Portrait pixel/VRAM and exact encoded name verification remain required.
-        raise AssertionError("Name glyph and portrait VRAM assertions are not implemented; do not mark verified")
+        portrait=symbols["BugCatcherPic"]
+        actual=int.from_bytes(bytes(result["portrait_pointer"]),"little")
+        if actual!=portrait:
+            raise AssertionError(f"Wrong portrait pointer: {actual:#06x} != {portrait:#06x}")
+        result["portrait_symbol_address"]=portrait
+        result["screenshot_sha256"]=hashlib.sha256((out/"bug_catcher_f_battle.png").read_bytes()).hexdigest()
+        result["status"]="BATTLE_WRAM_AND_PORTRAIT_POINTER_PASS"
+        # A separate graphics-level comparison is needed to prove rendered tiles.
     except Exception as e:
         result["error"]=f"{type(e).__name__}: {e}"
         raise
