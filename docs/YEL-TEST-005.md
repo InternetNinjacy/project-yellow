@@ -141,3 +141,21 @@ evaluated; these input presses are exploratory and do not qualify as a
 genuine complete six-Pokémon capture route or a passing game scenario.
 Keep the currently exercised ROM branch separate from YEL-QOL-011 PR #6:
 PR #6 behavior requires building its exact source revision before feature tests.
+
+## 2026-10-10 input-driven progress update
+
+Extended 60-A introductory trace, Actions run
+https://github.com/InternetNinjacy/project-yellow/actions/runs/38052482785 :
+map changed from 0 to 38 (hex $26 = REDS_HOUSE_2F), player position
+(3,6) at frame 1184. This is a real clean-boot/controller-input
+transition into the upstairs starting map. Party zero, bag zero, no battle.
+
+Subsequent exploratory B/right/up commands, Actions run
+https://github.com/InternetNinjacy/project-yellow/actions/runs/38052586833 :
+through frame 6584, map remains 38 and coordinates (3,6), party zero.
+Thus controller steps did NOT move the player or reach the stairs.
+Inspect the archived screenshots to determine the blocking intro/menu
+state; do not assume the player is freely controllable because map
+coordinates are populated. The future route must take inputs according to
+observed menu state rather than brute-force repeating A.
+No pre-capture checkpoint or storage scenario passed.
