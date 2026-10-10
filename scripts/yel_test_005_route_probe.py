@@ -25,6 +25,7 @@ def main():
     p.add_argument("--sym", required=True)
     p.add_argument("--trace", required=True)
     p.add_argument("--out", required=True)
+    p.add_argument("--require-debug-encounter", action="store_true", help="Require standard wild battle after DEBUG setup")
     p.add_argument("--require-debug-setup", action="store_true", help="Require six party members and Poké Balls")
     p.add_argument("--require-movement", action="store_true", help="Fail unless an input changes actual player coordinates")
     a = p.parse_args()
@@ -72,6 +73,8 @@ def main():
             raise AssertionError("No actual player movement recorded")
         result = inspect(emu.memory, syms)
         result["actual_coordinate_movement"] = moved
+        if a.require_debug_encounter and not (result["checks"]["wild_battle"] and result["checks"]["enemy_species_present"]):
+            raise AssertionError("DEBUG station did not reach a real wild Pokémon battle")
         if a.require_debug_setup and not (result["checks"]["six_party_members"] and result["checks"]["has_poke_ball"]):
             raise AssertionError("DEBUG setup failed: six-member party and Poké Balls not established")
         result["steps"] = rows
