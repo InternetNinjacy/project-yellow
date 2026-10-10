@@ -43,7 +43,7 @@ def main():
         if label not in sym:
             raise RuntimeError("missing trace symbol: "+label)
         bank,addr=sym[label]
-        em.hook_register(bank,addr,snapshot(label))
+        em.hook_register(bank,addr,snapshot(label),None)
     status="NOT_VERIFIED"
     try:
         def step(button=None,frames=1):
