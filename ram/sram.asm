@@ -51,6 +51,7 @@ sYel012TransactionWindowBackup:: ds wBoxDataEnd - wBoxDataStart
 sYel012TransactionNewRecord:: ds 55
 sYel012TransactionStatus:: db
 sYel012TransactionPage:: db
+sYel012TransactionBox:: db
 
 SECTION "Saved Boxes 3", SRAM
 	boxes 4
