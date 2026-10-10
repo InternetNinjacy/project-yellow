@@ -139,7 +139,6 @@ jobs:
             # Write only the LCD OBJ enable bit through SameBoy debugger.
             kill -INT "$pid"
             sleep 0.3
-            printf "print [$ff40]\n" >&3
             sleep 0.3
             printf 'print [$ff40] = ([$ff40] & $fd)\ncontinue\n' >&3
             sleep 1.2
