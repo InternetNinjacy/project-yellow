@@ -55,8 +55,9 @@ Yel012ReadBoxRecord::
 	jp Yel012TransferBoxRecord
 
 Yel012WriteBoxRecord::
-	ld c, 1
-	; fallthrough
+	; No direct physical SRAM writes are permitted without rollback.
+	; Stage replacement in the bank-5 transaction shadow instead.
+	jp Yel012StageRecordReplacement
 
 Yel012TransferBoxRecord:
 	cp MONS_PER_BOX
