@@ -4,6 +4,7 @@ on:
     branches: [yel-test-005-shared-emulator]
     paths:
       - 'engine/debug/debug_party.asm'
+      - 'scripts/RedsHouse2F.asm'
       - 'tests/traces/yel-test-005-debug-entry.json'
       - 'scripts/yel_test_005_*.py'
       - '.github/workflows/yel-test-005-debug-station.yml'
