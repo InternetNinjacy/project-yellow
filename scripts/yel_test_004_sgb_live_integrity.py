@@ -68,16 +68,30 @@ def main():
                  "tile": data[i * 4 + 2], "flags": data[i * 4 + 3]}
                 for i in range(40) if data[i * 4] and data[i * 4 + 1]
                 and data[i * 4 + 2] in eligible]
-    shadow_matches, hardware_matches = entries(shadow), entries(hardware)
-    if len(shadow_matches) < 4:
-        raise AssertionError(f"{a.species}: fewer than four shadow OAM sprite tiles from matching VRAM")
-    if len(hardware_matches) < 4:
-        raise AssertionError(f"{a.species}: fewer than four hardware OAM sprite tiles from matching VRAM")
+    # Group live hardware and shadow OAM by the same stopped-CPU snapshot.
+    # A wandering object may be clipped at one instant, so require at least
+    # one independently paired snapshot with four displayed species tiles.
+    starts = list(re.finditer(r"(?im)^>\\s*fe00:", raw))
+    observations = []
+    for n, mark in enumerate(starts):
+        section = raw[mark.start():starts[n+1].start() if n+1 < len(starts) else len(raw)]
+        try:
+            live_hardware = parse_dump(section, 0xFE00, 160)
+            live_shadow = parse_dump(section, sym["wShadowOAM"], 160)
+        except AssertionError:
+            continue
+        observations.append((entries(live_shadow), entries(live_hardware)))
+    passing = [(s,h) for s,h in observations if len(s)>=4 and len(h)>=4]
+    if not passing:
+        raise AssertionError(
+            f"{a.species}: no simultaneous four-tile OAM match across "
+            f"{len(observations)} paired native SGB snapshots")
+    shadow_matches, hardware_matches = passing[0]
     report = {"status": "SGB_LIVE_VRAM_OAM_PASS", "species": a.species,
               "model": "SameBoy sgb-ntsc", "source_sha256": hashlib.sha256(source).hexdigest(),
               "vram_matched_address": hex(0x8000 + offsets[0]),
               "matching_vram_offsets": [hex(0x8000 + x) for x in offsets],
-              "shadow_oam_matches": shadow_matches, "hardware_oam_matches": hardware_matches,
+              "shadow_oam_matches": shadow_matches, "hardware_oam_matches": hardware_matches,\n              "paired_oam_snapshots_inspected": len(observations),
               "facing_walking_transparency_palette": "PENDING",
               "physical_hardware": "PENDING"}
     a.out.parent.mkdir(parents=True, exist_ok=True)
