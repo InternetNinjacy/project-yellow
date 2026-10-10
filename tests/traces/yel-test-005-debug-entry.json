@@ -1,0 +1,35 @@
+[
+  {
+    "frames": 360
+  },
+  {
+    "buttons": [
+      "up",
+      "select",
+      "b"
+    ],
+    "frames": 3,
+    "after": 180
+  },
+  {
+    "button": "down",
+    "frames": 2,
+    "after": 30
+  },
+  {
+    "button": "a",
+    "frames": 2,
+    "after": 120
+  },
+  {
+    "frames": 900
+  },
+  {
+    "button": "a",
+    "frames": 2,
+    "after": 200
+  },
+  {
+    "frames": 300
+  }
+]
