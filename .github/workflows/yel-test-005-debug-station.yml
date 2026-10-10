@@ -58,6 +58,32 @@ jobs:
             --rom pokeyellow_debug.gbc --sym pokeyellow_debug.sym \
             --state test-results/yel-test-005-debug/capture/checkpoint.state \
             --out test-results/yel-test-005-debug/capture/audit.json
+      - name: Checkout PR 6 feature source in isolated directory
+        uses: actions/checkout@v4
+        with:
+          ref: yel-qol-011-auto-box-capture
+          path: .qol-feature
+      - name: Build QOL-011 feature code with DEBUG station overlay
+        run: |
+          git -C .qol-feature rev-parse HEAD > test-results/yel-test-005-debug/feature-source-sha.txt
+          cp engine/debug/debug_party.asm .qol-feature/engine/debug/debug_party.asm
+          cp scripts/PalletTown.asm .qol-feature/scripts/PalletTown.asm
+          make -C .qol-feature -j2 pokeyellow_debug.gbc
+          sha256sum .qol-feature/pokeyellow_debug.gbc .qol-feature/pokeyellow_debug.sym > test-results/yel-test-005-debug/feature-hashes.txt
+      - name: Probe feature-ROM battle menu from independent genuine checkpoint
+        run: |
+          python scripts/yel_test_005_replay.py \
+            --rom .qol-feature/pokeyellow_debug.gbc --sym .qol-feature/pokeyellow_debug.sym \
+            --trace tests/traces/yel-test-005-debug-entry.json \
+            --out test-results/yel-test-005-debug/qol-feature-base --checkpoint
+          python scripts/yel_test_005_capture_audit.py \
+            --rom .qol-feature/pokeyellow_debug.gbc --sym .qol-feature/pokeyellow_debug.sym \
+            --state test-results/yel-test-005-debug/qol-feature-base/checkpoint.state \
+            --out test-results/yel-test-005-debug/qol-feature-base/audit.json
+          python scripts/yel_test_005_capture_probe.py \
+            --rom .qol-feature/pokeyellow_debug.gbc --sym .qol-feature/pokeyellow_debug.sym \
+            --state test-results/yel-test-005-debug/qol-feature-base/checkpoint.state \
+            --out test-results/yel-test-005-debug/qol-feature-probes
       - name: Remove private PyBoy state before artifact upload
         if: always()
         run: find test-results/yel-test-005-debug -name '*.state' -delete
