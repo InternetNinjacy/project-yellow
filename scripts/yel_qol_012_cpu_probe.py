@@ -58,6 +58,10 @@ def main():
     rom=Path(args.rom).read_bytes()
     em=PyBoy(args.rom,window='null',cgb=False,sound_emulated=False)
     em.set_emulation_speed(0)
+    # Finish the emulator's actual boot ROM/startup before manipulating PC.
+    # The real game may then sit at its title screen; transaction tests
+    # replace the CPU entry and SRAM contents explicitly.
+    em.tick(400,render=False,sound=False)
     results=[]
     regs=em.register_file
     # Real CPU execution with an inert WRAM return loop, no ROM hooks.
