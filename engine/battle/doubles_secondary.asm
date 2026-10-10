@@ -82,3 +82,66 @@ CopyDoublesPartyFields:
 	ld bc, wBattleMonPP - wBattleMonLevel
 	call CopyData
 	ret
+
+; Controlled volatile SRAM bank-4 transfer (NOT enabled in live battle).
+; Inputs: B = previously selected SRAM bank (0..3);
+;         C = 0 if SRAM previously disabled, nonzero if enabled.
+; Caller must own SRAM access exclusively, know the previous state and keep
+; interrupts/other SRAM users from changing that state during this call.
+; The mapper has no readable selected-bank or enable-state registers.
+; This routine does NOT derive either value from hardware.
+; Carry set = invalid bank, NO bank or RAM-enable changes.
+; Carry clear = complete transfer, prior bank/enable restored.
+; WARNING: Scratch WRAM aliases are unsafe for active battle use; stage
+; only in a deliberately controlled, non-overlapping test fixture.
+CopyDoublesScratchToDedicatedSRAM:
+	ld a, b
+	cp 4
+	jr nc, .badBank
+	push bc
+	push hl
+	push de
+	call EnableSRAM
+	ld a, 4
+	ld [rRAMB], a
+	ld hl, wDoublesSecondaryBattleDataStart
+	ld de, sDoublesSecondaryBattleDataStart
+	ld bc, wDoublesSecondaryBattleDataEnd - wDoublesSecondaryBattleDataStart
+	call CopyData
+	jr RestoreDoublesSRAMContext
+.badBank
+	scf
+	ret
+
+CopyDoublesDedicatedSRAMToScratch:
+	ld a, b
+	cp 4
+	jr nc, .badBank
+	push bc
+	push hl
+	push de
+	call EnableSRAM
+	ld a, 4
+	ld [rRAMB], a
+	ld hl, sDoublesSecondaryBattleDataStart
+	ld de, wDoublesSecondaryBattleDataStart
+	ld bc, wDoublesSecondaryBattleDataEnd - wDoublesSecondaryBattleDataStart
+	call CopyData
+	jr RestoreDoublesSRAMContext
+.badBank
+	scf
+	ret
+
+RestoreDoublesSRAMContext:
+	pop de
+	pop hl
+	pop bc
+	ld a, b
+	ld [rRAMB], a
+	ld a, c
+	and a
+	jr nz, .wasEnabled
+	call DisableSRAM
+.wasEnabled
+	and a ; clear carry after successful restore
+	ret
