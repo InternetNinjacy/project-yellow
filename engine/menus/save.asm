@@ -349,6 +349,7 @@ CheckBoxSpaceForCapture::
 	cp MONS_PER_BOX
 	jr nc, .checkOtherBoxes
 	ld a, 1
+	and a ; preserve nonzero as Z=0 across Bankswitch
 	ret
 .checkOtherBoxes
 	ld hl, wCurrentBoxNum
@@ -367,6 +368,7 @@ CheckBoxSpaceForCapture::
 	ret
 .available
 	ld a, 1
+	and a ; preserve nonzero as Z=0 across Bankswitch
 	ret
 
 AutoSwitchBoxForCapture::
