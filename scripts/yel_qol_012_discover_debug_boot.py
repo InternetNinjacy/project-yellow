@@ -18,15 +18,32 @@ def main():
     p.add_argument("--out",required=True)
     a=p.parse_args()
     sym=symbol_table(a.sym)
-    needed=("wPartyCount","sYel012StorageVersion","sYel012StorageVersionCheck")
+    needed=("wPartyCount","wStatusFlags6","sYel012StorageVersion","sYel012StorageVersionCheck")
     for name in needed:
         if name not in sym:
             raise RuntimeError("missing symbol "+name)
     out=Path(a.out)
     out.parent.mkdir(parents=True,exist_ok=True)
     events=[]
+    trace=[]
     em=PyBoy(a.rom,window="null",cgb=False,sound_emulated=False)
     em.set_emulation_speed(0)
+    # Hooks fire on real CPU execution; no breakpoint RAM seeding.
+    targets=("StartNewGameDebug","Yel012InitializeFreshStorage",
+             "SetDebugNewGameParty","AddPartyMon","PrepareNewGameDebug")
+    def snapshot(label):
+        def visit(_context):
+            trace.append({"routine":label, "pc":em.register_file.PC,
+                          "party_count":em.memory[sym["wPartyCount"][1]],
+                          "debug_flags":em.memory[sym["wStatusFlags6"][1]],
+                          "version":em.memory[5,sym["sYel012StorageVersion"][1]],
+                          "check":em.memory[5,sym["sYel012StorageVersionCheck"][1]]})
+        return visit
+    for label in targets:
+        if label not in sym:
+            raise RuntimeError("missing trace symbol: "+label)
+        bank,addr=sym[label]
+        em.hook_register(bank,addr,snapshot(label))
     status="NOT_VERIFIED"
     try:
         def step(button=None,frames=1):
@@ -56,7 +73,9 @@ def main():
                 "storage_version":em.memory[5,sym["sYel012StorageVersion"][1]],
                 "version_check":em.memory[5,sym["sYel012StorageVersionCheck"][1]],
                 "cpu_pc":em.register_file.PC,
-                "frames_recorded":sum(e["frames"] for e in events)}
+                "frames_recorded":sum(e["frames"] for e in events),
+                "routine_trace":trace,
+                "last_checkpoint":trace[-1]["routine"] if trace else "no-traced-entry"}
         out.write_text(json.dumps(result,indent=2)+"\n")
         if status!="PASS_DEBUG_NEW_GAME_CONTROLLER_BOOT":
             raise AssertionError("real controller events did not establish DEBUG party/storage; see evidence JSON")
