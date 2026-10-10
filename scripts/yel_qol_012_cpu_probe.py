@@ -181,6 +181,53 @@ def main():
                 assert seen==expected,(case,'record bytes differ',index)
             results.append({'box':boxid+1,'bank':bank,'mode':mode,
                             'slots_verified':30,'status':'PASS_ASSEMBLY_CPU'})
+        # Integration probe: execute the new capture bridge with an
+        # intercepted *legacy naming/record builder* routine. This is
+        # real bridge CPU code, but NOT an end-to-end battle/ball test.
+        needed=('Yel012CaptureToBoxTransaction','SendNewMonToBox',
+                'wBoxMon1','wBoxMon1OT','wBoxMon1Nick','hLoadedROMBank')
+        for n in needed:
+            assert n in sym,('missing bridge test symbol',n)
+        boxid=1
+        physicalBank=2
+        base=get('sBox1')+BOX
+        starting=seed(29,57)
+        set_sram(physicalBank,base,starting)
+        set_sram(5,get('sYel012TransactionStatus'),b'\\x00')
+        em.memory[get('wCurrentBoxNum')]=boxid|0x80
+        expectedNew=record(150,57)
+        called={'count':0}
+        def fake_legacy_builder(context):
+            context['count']+=1
+            assert em.memory[get('wBoxCount')]==0,'bridge did not isolate legacy constructor'
+            em.memory[get('wBoxCount')]=1
+            em.memory[get('wBoxSpecies')]=expectedNew[0]
+            em.memory[get('wBoxSpecies')+1]=255
+            for baseAddr,data in (
+                (get('wBoxMon1'),expectedNew[:33]),
+                (get('wBoxMon1OT'),expectedNew[33:44]),
+                (get('wBoxMon1Nick'),expectedNew[44:55])):
+                for j,value in enumerate(data):em.memory[baseAddr+j]=value
+            # Simulate only the RET, preserving the real bank-switch stack.
+            sp=regs.SP
+            regs.PC=em.memory[sp] | (em.memory[(sp+1)&0xffff]<<8)
+            regs.SP=(sp+2)&0xffff
+        legacyBank,legacyAddr=sym['SendNewMonToBox']
+        em.hook_register(legacyBank,legacyAddr,fake_legacy_builder,called)
+        flag=call('Yel012CaptureToBoxTransaction')
+        assert flag&16==0,('bridge commit rejected',flag)
+        assert called['count']==1,('bridge legacy builder count',called)
+        physical=sram(physicalBank,base,BOX)
+        assert physical[0]==30,('bridge count',physical[0])
+        assert physical[MON_OFFSET:MON_OFFSET+33]==expectedNew[:33],('bridge mon bytes')
+        assert physical[OT_OFFSET:OT_OFFSET+11]==expectedNew[33:44],('bridge OT')
+        assert physical[NICK_OFFSET:NICK_OFFSET+11]==expectedNew[44:55],('bridge nick')
+        for index in range(29):
+            assert physical[MON_OFFSET+(index+1)*33:MON_OFFSET+(index+2)*33]==starting[MON_OFFSET+index*33:MON_OFFSET+(index+1)*33]
+            assert physical[OT_OFFSET+(index+1)*11:OT_OFFSET+(index+2)*11]==starting[OT_OFFSET+index*11:OT_OFFSET+(index+1)*11]
+            assert physical[NICK_OFFSET+(index+1)*11:NICK_OFFSET+(index+2)*11]==starting[NICK_OFFSET+index*11:NICK_OFFSET+(index+1)*11]
+        results.append({'box':2,'bank':physicalBank,'mode':'bridge-stubbed-legacy',
+                        'status':'PASS_ASSEMBLY_CPU_WITH_STUBBED_LEGACY_BUILDER'})
         status='PASS_ISOLATED_ASSEMBLY_TRANSACTION_NOT_SAVE_VERIFIED'
     except Exception as exc:
         status='FAIL'
