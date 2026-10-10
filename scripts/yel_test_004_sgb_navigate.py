@@ -79,7 +79,8 @@ def main():
     # north along the right wall, then west onto the top-right stair.
     # Sprite input is edge-triggered; the visual room gate below remains
     # authoritative and refuses to claim entry without matching room art.
-    # 2026-10-09 SGB screenshot sequence at step 9-13 shows the top-right\n    # stairs east of the player; travel along the top row toward it.\n    steps = ["Right"] * 4 + ["Up"] * 5 + ["Right"] * 4 + ["Up", "Right", "Up"]
+    # 2026-10-09 SGB screenshot sequence at step 9-13 shows the top-right
+    # stairs east of the player; travel along the top row toward it.\n    steps = ["Right"] * 4 + ["Up"] * 5 + ["Right"] * 4 + ["Up", "Right", "Up"]
     evidence = []
     for i, direction in enumerate(["initial"] + steps):
         if direction != "initial":
