@@ -200,6 +200,7 @@ EvosMovesPointerTable:
 	dw BellsproutEvosMoves
 	dw WeepinbellEvosMoves
 	dw VictreebelEvosMoves
+	dw RattakingEvosMoves
 	assert_table_length NUM_POKEMON_INDEXES
 
 RhydonEvosMoves:
@@ -1914,8 +1915,7 @@ RattataEvosMoves:
 
 RaticateEvosMoves:
 ; Evolutions
-	; Rattaking evolution is approved at level 36, but requires registered species ID.
-	; Do not emit an unresolved RATTaking constant before dex integration.
+	db EVOLVE_LEVEL, 36, RATTAKING
 	db 0
 ; Learnset
 	db 5, QUICK_ATTACK
@@ -1923,7 +1923,9 @@ RaticateEvosMoves:
 	db 13, FOCUS_ENERGY
 	db 17, HYPER_FANG
 	db 21, RAGE
+	db 25, SCARY_FACE
 	db 28, SUPER_FANG
+	db 32, POISON_FANG
 	db 0
 
 NidorinoEvosMoves:
@@ -2174,4 +2176,21 @@ VictreebelEvosMoves:
 	db 13, WRAP
 	db 15, POISONPOWDER
 	db 18, SLEEP_POWDER
+	db 0
+
+RattakingEvosMoves:
+; Evolutions
+	db 0
+; Learnset
+	db 5, QUICK_ATTACK
+	db 9, BITE
+	db 13, FOCUS_ENERGY
+	db 17, HYPER_FANG
+	db 21, RAGE
+	db 25, SCARY_FACE
+	db 28, SUPER_FANG
+	db 32, POISON_FANG
+	db 40, SLASH
+	db 44, THRASH
+	db 50, CRUNCH
 	db 0
