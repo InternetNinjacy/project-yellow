@@ -62,3 +62,6 @@ explicit and does not depend on CGB-only banked WRAM.
 
 **Status:** investigation complete; banked-window engine refactor and
 native persistence tests remain unimplemented. Draft PR #12 must not merge.
+
+## 2026-10-10 assembly window integration checkpoint
+The WRAM `Current Box Data` section now allocates only 20 records using `YEL012_WORKING_SLOTS`, independent of `MONS_PER_BOX=30` in SRAM. The first linker attempt progressed beyond the old WRAM collision and found an unrelated out-of-range JR in the new assembly accessor; changed to JP. The 30-slot SRAM primitive is compiled from `main.asm`, but callers still rely on legacy whole-box copies (`wBoxDataEnd - wBoxDataStart`, now 1122 bytes) when physical SRAM boxes are 1682 bytes. Therefore this branch must be treated as functionally unsafe until page transactions, header/sentinel/count management, PC navigation, capture prepend, deposit/withdraw, checksums and native SAVE/CONTINUE are all migrated. A build PASS is not a playable storage PASS. Do not merge.
