@@ -5537,9 +5537,10 @@ MetronomePickMove:
 	call BattleRandom
 	and a
 	jr z, .pickMoveLoop
-	cp STRUGGLE
-	ASSERT NUM_ATTACKS == STRUGGLE ; random numbers greater than STRUGGLE are not moves
+	cp NUM_ATTACKS + 1 ; include appended moves, reject out-of-range IDs
 	jr nc, .pickMoveLoop
+	cp STRUGGLE ; Struggle remains ineligible for Metronome
+	jr z, .pickMoveLoop
 	cp METRONOME
 	jr z, .pickMoveLoop
 	ld [hl], a
