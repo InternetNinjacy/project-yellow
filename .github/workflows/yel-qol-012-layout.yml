@@ -5,6 +5,8 @@ on:
     paths:
       - 'scripts/yel_qol_012_storage_layout.py'
       - 'tests/test_yel_qol_012_storage_layout.py'
+      - 'scripts/yel_qol_012_records.py'
+      - 'tests/test_yel_qol_012_records.py'
       - '.github/workflows/yel-qol-012-layout.yml'
   workflow_dispatch:
 jobs:
@@ -15,4 +17,5 @@ jobs:
       - name: Assert 12 by 30 physical bank allocation
         run: |
           python -m unittest discover -s tests -p 'test_yel_qol_012_storage_layout.py' -v
+          python -m unittest discover -s tests -p 'test_yel_qol_012_records.py' -v
           python scripts/yel_qol_012_storage_layout.py
