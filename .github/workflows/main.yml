@@ -45,6 +45,12 @@ jobs:
           make -j$(nproc)
           .github/checkdiff.sh
 
+      - name: YEL-QOL-012 storage transaction contract tests
+        run: |
+          python3 -m unittest discover -s tests -p 'test_yel_qol_012_storage_layout.py' -v
+          python3 -m unittest discover -s tests -p 'test_yel_qol_012_records.py' -v
+          python3 -m unittest discover -s tests -p 'test_yel_qol_012_transactions.py' -v
+
       - name: Discord webhook
         if: ${{ github.event_name == 'push' && github.repository_owner == 'pret' }}
         env:
