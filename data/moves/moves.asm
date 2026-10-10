@@ -177,10 +177,8 @@ Moves:
 	move SUBSTITUTE,   SUBSTITUTE_EFFECT,            0, NORMAL,       100, 10
 	move STRUGGLE,     RECOIL_EFFECT,               50, NORMAL,       100, 10
 	move SCARY_FACE,   SPEED_DOWN2_EFFECT,            0, NORMAL,       100, 10
-	; TODO YEL-MON-004: custom 50% badly-poison effect (NOT ordinary poison).
-	move POISON_FANG,  POISON_SIDE_EFFECT2,         50, POISON,       100, 15
-	; TODO YEL-MON-004: custom exact 39% Defense -1 (NOT stock effect probability).
-	move CRUNCH,       DEFENSE_DOWN_SIDE_EFFECT,    80, DARK,         100, 30
+	move POISON_FANG,  POISON_FANG_EFFECT,         50, POISON,       100, 15
+	move CRUNCH,       CRUNCH_EFFECT,    80, DARK,         100, 30
 	assert_table_length NUM_ATTACKS
 
 ; YEL-BAL-002 Physical/Special split. Index by (move ID - 1).
