@@ -3,26 +3,42 @@ ReflectLightScreenEffect_:
 	ld de, wPlayerMoveEffect
 	ldh a, [hWhoseTurn]
 	and a
-	jr z, .reflectLightScreenEffect
+	jr z, .selectEffect
 	ld hl, wEnemyBattleStatus3
 	ld de, wEnemyMoveEffect
-.reflectLightScreenEffect
+.selectEffect
 	ld a, [de]
 	cp LIGHT_SCREEN_EFFECT
 	jr nz, .reflect
-	bit HAS_LIGHT_SCREEN_UP, [hl] ; is mon already protected by light screen?
-	jr nz, .moveFailed
-	set HAS_LIGHT_SCREEN_UP, [hl] ; mon is now protected by light screen
 	ld de, wPlayerLightScreenTurns
 	ldh a, [hWhoseTurn]
 	and a
-	jr z, .startLightScreen
+	jr z, .checkLightScreen
 	ld de, wEnemyLightScreenTurns
-.startLightScreen
+.checkLightScreen
+	ld a, [de]
+	and a
+	jr nz, .moveFailed
+	set HAS_LIGHT_SCREEN_UP, [hl]
 	ld a, 5
 	ld [de], a
 	ld hl, LightScreenProtectedText
 	jr .playAnim
+.reflect
+	ld de, wPlayerReflectTurns
+	ldh a, [hWhoseTurn]
+	and a
+	jr z, .checkReflect
+	ld de, wEnemyReflectTurns
+.checkReflect
+	ld a, [de]
+	and a
+	jr nz, .moveFailed
+	set HAS_REFLECT_UP, [hl]
+	ld a, 5
+	ld [de], a
+	ld hl, ReflectGainedArmorText
+.playAnim
 .reflect
 	bit HAS_REFLECT_UP, [hl] ; is mon already protected by reflect?
 	jr nz, .moveFailed
