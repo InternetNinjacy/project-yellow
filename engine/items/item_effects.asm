@@ -124,8 +124,9 @@ ItemUseBall:
 	jr nz, .canUseBall
 	; Rotate to the next non-full box only when capture needs storage.
 	; A = 0 when every box is full.
+	; Bankswitch restores the previous ROM bank into A. The callee's
+	; zero flag survives the far call, but its A return value does not.
 	callfar CheckBoxSpaceForCapture
-	and a
 	jp z, BoxFullCannotThrowBall
 
 .canUseBall
