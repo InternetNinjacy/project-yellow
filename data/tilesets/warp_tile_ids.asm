@@ -25,6 +25,7 @@ WarpTileIDPointers:
 	dw .FacilityWarpTileIDs
 	dw .PlateauWarpTileIDs
 	dw .BeachHouseWarpTileIDs
+	dw .GymWarpTileIDs ; dedicated Pewter Gym uses original Gym entrance tile
 	assert_table_length NUM_TILESETS
 
 MACRO warp_tiles

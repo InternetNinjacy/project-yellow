@@ -69,3 +69,7 @@ SECTION "Tilesets 4", ROMX
 BeachHouse_GFX::    INCBIN "gfx/tilesets/beach_house.2bpp"
 	ds 384
 BeachHouse_Block::  INCBIN "gfx/blocksets/beach_house.bst"
+
+SECTION "Pewter-only Frozen Gym Tileset", ROMX
+PewterGymFrozen_GFX:: INCBIN "gfx/tilesets/pewter_gym.2bpp"
+PewterGymFrozen_Block:: INCBIN "gfx/blocksets/pewter_gym.bst"
