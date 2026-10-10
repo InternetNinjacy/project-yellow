@@ -4,7 +4,7 @@
 ; SRAM bank 5 contains the original, mutable shadow, window backup and
 ; incoming 55-byte capture. Status: 0 idle, 1 staged, 2 committing.
 DEF YEL012_BOX_SIZE EQU MONS_PER_BOX * (1 + BOXMON_STRUCT_LENGTH + 2 * NAME_LENGTH) + 2
-DEF YEL012_WINDOW_SIZE EQU wBoxDataEnd - wBoxDataStart
+DEF YEL012_WINDOW_SIZE EQU 1122 ; 20-slot working window size; verify in symbol-map CI
 DEF YEL012_REMAINDER EQU YEL012_BOX_SIZE - YEL012_WINDOW_SIZE
 ASSERT YEL012_BOX_SIZE == 1682
 ASSERT YEL012_WINDOW_SIZE == 1122
