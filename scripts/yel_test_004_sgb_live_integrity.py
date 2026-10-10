@@ -28,7 +28,7 @@ def parse_dump(transcript, start, size):
     # unrelated debugger commands or silently fill missing bytes with zero.
     found = {}
     for raw in transcript.splitlines():
-        match = re.match(r"^\s*([0-9a-fA-F]{4}):\s*((?:[0-9a-fA-F]{2}(?:\s+|$))+)", raw)
+        match = re.match(r"^\s*(?:>\s*)?([0-9a-fA-F]{4}):\s*((?:[0-9a-fA-F]{2}(?:\s+|$))+)", raw)
         if not match:
             continue
         addr = int(match.group(1), 16)
