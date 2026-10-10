@@ -78,6 +78,7 @@ jobs:
           retention-days: 30
 
       - name: YEL-QOL-012 discover actual DEBUG boot inputs
+        continue-on-error: true # diagnostic only; does not gate separately staged capture replay
         run: |
           mkdir -p test-results/yel-qol-012
           python3 scripts/yel_qol_012_discover_debug_boot.py \
