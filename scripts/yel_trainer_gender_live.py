@@ -114,6 +114,9 @@ def main():
         result["trainer_party_no"]=mem8(emu,symbols["wTrainerNo"])
         result["enemy_party_count"]=mem8(emu,symbols["wEnemyPartyCount"])
         result["enemy_species_bytes"]=list(mem_bytes(emu,symbols["wEnemyPartySpecies"],3))
+        # Two original Bug Catcher #1 party members must be the same species.
+        if result["enemy_species_bytes"][0] != result["enemy_species_bytes"][1]:
+            raise AssertionError("Bug Catcher #1 party did not load two identical Caterpie")
         result["portrait_pointer"]=list(mem_bytes(emu,symbols["wTrainerPicPointer"],2))
         screenshot(emu,out/"bug_catcher_f_battle.png")
         if result["enemy_party_count"]!=2:
