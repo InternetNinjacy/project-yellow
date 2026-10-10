@@ -1520,7 +1520,11 @@ NEXTU
 wUnknownSerialCounter2:: dw
 ENDU
 
-	ds 2
+; YEL-DBL-001: battle-only format discriminator, never serialized.
+; 0 = legacy single battle, 1 = true doubles after the engine initializes
+; both active slots. No battle may set 1 until two-active-slot setup exists.
+wBattleFormat:: db
+	ds 1
 wBattleStatusDataEnd::
 
 ; non-zero when an item or move that allows escape from battle was used
