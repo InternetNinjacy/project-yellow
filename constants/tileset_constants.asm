@@ -28,4 +28,5 @@ DEF MAP_TILESET_SIZE EQU $60 ; tiles
 	const FACILITY     ; 22
 	const PLATEAU      ; 23
 	const BEACH_HOUSE  ; 24
+	const PEWTER_GYM_FROZEN ; 25 — isolated Pewter-only Gym tileset
 DEF NUM_TILESETS EQU const_value
