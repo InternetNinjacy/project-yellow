@@ -21,6 +21,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y bison libpng-dev pkg-config build-essential xvfb xdotool imagemagick libsdl2-dev
+          python -m pip install pyboy Pillow
       - name: Build RGBDS
         working-directory: .toolchain/rgbds
         run: sudo make -j2 install
@@ -32,6 +33,10 @@ jobs:
           make -j2 pokeyellow_debug.gbc
           mkdir -p test-results/sgb-smoke
           sha256sum pokeyellow_debug.gbc > test-results/sgb-smoke/rom.sha256
+      - name: Generate independent Red House 1F visual reference
+        run: |
+          python scripts/yel_test_004_gbc_ivysaur.py --cgb --rom pokeyellow_debug.gbc --sym pokeyellow_debug.sym --sprite-2bpp gfx/sprites/ivysaur.2bpp --out test-results/sgb-reference
+          test -s test-results/sgb-reference/lab_entry.png
       - name: Launch genuine SGB model in headless X server
         run: |
           xvfb-run --auto-servernum --server-args='-screen 0 1024x768x24' bash -euxo pipefail -c '
@@ -70,24 +75,17 @@ jobs:
             xdotool keyup --window "$wid" Up
             sleep 6
             import -window "$wid" test-results/sgb-smoke/sgb_lab_attempt.png
-            xdotool keydown --window "$wid" Right
-            sleep 2.2
-            xdotool keyup --window "$wid" Right
-            sleep 1
-            import -window "$wid" test-results/sgb-smoke/sgb_upper_right.png
-            xdotool keydown --window "$wid" Up
-            sleep 2.2
-            xdotool keyup --window "$wid" Up
-            sleep 2
-            import -window "$wid" test-results/sgb-smoke/sgb_downstairs_attempt.png
+            python scripts/yel_test_004_sgb_navigate.py --window-id "$wid" --reference test-results/sgb-reference/lab_entry.png --out test-results/sgb-smoke/navigation
             kill $pid || true
             wait $pid || true
           '
-          test -s test-results/sgb-smoke/sgb_lab_attempt.png
+          test -s test-results/sgb-smoke/navigation/lab_confirmed_160x144.png
       - name: Archive actual SGB emulator evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: yel-test-004-sgb-boot-smoke
-          path: test-results/sgb-smoke/
+          path: |
+            test-results/sgb-smoke/
+            test-results/sgb-reference/lab_entry.png
           if-no-files-found: warn
