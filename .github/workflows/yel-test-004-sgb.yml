@@ -133,6 +133,20 @@ jobs:
               sleep 0.55
             done
             sleep 2
+            # Controlled SGB-NTSC layer test, original SGB model and release art.
+            # Write only the LCD OBJ enable bit through SameBoy debugger.
+            kill -INT "$pid"
+            sleep 0.3
+            printf "print [$ff40]\n" >&3
+            sleep 0.3
+            printf 'print [$ff40] = ([$ff40] & $fd)\ncontinue\n' >&3
+            sleep 1.2
+            import -window "$wid" test-results/sgb-smoke/obj_disabled.png
+            kill -INT "$pid"
+            sleep 0.3
+            printf 'print [$ff40] = ([$ff40] | $02)\ncontinue\n' >&3
+            sleep 1.1
+            import -window "$wid" test-results/sgb-smoke/obj_reenabled.png
             kill $pid || true
             wait $pid || true
           '
@@ -159,6 +173,13 @@ jobs:
             --log test-results/sgb-smoke/sameboy.log \
             --frames test-results/sgb-smoke/directions \
             --out test-results/sgb-smoke/ivysaur_direction_report.json
+      - name: Evaluate SGB OBJ background compositing for Ivysaur
+        run: |
+          python scripts/yel_test_004_sgb_compositing.py \
+            --species Ivysaur \
+            --enabled test-results/sgb-smoke/obj_reenabled.png \
+            --disabled test-results/sgb-smoke/obj_disabled.png \
+            --out test-results/sgb-smoke/ivysaur_compositing.json
       - name: Audit distinct approved 2bpp sprite source assets
         run: |
           python scripts/yel_test_004_sgb_source_integrity.py \
