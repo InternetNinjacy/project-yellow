@@ -231,3 +231,295 @@ Yel012StageWindow::
 .invalid
 	scf
 	ret
+
+; Compare BC bytes in the physical SRAM bank (HL) to staged WRAM (DE).
+; Carry is set on a verification mismatch.
+Yel012ComparePhysicalPage:
+.loop
+	ld a, [de]
+	cp [hl]
+	jr nz, .mismatch
+	inc de
+	inc hl
+	dec bc
+	ld a, b
+	or c
+	jr nz, .loop
+	and a
+	ret
+.mismatch
+	scf
+	ret
+
+; HL is either bank-5 original or bank-5 modified shadow.
+; Copies both chunks to the selected physical box and verifies each.
+; On success physical SRAM remains enabled for checksum update.
+Yel012FlushSnapshotToPhysical:
+	ld a, 5
+	call OpenSRAM
+	ld de, wBoxDataStart
+	ld bc, YEL012_WINDOW_SIZE
+	call CopyData
+	push hl ; source second-chunk address in bank 5
+	call Yel012GetBoxSRAMLocation
+	ld d, h
+	ld e, l
+	ld a, b
+	call OpenSRAM
+	ld hl, wBoxDataStart
+	ld bc, YEL012_WINDOW_SIZE
+	call CopyData
+	call Yel012GetBoxSRAMLocation
+	ld de, wBoxDataStart
+	ld bc, YEL012_WINDOW_SIZE
+	call Yel012ComparePhysicalPage
+	jr c, .firstFailed
+	pop hl
+	ld a, 5
+	call OpenSRAM
+	ld de, wBoxDataStart
+	ld bc, YEL012_REMAINDER
+	call CopyData
+	call Yel012GetBoxSRAMLocation
+	ld de, YEL012_WINDOW_SIZE
+	add hl, de
+	ld d, h
+	ld e, l
+	ld a, b
+	call OpenSRAM
+	ld hl, wBoxDataStart
+	ld bc, YEL012_REMAINDER
+	call CopyData
+	call Yel012GetBoxSRAMLocation
+	ld de, YEL012_WINDOW_SIZE
+	add hl, de
+	ld de, wBoxDataStart
+	ld bc, YEL012_REMAINDER
+	jp Yel012ComparePhysicalPage
+.firstFailed
+	pop hl
+	scf
+	ret
+
+; Check count, species terminator and all occupied species header entries
+; against the first byte of the corresponding 33-byte Pokémon data.
+; Caller must have bank 5 SRAM enabled.
+Yel012ValidateShadow:
+	ld a, [sYel012TransactionShadow]
+	cp MONS_PER_BOX + 1
+	jr nc, .corrupt
+	ld b, a
+	ld c, a
+	ld hl, sYel012TransactionShadow + 1
+	ld e, c
+	ld d, 0
+	add hl, de
+	ld a, [hl]
+	cp $ff
+	jr nz, .corrupt
+	ld de, sYel012TransactionShadow + 1
+	ld hl, sYel012TransactionShadow + YEL012_SRAM_MON_OFFSET
+	ld a, b
+	and a
+	jr z, .valid
+.loop
+	ld a, [de]
+	and a
+	jr z, .corrupt
+	cp $ff
+	jr z, .corrupt
+	cp [hl]
+	jr nz, .corrupt
+	inc de
+	push bc
+	ld bc, BOXMON_STRUCT_LENGTH
+	add hl, bc
+	pop bc
+	dec b
+	jr nz, .loop
+.valid
+	and a
+	ret
+.corrupt
+	scf
+	ret
+
+; Prepare a new captured Pokémon in the bank-5 transaction, but do not
+; write the live physical box. Caller passes DE -> 55-byte WRAM record.
+; Carry set on absent transaction, invalid Pokémon, or full box.
+Yel012PrepareCaptureInsert::
+	push de
+	ld a, 5
+	call OpenSRAM
+	ld a, [sYel012TransactionStatus]
+	cp 1
+	jr nz, .failPop
+	ld a, [sYel012TransactionShadow]
+	cp MONS_PER_BOX
+	jr nc, .failPop
+	pop hl
+	push hl
+	ld a, [hl]
+	and a
+	jr z, .failPop
+	cp $ff
+	jr z, .failPop
+	ld de, sYel012TransactionNewRecord
+	ld bc, YEL012_RECORD_BUFFER_SIZE
+	call CopyData
+	pop de
+	; Shadow is altered only after complete input is safely staged.
+	ld a, [sYel012TransactionShadow]
+	ld hl, sYel012TransactionShadow + 1
+	ld de, 1
+	call Yel012ShiftFieldRight
+	ld a, [sYel012TransactionShadow]
+	ld hl, sYel012TransactionShadow + YEL012_SRAM_MON_OFFSET
+	ld de, BOXMON_STRUCT_LENGTH
+	call Yel012ShiftFieldRight
+	ld a, [sYel012TransactionShadow]
+	ld hl, sYel012TransactionShadow + YEL012_SRAM_OT_OFFSET
+	ld de, NAME_LENGTH
+	call Yel012ShiftFieldRight
+	ld a, [sYel012TransactionShadow]
+	ld hl, sYel012TransactionShadow + YEL012_SRAM_NICK_OFFSET
+	ld de, NAME_LENGTH
+	call Yel012ShiftFieldRight
+	ld hl, sYel012TransactionNewRecord
+	ld a, [hl]
+	ld [sYel012TransactionShadow + 1], a
+	ld de, sYel012TransactionShadow + YEL012_SRAM_MON_OFFSET
+	ld bc, BOXMON_STRUCT_LENGTH
+	call CopyData
+	ld de, sYel012TransactionShadow + YEL012_SRAM_OT_OFFSET
+	ld bc, NAME_LENGTH
+	call CopyData
+	ld de, sYel012TransactionShadow + YEL012_SRAM_NICK_OFFSET
+	ld bc, NAME_LENGTH
+	call CopyData
+	ld hl, sYel012TransactionShadow
+	inc [hl]
+	ld c, [hl]
+	ld b, 0
+	inc hl
+	add hl, bc
+	ld [hl], $ff
+	call Yel012ValidateShadow
+	push af
+	call CloseSRAM
+	pop af
+	ret
+.failPop
+	pop de
+	call CloseSRAM
+	scf
+	ret
+
+; Overlap-safe backwards shift by one record within SRAM bank 5.
+; Input HL=field start, DE=field stride, A=number of occupied records.
+Yel012ShiftFieldRight:
+	ld bc, 0
+	and a
+	ret z
+.count
+	add hl, de
+	push hl
+	ld h, b
+	ld l, c
+	add hl, de
+	ld b, h
+	ld c, l
+	pop hl
+	dec a
+	jr nz, .count
+	dec hl
+	push hl
+	add hl, de
+	ld d, h
+	ld e, l
+	pop hl
+.move
+	ld a, [hld]
+	ld [de], a
+	dec de
+	dec bc
+	ld a, b
+	or c
+	jr nz, .move
+	ret
+
+; Abort a staged transaction, leave physical SRAM untouched and restore
+; all 1122 bytes of the caller's original working-box window.
+Yel012AbortTransaction::
+	ld a, 5
+	call OpenSRAM
+	ld a, [sYel012TransactionStatus]
+	cp 1
+	jr nz, .invalid
+	call Yel012RestoreWindow
+	xor a
+	ld [sYel012TransactionStatus], a
+	call CloseSRAM
+	and a
+	ret
+.invalid
+	call CloseSRAM
+	scf
+	ret
+
+; Check all shadow records before writing; verify both physical chunks.
+; If either physical write fails verification, restore the original
+; physical bytes from the saved snapshot and recompute checksums.
+; This is runtime rollback; unexpected power loss requires boot recovery.
+Yel012CommitTransaction::
+	ld a, 5
+	call OpenSRAM
+	ld a, [sYel012TransactionStatus]
+	cp 1
+	jp nz, .invalid
+	ld a, [wCurrentBoxNum]
+	and BOX_NUM_MASK
+	ld b, a
+	ld a, [sYel012TransactionBox]
+	cp b
+	jp nz, .invalid
+	call Yel012ValidateShadow
+	jp c, .invalid
+	ld a, 2
+	ld [sYel012TransactionStatus], a
+	ld hl, sYel012TransactionShadow
+	call Yel012FlushSnapshotToPhysical
+	jr c, .rollback
+	call Yel012RefreshPhysicalChecksums
+	jr .success
+.rollback
+	ld hl, sYel012TransactionBackup
+	call Yel012FlushSnapshotToPhysical
+	jr c, .rollbackFailed
+	call Yel012RefreshPhysicalChecksums
+	ld a, 5
+	call OpenSRAM
+	call Yel012RestoreWindow
+	xor a
+	ld [sYel012TransactionStatus], a
+	call CloseSRAM
+	scf
+	ret
+.success
+	ld a, 5
+	call OpenSRAM
+	call Yel012RestoreWindow
+	xor a
+	ld [sYel012TransactionStatus], a
+	call CloseSRAM
+	and a
+	ret
+.rollbackFailed
+	; Keep status=2 to signal an incomplete transaction on next boot.
+	call CloseSRAM
+	scf
+	ret
+.invalid
+	call CloseSRAM
+	scf
+	ret
