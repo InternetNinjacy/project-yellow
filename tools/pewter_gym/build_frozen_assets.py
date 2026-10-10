@@ -15,7 +15,6 @@ BLOCKS = ROOT / "gfx/blocksets/gym.bst"
 MAP = ROOT / "maps/PewterGym.blk"
 OUT_GFX = ROOT / "gfx/tilesets/pewter_gym.png"
 OUT_BLOCKS = ROOT / "gfx/blocksets/pewter_gym.bst"
-OUT_MAP = ROOT / "maps/PewterGym.blk"   # Do not run until map integration is planned!
 SNOW = ROOT / "art/pewter_gym/snow_floor_8x8.png"
 ICE = ROOT / "art/pewter_gym/sliding_ice_8x8.png"
 FROST = ROOT / "art/pewter_gym/frost_boulder_16x16.png"
@@ -78,14 +77,12 @@ def main():
                 cache[key] = len(blocks) // 16
                 blocks.extend(block)
             remapped[pos] = cache[key]
-    # Fail closed: refuse overwriting source-map in the tool itself.
+    # Keep generated map separate until the validated candidate is promoted.
     out_map = ROOT / "build/pewter_gym/PewterGym.blk"
     out_map.parent.mkdir(parents=True, exist_ok=True)
     image.save(OUT_GFX)
     OUT_BLOCKS.write_bytes(blocks)
     out_map.write_bytes(remapped)
-    if GFX.read_bytes() != GFX.read_bytes():
-        raise SystemExit("Unreachable source-preservation guard")
     print(f"Prepared isolated Pewter tileset, {snow_count} snow / {ice_count} ice cells")
     print(f"Map candidate: {out_map} (requires explicit promotion and QA)")
 
