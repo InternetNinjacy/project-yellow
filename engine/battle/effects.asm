@@ -761,6 +761,7 @@ StatModifierDownEffect:
 	cp EVASION_DOWN1_EFFECT + $3 - ATTACK_DOWN1_EFFECT ; covers all -1 effects
 	jr c, .decrementStatMod
 	sub ATTACK_DOWN2_EFFECT - ATTACK_DOWN1_EFFECT ; map -2 effects to corresponding -1 effect
+	jr .decrementStatMod
 .psychicSpD
 	push de
 	ld b, $ff
