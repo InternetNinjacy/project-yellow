@@ -170,6 +170,7 @@ INCLUDE "engine/pokemon/evos_moves.asm"
 SECTION "Battle Core", ROMX
 
 INCLUDE "engine/battle/core.asm"
+INCLUDE "engine/battle/doubles_secondary.asm"
 INCLUDE "engine/battle/effects.asm"
 
 
