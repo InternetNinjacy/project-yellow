@@ -1,0 +1,130 @@
+#!/usr/bin/env python3
+"""Strict Project Yellow end-to-end capture/SAVE/CONTINUE PyBoy replay.
+
+Input JSON supplies *real controller events*, not synthesized SRAM records.
+This script does not claim gameplay success until a full-party catch and a
+persisted exact 55-byte Pokémon record have been observed in cartridge SRAM.
+No savestate or direct write to emulator memory is used.
+"""
+import argparse
+import json
+import shutil
+import tempfile
+from pathlib import Path
+from pyboy import PyBoy
+
+BOX_SIZE = 1682
+MON_BYTES = 33
+NAME_BYTES = 11
+PHYSICAL_MON_OFFSET = 32
+PHYSICAL_OT_OFFSET = 1022
+PHYSICAL_NICK_OFFSET = 1352
+ALLOWED = {"a", "b", "start", "select", "up", "down", "left", "right"}
+
+def symbol_table(path):
+    result = {}
+    for line in Path(path).read_text().splitlines():
+        parts = line.split(";")[0].split()
+        if len(parts) >= 2 and ":" in parts[0]:
+            try:
+                bank, address = parts[0].split(":", 1)
+                result[parts[1]] = (int(bank, 16), int(address, 16))
+            except ValueError:
+                pass
+    return result
+
+def play(em, sequence):
+    for action in sequence:
+        button = action.get("button")
+        frames = action.get("frames", 1)
+        if not isinstance(frames, int) or not 1 <= frames <= 12000:
+            raise ValueError("invalid frame count")
+        if button is not None:
+            if button not in ALLOWED:
+                raise ValueError("unsupported button: " + str(button))
+            em.button_press(button)
+        em.tick(frames, render=False, sound=False)
+        if button is not None:
+            em.button_release(button)
+            em.tick(2, render=False, sound=False)
+
+def box_bytes(em, syms, index):
+    if not isinstance(index, int) or not 0 <= index < 12:
+        raise ValueError("box must be 0..11")
+    start = syms["sBox1"][1] + (index % 4) * BOX_SIZE
+    bank = 2 + index // 4
+    return bytes(em.memory[bank, start + offset] for offset in range(BOX_SIZE))
+
+def record(box, index):
+    return (box[PHYSICAL_MON_OFFSET + index * MON_BYTES:PHYSICAL_MON_OFFSET + (index + 1) * MON_BYTES] +
+            box[PHYSICAL_OT_OFFSET + index * NAME_BYTES:PHYSICAL_OT_OFFSET + (index + 1) * NAME_BYTES] +
+            box[PHYSICAL_NICK_OFFSET + index * NAME_BYTES:PHYSICAL_NICK_OFFSET + (index + 1) * NAME_BYTES])
+
+def assert_storage(em, syms, destination, count):
+    box = box_bytes(em, syms, destination)
+    if box[0] != count or box[count + 1] != 255:
+        raise AssertionError(f"box occupancy/terminator mismatch: expected {count}, saw {box[0]}")
+    return box
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--rom", required=True)
+    parser.add_argument("--sym", required=True)
+    parser.add_argument("--replay", required=True, help="Recorded gameplay input JSON")
+    parser.add_argument("--out", required=True)
+    args = parser.parse_args()
+    spec = json.loads(Path(args.replay).read_text())
+    for key in ("prepare", "capture", "save", "continue"):
+        if not isinstance(spec.get(key), list) or not spec[key]:
+            raise ValueError(f"replay must include real {key} controller actions")
+    destination = spec["destination_box"]
+    starting_count = spec.get("starting_count", 29)
+    if starting_count != 29:
+        raise ValueError("acceptance replay must exercise 29 -> 30")
+    syms = symbol_table(args.sym)
+    for symbol in ("sBox1", "wPartyCount", "sYel012StorageVersion", "sYel012StorageVersionCheck"):
+        if symbol not in syms:
+            raise ValueError("missing symbol " + symbol)
+    with tempfile.TemporaryDirectory(prefix="yel012_replay_") as temp:
+        rom = Path(temp) / "yellow.gbc"
+        shutil.copyfile(args.rom, rom)
+        def boot():
+            emulator = PyBoy(str(rom), window="null", cgb=False, sound_emulated=False)
+            emulator.set_emulation_speed(0)
+            return emulator
+        em = boot()
+        try:
+            play(em, spec["prepare"])
+            if em.memory[syms["wPartyCount"][1]] != 6:
+                raise AssertionError("replay did not prepare a six-Pokémon party")
+            before = assert_storage(em, syms, destination, starting_count)
+            play(em, spec["capture"])
+            after = assert_storage(em, syms, destination, 30)
+            if record(after, 0) == record(before, 0):
+                raise AssertionError("captured record not prepended")
+            for index in range(29):
+                if record(after, index + 1) != record(before, index):
+                    raise AssertionError(f"existing record {index} changed during capture")
+            captured = record(after, 0)
+            if len(captured) != 55 or captured[0] in (0, 255):
+                raise AssertionError("invalid captured species/record")
+            play(em, spec["save"])
+            em.stop(save=True)
+            em = boot()  # New emulator instance, battery SRAM loaded from disk
+            play(em, spec["continue"])
+            restored = assert_storage(em, syms, destination, 30)
+            if restored != after or record(restored, 0) != captured:
+                raise AssertionError("SAVE/CONTINUE failed to retain exact physical box data")
+            report = {"contract": "YEL-QOL-012-REAL-GAMEPLAY/1", "status": "PASS",
+                      "destination_box": destination + 1, "before": 29, "after": 30,
+                      "captured_record_hex": captured.hex(),
+                      "reboot": "new PyBoy instance; actual battery SRAM"}
+            output = Path(args.out)
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_text(json.dumps(report, indent=2) + "\n")
+            print(json.dumps({k: v for k, v in report.items() if k != "captured_record_hex"}))
+        finally:
+            em.stop(save=False)
+
+if __name__ == "__main__":
+    main()
