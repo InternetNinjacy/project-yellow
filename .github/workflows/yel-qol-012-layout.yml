@@ -1,0 +1,18 @@
+name: YEL-QOL-012 Storage Layout Feasibility
+on:
+  push:
+    branches: [yel-qol-012-pc-30]
+    paths:
+      - 'scripts/yel_qol_012_storage_layout.py'
+      - 'tests/test_yel_qol_012_storage_layout.py'
+      - '.github/workflows/yel-qol-012-layout.yml'
+  workflow_dispatch:
+jobs:
+  verify-memory-plan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assert 12 by 30 physical bank allocation
+        run: |
+          python -m unittest discover -s tests -p 'test_yel_qol_012_storage_layout.py' -v
+          python scripts/yel_qol_012_storage_layout.py
