@@ -17,10 +17,10 @@ Yel012GetBoxSRAMLocation::
 	ld b, 2
 .bank
 	cp 4
-	jr c, .slot
+	jp c, .slot
 	sub 4
 	inc b
-	jr .bank
+	jp .bank
 .slot
 	add a
 	ld e, a
@@ -44,7 +44,7 @@ Yel012CalcChecksum:
 	dec bc
 	ld a, b
 	or c
-	jr nz, .loop
+	jp nz, .loop
 	ld a, d
 	cpl
 	ret
@@ -68,7 +68,7 @@ Yel012RefreshPhysicalChecksums::
 	inc de
 	pop bc
 	dec b
-	jr nz, .each
+	jp nz, .each
 	ret
 
 ; Stage a physical box to its rollback snapshot and mutable shadow.
@@ -79,7 +79,7 @@ Yel012BeginTransaction::
 	call OpenSRAM
 	ld a, [sYel012TransactionStatus]
 	and a
-	jr nz, .failClose
+	jp nz, .failClose
 	ld hl, wBoxDataStart
 	ld de, sYel012TransactionWindowBackup
 	ld bc, YEL012_WINDOW_SIZE
@@ -87,13 +87,13 @@ Yel012BeginTransaction::
 	ld a, [wCurrentBoxNum]
 	and BOX_NUM_MASK
 	cp NUM_BOXES
-	jr nc, .failed
+	jp nc, .failed
 	call Yel012GetBoxSRAMLocation
 	ld a, b
 	call OpenSRAM
 	ld a, [hl]
 	cp MONS_PER_BOX + 1
-	jr nc, .failed
+	jp nc, .failed
 	; The physical count and its terminator are validated before copying.
 	ld c, a
 	ld b, 0
@@ -101,9 +101,9 @@ Yel012BeginTransaction::
 	add hl, bc
 	ld a, [hl]
 	cp $ff
-	jr nz, .failed
+	jp nz, .failed
 	call Yel012CopyPhysicalAndSnapshotZero
-	jr c, .failed
+	jp c, .failed
 	ld a, 5
 	call OpenSRAM
 	ld a, [wCurrentBoxNum]
@@ -179,7 +179,7 @@ MACRO YEL012_STAGE_FIELD
 	ld hl, sYel012TransactionShadow + \1
 	ld a, [sYel012TransactionPage]
 	and a
-	jr z, .start\@
+	jp z, .start\@
 	ld bc, 20 * \2
 	add hl, bc
 .start\@
@@ -187,13 +187,13 @@ MACRO YEL012_STAGE_FIELD
 	ld a, [wBoxCount]
 .loop\@
 	and a
-	jr z, .done\@
+	jp z, .done\@
 	push af
 	ld bc, \2
 	call CopyData
 	pop af
 	dec a
-	jr .loop\@
+	jp .loop\@
 .done\@
 ENDM
 
@@ -203,7 +203,7 @@ MACRO YEL012_WRITE_FIELD
 	ld de, sYel012TransactionShadow + \1
 	ld a, [sYel012TransactionPage]
 	and a
-	jr z, .start\@
+	jp z, .start\@
 	ld hl, 20 * \2
 	add hl, de
 	ld d, h
@@ -213,39 +213,39 @@ MACRO YEL012_WRITE_FIELD
 	ld a, [wBoxCount]
 .loop\@
 	and a
-	jr z, .done\@
+	jp z, .done\@
 	push af
 	ld bc, \2
 	call CopyData
 	pop af
 	dec a
-	jr .loop\@
+	jp .loop\@
 .done\@
 ENDM
 
 Yel012StageWindow::
 	cp 0
-	jr z, .indexOK
+	jp z, .indexOK
 	cp 20
-	jr nz, .invalid
+	jp nz, .invalid
 .indexOK
 	push af
 	ld a, 5
 	call OpenSRAM
 	ld a, [sYel012TransactionStatus]
 	cp 1
-	jr nz, .badPop
+	jp nz, .badPop
 	ld a, [sYel012TransactionPagePending]
 	and a
-	jr nz, .badPop
+	jp nz, .badPop
 	pop af
 	ld [sYel012TransactionPage], a
 	ld b, a
 	ld a, [sYel012TransactionShadow]
 	sub b
-	jr c, .invalidClose
+	jp c, .invalidClose
 	cp 20
-	jr c, .countOK
+	jp c, .countOK
 	ld a, 20
 .countOK
 	ld [wBoxCount], a
@@ -290,7 +290,7 @@ Yel012CommitStagedWindow::
 	sub b
 	jp c, .reject
 	cp 20
-	jr c, .expectedCount
+	jp c, .expectedCount
 	ld a, 20
 .expectedCount
 	ld b, a
@@ -303,17 +303,17 @@ Yel012CommitStagedWindow::
 	ld a, b
 .checkNext
 	and a
-	jr z, .sentinel
+	jp z, .sentinel
 	push af
 	ld a, [hli]
 	and a
-	jr z, .badItem
+	jp z, .badItem
 	cp $ff
-	jr z, .badItem
+	jp z, .badItem
 	ld c, a
 	ld a, [de]
 	cp c
-	jr nz, .badItem
+	jp nz, .badItem
 	push hl
 	ld hl, BOXMON_STRUCT_LENGTH
 	add hl, de
@@ -322,14 +322,14 @@ Yel012CommitStagedWindow::
 	pop hl
 	pop af
 	dec a
-	jr .checkNext
+	jp .checkNext
 .badItem
 	pop af
 	jp .reject
 .sentinel
 	ld a, [hl]
 	cp $ff
-	jr nz, .reject
+	jp nz, .reject
 	YEL012_WRITE_FIELD 1, 1, wBoxSpecies
 	YEL012_WRITE_FIELD YEL012_SRAM_MON_OFFSET, BOXMON_STRUCT_LENGTH, wBoxMons
 	YEL012_WRITE_FIELD YEL012_SRAM_OT_OFFSET, NAME_LENGTH, wBoxMonOT
@@ -352,13 +352,13 @@ Yel012ComparePhysicalPage:
 .loop
 	ld a, [de]
 	cp [hl]
-	jr nz, .mismatch
+	jp nz, .mismatch
 	inc de
 	inc hl
 	dec bc
 	ld a, b
 	or c
-	jr nz, .loop
+	jp nz, .loop
 	and a
 	ret
 .mismatch
@@ -387,7 +387,7 @@ Yel012FlushSnapshotToPhysical:
 	ld de, wBoxDataStart
 	ld bc, YEL012_WINDOW_SIZE
 	call Yel012ComparePhysicalPage
-	jr c, .firstFailed
+	jp c, .firstFailed
 	pop hl
 	ld a, 5
 	call OpenSRAM
@@ -421,7 +421,7 @@ Yel012FlushSnapshotToPhysical:
 Yel012ValidateShadow:
 	ld a, [sYel012TransactionShadow]
 	cp MONS_PER_BOX + 1
-	jr nc, .corrupt
+	jp nc, .corrupt
 	ld b, a
 	ld c, a
 	ld hl, sYel012TransactionShadow + 1
@@ -430,27 +430,27 @@ Yel012ValidateShadow:
 	add hl, de
 	ld a, [hl]
 	cp $ff
-	jr nz, .corrupt
+	jp nz, .corrupt
 	ld de, sYel012TransactionShadow + 1
 	ld hl, sYel012TransactionShadow + YEL012_SRAM_MON_OFFSET
 	ld a, b
 	and a
-	jr z, .valid
+	jp z, .valid
 .loop
 	ld a, [de]
 	and a
-	jr z, .corrupt
+	jp z, .corrupt
 	cp $ff
-	jr z, .corrupt
+	jp z, .corrupt
 	cp [hl]
-	jr nz, .corrupt
+	jp nz, .corrupt
 	inc de
 	push bc
 	ld bc, BOXMON_STRUCT_LENGTH
 	add hl, bc
 	pop bc
 	dec b
-	jr nz, .loop
+	jp nz, .loop
 .valid
 	and a
 	ret
@@ -467,20 +467,20 @@ Yel012PrepareCaptureInsert::
 	call OpenSRAM
 	ld a, [sYel012TransactionStatus]
 	cp 1
-	jr nz, .failPop
+	jp nz, .failPop
 	ld a, [sYel012TransactionPagePending]
 	and a
-	jr nz, .failPop
+	jp nz, .failPop
 	ld a, [sYel012TransactionShadow]
 	cp MONS_PER_BOX
-	jr nc, .failPop
+	jp nc, .failPop
 	pop hl
 	push hl
 	ld a, [hl]
 	and a
-	jr z, .failPop
+	jp z, .failPop
 	cp $ff
-	jr z, .failPop
+	jp z, .failPop
 	ld de, sYel012TransactionNewRecord
 	ld bc, YEL012_RECORD_BUFFER_SIZE
 	call CopyData
@@ -548,7 +548,7 @@ Yel012ShiftFieldRight:
 	ld c, l
 	pop hl
 	dec a
-	jr nz, .count
+	jp nz, .count
 	dec hl
 	push hl
 	add hl, de
@@ -562,7 +562,7 @@ Yel012ShiftFieldRight:
 	dec bc
 	ld a, b
 	or c
-	jr nz, .move
+	jp nz, .move
 	ret
 
 ; Abort a staged transaction, leave physical SRAM untouched and restore
@@ -572,7 +572,7 @@ Yel012AbortTransaction::
 	call OpenSRAM
 	ld a, [sYel012TransactionStatus]
 	cp 1
-	jr nz, .invalid
+	jp nz, .invalid
 	call Yel012RestoreWindow
 	xor a
 	ld [sYel012TransactionStatus], a
@@ -609,13 +609,13 @@ Yel012CommitTransaction::
 	ld [sYel012TransactionStatus], a
 	ld hl, sYel012TransactionShadow
 	call Yel012FlushSnapshotToPhysical
-	jr c, .rollback
+	jp c, .rollback
 	call Yel012RefreshPhysicalChecksums
-	jr .success
+	jp .success
 .rollback
 	ld hl, sYel012TransactionBackup
 	call Yel012FlushSnapshotToPhysical
-	jr c, .rollbackFailed
+	jp c, .rollbackFailed
 	call Yel012RefreshPhysicalChecksums
 	ld a, 5
 	call OpenSRAM
