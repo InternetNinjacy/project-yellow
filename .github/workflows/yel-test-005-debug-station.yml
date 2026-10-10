@@ -42,7 +42,7 @@ jobs:
         run: |
           python scripts/yel_test_005_route_probe.py \
             --rom pokeyellow_debug.gbc --sym pokeyellow_debug.sym \
-            --trace tests/traces/yel-test-005-startup-probe.json \
+            --trace tests/traces/yel-test-005-debug-entry.json \
             --out test-results/yel-test-005-debug/new-game
       - name: Upload manifests and screenshots only
         if: always()
