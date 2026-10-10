@@ -92,9 +92,24 @@ Yel012TransferBoxRecord:
 	jr z, .badOpen
 	cp $ff
 	jr z, .badOpen
-	; The header and count remain unchanged; caller owns consistency
-	; between the record species and indexed species table.
+	; For occupied-slot writes, reject a species mismatch before any
+	; SRAM bytes are modified; callers must transact inserts separately.
+	push bc
+	ld b, a ; expected header species
+	ld a, c
+	and a
+	jr z, .headerOK
+	ld a, [de] ; species in incoming mon_struct
+	cp b
+	jr nz, .badSpecies
+.headerOK
+	pop bc
 	ld a, b ; zero-based slot
+	jr .transfer
+.badSpecies
+	pop bc
+	jr .badOpen
+.transfer
 	YEL012_COPY_FIELD YEL012_SRAM_MON_OFFSET, BOXMON_STRUCT_LENGTH, BOXMON_STRUCT_LENGTH
 	YEL012_COPY_FIELD YEL012_SRAM_OT_OFFSET, NAME_LENGTH, NAME_LENGTH
 	YEL012_COPY_FIELD YEL012_SRAM_NICK_OFFSET, NAME_LENGTH, NAME_LENGTH
