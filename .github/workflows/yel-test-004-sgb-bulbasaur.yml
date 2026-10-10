@@ -106,6 +106,12 @@ jobs:
           '
           test -s test-results/sgb-smoke/sameboy.log
           python scripts/yel_test_004_sgb_capture_gate.py --species Bulbasaur --log test-results/sgb-smoke/sameboy.log --frame test-results/sgb-smoke/bulbasaur_map25_candidate.png --reference test-results/sgb-reference/lab_entry.png --out test-results/sgb-smoke/bulbasaur_capture_report.json
+      - name: Audit distinct approved 2bpp sprite source assets
+        run: |
+          python scripts/yel_test_004_sgb_source_integrity.py \
+            --bulbasaur gfx/sprites/bulbasaur.2bpp \
+            --ivysaur gfx/sprites/ivysaur.2bpp \
+            --out test-results/sgb-smoke/source_integrity.json
       - name: Archive actual SGB emulator evidence
         if: always()
         uses: actions/upload-artifact@v4
