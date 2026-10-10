@@ -38,6 +38,12 @@ jobs:
       - name: Assert debug-mode first-stage boot
         run: |
           python scripts/yel_emulator_smoke.py --rom pokeyellow_debug.gbc --out test-results/yel-test-005-debug/boot
+      - name: Exercise DEBUG New Game party and bag setup
+        run: |
+          python scripts/yel_test_005_route_probe.py \
+            --rom pokeyellow_debug.gbc --sym pokeyellow_debug.sym \
+            --trace tests/traces/yel-test-005-startup-probe.json \
+            --out test-results/yel-test-005-debug/new-game
       - name: Upload manifests and screenshots only
         if: always()
         uses: actions/upload-artifact@v4
