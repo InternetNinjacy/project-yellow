@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "id": "dex-001-bulbasaur-sgb",
+      "species": "Bulbasaur",
+      "sprite_source": "gfx/sprites/bulbasaur.2bpp",
+      "sprite_symbol": "SPRITE_BULBASAUR",
+      "test_location": {
+        "map_id": 37,
+        "name": "REDS_HOUSE_1F",
+        "object_source": "data/maps/objects/RedsHouse1F.asm",
+        "placeholder": "SPRITE_IVYSAUR"
+      },
+      "hardware_mode": "sgb-ntsc",
+      "expected_behavior": {
+        "tile_count": 12,
+        "min_shadow_oam": 4,
+        "min_hardware_oam": 4,
+        "facings": [
+          "down",
+          "up",
+          "left",
+          "right"
+        ],
+        "walking": true,
+        "border": true,
+        "compositing": true,
+        "palette_packets": "pending"
+      }
+    },
+    {
+      "id": "dex-002-ivysaur-sgb",
+      "species": "Ivysaur",
+      "sprite_source": "gfx/sprites/ivysaur.2bpp",
+      "sprite_symbol": "SPRITE_IVYSAUR",
+      "test_location": {
+        "map_id": 37,
+        "name": "REDS_HOUSE_1F",
+        "object_source": "data/maps/objects/RedsHouse1F.asm",
+        "placeholder": "SPRITE_IVYSAUR"
+      },
+      "hardware_mode": "sgb-ntsc",
+      "expected_behavior": {
+        "tile_count": 12,
+        "min_shadow_oam": 4,
+        "min_hardware_oam": 4,
+        "facings": [
+          "down",
+          "up",
+          "left",
+          "right"
+        ],
+        "walking": true,
+        "border": true,
+        "compositing": true,
+        "palette_packets": "pending"
+      }
+    }
+  ]
+}

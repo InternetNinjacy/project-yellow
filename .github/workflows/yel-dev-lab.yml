@@ -36,6 +36,34 @@ jobs:
             --sym pokeyellow_debug.sym \
             --sprite-2bpp gfx/sprites/ivysaur.2bpp \
             --out test-results/dev-lab-ivysaur
+      - name: Verify GBC-mode Ivysaur palette rendering
+        run: |
+          python scripts/yel_test_004_gbc_ivysaur.py \
+            --cgb \
+            --rom pokeyellow_debug.gbc \
+            --sym pokeyellow_debug.sym \
+            --sprite-2bpp gfx/sprites/ivysaur.2bpp \
+            --out test-results/yel-test-004-gbc-ivysaur
+      - name: Build isolated DEBUG Bulbasaur fixture without changing release
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('data/maps/objects/RedsHouse1F.asm')
+          s=p.read_text()
+          old='object_event  5,  4, SPRITE_IVYSAUR, WALK, ANY_DIR, TEXT_REDSHOUSE1F_MOM'
+          assert s.count(old)==1, 'unexpected DEBUG map station'
+          p.write_text(s.replace(old, 'object_event  5,  4, SPRITE_BULBASAUR, WALK, ANY_DIR, TEXT_REDSHOUSE1F_MOM'))
+          PY
+          make -j2 pokeyellow_debug.gbc
+          sha256sum pokeyellow.gbc pokeyellow_debug.gbc | tee test-results-bulbasaur-rom-sha256.txt
+      - name: Verify GBC-mode Bulbasaur palette rendering
+        run: |
+          python scripts/yel_test_004_gbc_bulbasaur.py \
+            --cgb \
+            --rom pokeyellow_debug.gbc \
+            --sym pokeyellow_debug.sym \
+            --sprite-2bpp gfx/sprites/bulbasaur.2bpp \
+            --out test-results/yel-test-004-gbc-bulbasaur
       - name: Archive evidence only
         if: always()
         uses: actions/upload-artifact@v4
@@ -44,5 +72,8 @@ jobs:
           path: |
             test-results/dev-lab-boot/
             test-results/dev-lab-ivysaur/
+            test-results/yel-test-004-gbc-ivysaur/
+            test-results/yel-test-004-gbc-bulbasaur/
+            test-results-bulbasaur-rom-sha256.txt
             test-results-rom-sha256.txt
           if-no-files-found: warn
