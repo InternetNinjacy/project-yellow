@@ -45,15 +45,19 @@ def likeness(actual, expected):
     # Keep the comparison to fixed room tile geometry, excluding moving NPC
     # and protagonist locations. Compare top and left-hand wall/furniture only.
     rectangles = ((0, 0, 64, 62), (90, 0, 160, 58), (0, 72, 50, 144))
-    total = 0
-    distance = 0
+    shared = 0
+    union = 0
+    reference_edges = 0
     for rect in rectangles:
         x, y = a.crop(rect), b.crop(rect)
-        delta = ImageChops.difference(x, y)
-        from PIL import ImageStat
-        distance += ImageStat.Stat(delta).sum[0]
-        total += x.width * x.height * 255
-    return 1.0 - distance / total
+        a_edges = [v > 48 for v in x.getdata()]
+        b_edges = [v > 48 for v in y.getdata()]
+        shared += sum(a and b for a, b in zip(a_edges, b_edges))
+        union += sum(a or b for a, b in zip(a_edges, b_edges))
+        reference_edges += sum(b_edges)
+    if reference_edges < 30 or union == 0:
+        raise AssertionError("Invalid room visual template: too few edges")
+    return shared / union
 
 
 def main():
@@ -61,7 +65,7 @@ def main():
     parser.add_argument("--window-id", required=True)
     parser.add_argument("--reference", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
-    parser.add_argument("--threshold", type=float, default=0.80)
+    parser.add_argument("--threshold", type=float, default=0.45)
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
     reference = Image.open(args.reference).convert("RGB")
