@@ -51,6 +51,12 @@ jobs:
           python3 -m unittest discover -s tests -p 'test_yel_qol_012_records.py' -v
           python3 -m unittest discover -s tests -p 'test_yel_qol_012_transactions.py' -v
 
+      - name: YEL-QOL-012 isolated real-emulator assembly transactions
+        run: |
+          python3 -m pip install 'pyboy==2.6.0'
+          mkdir -p test-results/yel-qol-012
+          python3 scripts/yel_qol_012_cpu_probe.py --rom pokeyellow_debug.gbc --sym pokeyellow_debug.sym --out test-results/yel-qol-012/cpu-transaction.json
+
       - name: Discord webhook
         if: ${{ github.event_name == 'push' && github.repository_owner == 'pret' }}
         env:
