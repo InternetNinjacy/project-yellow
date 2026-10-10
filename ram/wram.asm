@@ -663,7 +663,9 @@ wPlayerUnmodifiedSpecialDefense:: dw
 wEnemyUnmodifiedSpecialDefense:: dw
 wPlayerSpecialDefenseMod:: db
 wEnemySpecialDefenseMod:: db
-	ds 3
+wPlayerReflectTurns:: db
+wPlayerLightScreenTurns:: db
+wEnemyReflectTurns:: db
 
 UNION
 ; the amount of damage accumulated by the enemy while biding
@@ -1506,7 +1508,7 @@ wEnemyToxicCounter:: db
 ; low nibble: disable turns left
 wEnemyDisabledMove:: db
 
-	ds 1
+wEnemyLightScreenTurns:: db
 
 UNION
 ; the amount of damage accumulated by the player while biding
