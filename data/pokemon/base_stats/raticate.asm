@@ -16,7 +16,7 @@
 	; tm/hm learnset (approved set; TM34 pending Poison Fang remap)
 	tmhm MEGA_PUNCH, MEGA_KICK, BODY_SLAM, DOUBLE_EDGE, HYPER_BEAM, \
 	     RAGE, DIG, TOXIC, MIMIC, DOUBLE_TEAM, \
-	     REST, SUBSTITUTE, SKULL_BASH, CUT, STRENGTH
+	     REST, SUBSTITUTE, POISON_FANG, SKULL_BASH, CUT, STRENGTH
 	; end
 
 	db 0 ; padding
