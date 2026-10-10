@@ -46,7 +46,11 @@ sBank3IndividualBoxChecksums:: ds 4
 
 SECTION "YEL012 Transaction Backup", SRAM
 sYel012TransactionBackup:: ds 1682
+sYel012TransactionShadow:: ds 1682
+sYel012TransactionWindowBackup:: ds wBoxDataEnd - wBoxDataStart
 sYel012TransactionNewRecord:: ds 55
+sYel012TransactionStatus:: db
+sYel012TransactionPage:: db
 
 SECTION "Saved Boxes 3", SRAM
 	boxes 4
