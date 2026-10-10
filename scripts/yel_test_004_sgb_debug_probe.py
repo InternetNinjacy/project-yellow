@@ -102,7 +102,32 @@ def main():
                         "gameplay_state_unverified": True,
                         "snapshot": snapshot,
                         "addresses": {k: f"0x{v:04x}" for k, v in addrs.items()}}, indent=2) + "\\n")
-        print(f"SGB debugger values: {snapshot}", flush=True)
+        # Resume, move one tile, then ask the debugger again. This distinguishes
+        # live player state from an uninitialized/stale memory snapshot.
+        os.write(master, b"continue\n")
+        log += read_for(master, 2)
+        press(window, "Up", hold=0.24)
+        time.sleep(1)
+        os.kill(process.pid, signal.SIGINT)
+        follow = read_for(master, 2)
+        for address in addrs.values():
+            os.write(master, f"examine/1 ${address:04x}\n".encode())
+            follow += read_for(master, 1)
+        (args.out / "debugger_after_up.txt").write_text(follow)
+        after = {}
+        for name, address in addrs.items():
+            match = re.search(rf"(?im)^\\s*{address:04x}:\\s*([0-9a-f]{{2}})\\b", follow)
+            if not match:
+                raise AssertionError(f"No post-movement RAM reading for {name}")
+            after[name] = int(match.group(1), 16)
+        (args.out / "live_coordinates.json").write_text(
+            json.dumps({"source": "SameBoy sgb-ntsc debugger",
+                        "before": snapshot, "after_up": after,
+                        "changed": snapshot != after,
+                        "address_map": {k: f"0x{v:04x}" for k,v in addrs.items()},
+                        "navigation_pass": False}, indent=2) + "\n")
+        print(f"SGB coordinates before movement: {snapshot}; after Up: {after}", flush=True)
+
     finally:
         process.terminate()
         try: process.wait(timeout=3)
