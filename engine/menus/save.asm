@@ -296,7 +296,7 @@ CalcCheckSum:
 CalcIndividualBoxCheckSums:
 	ld hl, sBox1 ; sBox7
 	ld de, sBank2IndividualBoxChecksums ; sBank3IndividualBoxChecksums
-	ld b, NUM_BOXES / 2
+	ld b, NUM_BOXES / 3
 .loop
 	push bc
 	push de
@@ -311,17 +311,22 @@ CalcIndividualBoxCheckSums:
 	ret
 
 GetBoxSRAMLocation:
-; in: a = box num
-; out: b = box SRAM bank, hl = pointer to start of box
+; Return physical SRAM bank 2/3/4 and slot within its four-box bank.
 	ld hl, BoxSRAMPointerTable
 	ld a, [wCurrentBoxNum]
 	and BOX_NUM_MASK
-	cp NUM_BOXES / 2
 	ld b, 2
-	jr c, .next
-	inc b
-	sub NUM_BOXES / 2
-.next
+	cp 8
+	jr c, .underEight
+	sub 8
+	ld b, 4
+	jr .local
+.underEight
+	cp 4
+	jr c, .local
+	sub 4
+	ld b, 3
+.local
 	ld e, a
 	ld d, 0
 	add hl, de
@@ -332,12 +337,10 @@ GetBoxSRAMLocation:
 	ret
 
 BoxSRAMPointerTable:
-	dw sBox1 ; sBox7
-	dw sBox2 ; sBox8
-	dw sBox3 ; sBox9
-	dw sBox4 ; sBox10
-	dw sBox5 ; sBox11
-	dw sBox6 ; sBox12
+	dw sBox1
+	dw sBox2
+	dw sBox3
+	dw sBox4
 
 ; YEL-QOL-011: prepare storage silently before throwing a ball with a full party.
 ; Returns A=1 if a box has room, A=0 if all boxes are full.
@@ -598,8 +601,6 @@ BoxNoText:
 	db "BOX No.@"
 
 EmptyAllSRAMBoxes:
-; marks all boxes in SRAM as empty (initialisation for the first time the
-; player changes the box)
 	call EnableSRAM
 	ld a, BANK("Saved Boxes 1")
 	ld [rRAMB], a
@@ -607,27 +608,25 @@ EmptyAllSRAMBoxes:
 	ld a, BANK("Saved Boxes 2")
 	ld [rRAMB], a
 	call EmptySRAMBoxesInBank
+	ld a, BANK("Saved Boxes 3")
+	ld [rRAMB], a
+	call EmptySRAMBoxesInBank
 	call DisableSRAM
 	ret
 
 EmptySRAMBoxesInBank:
-; marks every box in the current SRAM bank as empty
-	ld hl, sBox1 ; sBox7
+	ld hl, sBox1
 	call EmptySRAMBox
-	ld hl, sBox2 ; sBox8
+	ld hl, sBox2
 	call EmptySRAMBox
-	ld hl, sBox3 ; sBox9
+	ld hl, sBox3
 	call EmptySRAMBox
-	ld hl, sBox4 ; sBox10
+	ld hl, sBox4
 	call EmptySRAMBox
-	ld hl, sBox5 ; sBox11
-	call EmptySRAMBox
-	ld hl, sBox6 ; sBox12
-	call EmptySRAMBox
-	ld hl, sBox1 ; sBox7
+	ld hl, sBox1
 	ld bc, sBank2AllBoxesChecksum - sBox1
 	call CalcCheckSum
-	ld [sBank2AllBoxesChecksum], a ; sBank3AllBoxesChecksum
+	ld [sBank2AllBoxesChecksum], a
 	call CalcIndividualBoxCheckSums
 	ret
 
@@ -648,10 +647,11 @@ GetMonCountsForAllBoxes:
 	ld a, BANK("Saved Boxes 2")
 	ld [rRAMB], a
 	call GetMonCountsForBoxesInBank
+	ld a, BANK("Saved Boxes 3")
+	ld [rRAMB], a
+	call GetMonCountsForBoxesInBank
 	call DisableSRAM
 	pop hl
-
-; copy the count for the current box from WRAM
 	ld a, [wCurrentBoxNum]
 	and BOX_NUM_MASK
 	ld c, a
@@ -659,21 +659,16 @@ GetMonCountsForAllBoxes:
 	add hl, bc
 	ld a, [wBoxCount]
 	ld [hl], a
-
 	ret
 
 GetMonCountsForBoxesInBank:
-	ld a, [sBox1] ; sBox7
+	ld a, [sBox1]
 	ld [hli], a
-	ld a, [sBox2] ; sBox8
+	ld a, [sBox2]
 	ld [hli], a
-	ld a, [sBox3] ; sBox9
+	ld a, [sBox3]
 	ld [hli], a
-	ld a, [sBox4] ; sBox10
-	ld [hli], a
-	ld a, [sBox5] ; sBox11
-	ld [hli], a
-	ld a, [sBox6] ; sBox12
+	ld a, [sBox4]
 	ld [hli], a
 	ret
 
