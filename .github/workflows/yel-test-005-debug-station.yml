@@ -94,13 +94,32 @@ jobs:
             --fixture-builder .qol-feature/scripts/yel_qol_011_make_fixture.py \
             --storage-harness .qol-feature/scripts/yel_qol_011_storage.py \
             --out test-results/yel-test-005-debug/qol-feature-matrix
-      - name: Remove private PyBoy state before artifact upload
+      - name: Assemble allowlisted public evidence ONLY
         if: always()
-        run: find test-results/yel-test-005-debug -name '*.state' -delete
-          find test-results/yel-test-005-debug -name '*.bin' -delete
-      - name: Upload manifests and screenshots only
+        run: |
+          mkdir -p test-results/yel-test-005-public
+          python - <<'PY'
+          from pathlib import Path
+          import shutil
+          src = Path("test-results/yel-test-005-debug")
+          dst = Path("test-results/yel-test-005-public")
+          allowed = {".png", ".json", ".txt"}
+          for file in src.rglob("*"):
+              if not file.is_file() or file.suffix.lower() not in allowed:
+                  continue
+              target = dst / file.relative_to(src)
+              target.parent.mkdir(parents=True, exist_ok=True)
+              shutil.copyfile(file, target)
+          files = [p for p in dst.rglob("*") if p.is_file()]
+          forbidden = [p for p in files if p.suffix.lower() not in allowed]
+          if forbidden:
+              raise RuntimeError("FORBIDDEN ARTIFACTS: " + repr(forbidden))
+          print("Allowlisted files:", len(files))
+          PY
+      - name: Upload allowlisted non-binary reports and screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: yel-test-005-debug-station-build
-          path: test-results/yel-test-005-debug/
+          name: yel-test-005-debug-station-safe-evidence
+          path: test-results/yel-test-005-public/
+          if-no-files-found: error
