@@ -359,8 +359,8 @@ GengarEvosMoves:
 ; Evolutions
 	db 0
 ; Learnset
-	db 29, HYPNOSIS
-	db 38, DREAM_EATER
+	db 20, HYPNOSIS
+	db 36, DREAM_EATER
 	db 0
 
 NidoranFEvosMoves:
@@ -484,8 +484,8 @@ GastlyEvosMoves:
 	db EVOLVE_LEVEL, 25, HAUNTER
 	db 0
 ; Learnset
-	db 27, HYPNOSIS
-	db 35, DREAM_EATER
+	db 16, HYPNOSIS
+	db 32, DREAM_EATER
 	db 0
 
 ScytherEvosMoves:
@@ -1721,10 +1721,11 @@ MissingNo92EvosMoves:
 HaunterEvosMoves:
 ; Evolutions
 	db EVOLVE_TRADE, 1, GENGAR
+	db EVOLVE_LEVEL, 40, GENGAR
 	db 0
 ; Learnset
-	db 29, HYPNOSIS
-	db 38, DREAM_EATER
+	db 18, HYPNOSIS
+	db 34, DREAM_EATER
 	db 0
 
 AbraEvosMoves:
