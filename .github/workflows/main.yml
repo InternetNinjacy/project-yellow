@@ -15,6 +15,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Verify isolated Pewter map geometry
+        run: python3 tools/pewter_gym/verify_frozen_map.py
+
       - name: Checkout rgbds
         uses: actions/checkout@v7
         with:
@@ -77,6 +80,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+
+      - name: Verify isolated Pewter map geometry
+        run: python3 tools/pewter_gym/verify_frozen_map.py
 
       - name: Checkout rgbds
         uses: actions/checkout@v7
