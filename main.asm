@@ -278,7 +278,6 @@ INCLUDE "engine/gfx/mon_icons.asm"
 INCLUDE "engine/events/in_game_trades.asm"
 INCLUDE "engine/gfx/palettes.asm"
 INCLUDE "engine/menus/save.asm"
-INCLUDE "engine/menus/yel_qol_012_record_access.asm"
 
 
 SECTION "Itemfinder 1", ROMX
@@ -424,3 +423,8 @@ INCLUDE "engine/pikachu/pikachu_emotions.asm"
 INCLUDE "engine/pikachu/pikachu_movement.asm"
 INCLUDE "engine/pikachu/pikachu_pic_animation.asm"
 INCLUDE "engine/debug/debug_menu.asm"
+
+
+SECTION "YEL012 SRAM Transaction Engine", ROMX
+INCLUDE "engine/menus/yel_qol_012_record_access.asm"
+INCLUDE "engine/menus/yel_qol_012_transaction.asm"
