@@ -1,20 +1,31 @@
-# Trainer gender counterparts: Phase 1 registry
+# Trainer gender counterparts: separate variant encoding
 
-Approved roster: **25** counterparts, in `data/trainers/gender_counterparts.csv`. All existing trainer IDs remain unchanged. Existing Jr. Trainer ♂/♀ and Cooltrainer ♂/♀ remain unchanged; unique boss classes are outside scope.
+Approved design registry: `data/trainers/gender_counterparts.csv` (25 counterparts). Existing trainer class IDs, sprites, tables, Jr. Trainer ♂/♀ and Cooltrainer ♂/♀ remain unchanged.
 
-## Blocking encoding constraint
+## Implemented groundwork
 
-`constants/trainer_constants.asm` defines `OPP_ID_OFFSET EQU 200` and `OPP_<CLASS> = 200 + class index`. Opponent identity is stored in a **byte** (`wEnemyMonOrTrainerClass`). With 47 existing classes, appending 25 new real class indices would yield indices 48–72; indices 56–72 would produce opponent IDs 256–272 and overflow a byte. Lowering 200 without a coordinated wild-species encoding migration is unsafe. **Do not append 25 entries to the current production tables** until the discriminator is redesigned.
+The original opponent class format uses `OPP_ID_OFFSET = 200`, so appending 25 ordinary classes would overflow an 8-bit opponent ID. Instead, a map trainer's **party-number byte** uses bit 7 as an optional opposite-gender presentation variant. Its lower seven bits remain the existing trainer-party index.
 
-The CSV is the canonical *design registry*, not executable class definitions. It is intentionally unreferenced by the ROM and introduces no new sprite assets. Thus no build behavior changes in this branch yet. This is a partial Phase 1 foundation, not a completed implementation.
+- Define `TRAINER_F_VARIANT | 1` as the last argument of an `object_event` to select an alternate presentation for the first party of its existing class.
+- The code stores the parsed selector in `wTrainerGenderVariant` (0 = original, 1 = opposite-gender). The class/opponent ID and `wTrainerNo` remain their original values.
+- Original map events contain no variant bit and retain their behavior.
+- The variant does not change party, payout, AI, encounter music or battle sprite until their display hooks are implemented.
+- All 25 approved variants are eligible for this encoding; the implementation does not consume new class IDs or add sprite art.
 
-## Implementer checklist
+Example of the final two arguments of a trainer map object: `OPP_BUG_CATCHER, TRAINER_F_VARIANT | 1`. (Requires a valid existing party #1 and appropriate event sprite.)
 
-- [ ] Decouple trainer class identity from the one-byte `OPP_ID_OFFSET` wire representation; preserve species classification, encounter and battle save semantics.
-- [ ] Add runtime male/female variant lookup, class names, original-portrait fallback, money, parties, AI and move-choice data.
-- [ ] Update trainer encounter music classification and preserve Jessie/James special pictures.
-- [ ] Validate trainer names within the fixed-length text limit (notably Bug Catcher, Pokémaniac, Bird Keeper).
-- [ ] Compile standard, debug and VC targets; battle-test an existing class and both genders of a new class.
-- [ ] Add new art and overworld mapping in later phases.
+## Compatibility and outstanding validation
 
-Original legacy `UNUSED_JUGGLER` and `CHIEF` remain untouched.
+The class ID encoding and legacy battle logic are unchanged. The 7-bit party-number range allows IDs 1–127; existing trainer parties must be audited against that limit, as must every alternate map assignment. The variant byte is WRAM, not persistent save data; individual trainers are reconstructed from map events. Special scripted opponents, battle intros, saved end-battle dialogue, and gendered naming require follow-on tests.
+
+Do not claim the 25 counterparts are player-visible yet. Next implementation: read `wTrainerGenderVariant` when preparing trainer names and sprite pointers, mapping all 25 approved entries to their alternate names and temporary base sprites. The fixed 12-character class-name storage needs a shortening policy for longer names.
+
+## Checklist
+- [x] Create approved design registry without renumbering existing classes.
+- [x] Encode alternate presentation in map trainer-party byte and separate runtime variant storage.
+- [ ] Wire alternate class names, original-sprite fallback, and trainer intro/music classification.
+- [ ] Make map assignments for both genders and verify trainer-party indices.
+- [ ] Run builds for regular/debug ROM and emulator battle tests.
+- [ ] Produce new battle and overworld artwork.
+
+The legacy `UNUSED_JUGGLER` and `CHIEF` entries remain untouched.
