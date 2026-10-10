@@ -61,6 +61,10 @@ def main():
     results=[]
     context={'call':None,'done':False,'started':False,'flags':None}
     regs=em.register_file
+    # Park execution in an inert WRAM JR -2, preventing Game Freak's
+    # real startup from corrupting CPU state between isolated calls.
+    em.memory[0xc000]=0x18
+    em.memory[0xc001]=0xfe
     def boot(ctx):
         # This ROM0 instruction is the emulator's CPU trampoline.
         if ctx['call'] is None:return
@@ -83,10 +87,11 @@ def main():
             ctx['flags']=regs.F
             ctx['done']=True
             ctx['call']=None
-            regs.PC=0x0100
+            regs.PC=0xc000
     em.hook_register(0,0x100,boot,context)
     def call(n,a=0,de=0):
         context.update(call=n,started=False,done=False,flags=None,a=a,de=de)
+        regs.PC=0x0100
         for _ in range(350):
             em.tick(1,render=False,sound=False)
             if context['done']:return context['flags']
