@@ -30,6 +30,18 @@ def main():
             for bank in range(4):
                 pyboy.memory[0x4000] = bank
                 originals.append(bytes(pyboy.memory[0xA000:0xC000]))
+            # Explicit bank-context round trip: select a legacy bank,
+            # access bank 4, then restore the selected bank before reading.
+            # This tests mapper behavior, not assembly register preservation.
+            previous_bank = 2
+            pyboy.memory[0x4000] = previous_bank
+            legacy_sentinel = pyboy.memory[0xA000 + 4095]
+            pyboy.memory[0x4000] = 4
+            pyboy.memory[0xA000 + 4095] = legacy_sentinel ^ 0xFF
+            pyboy.memory[0x4000] = previous_bank
+            assert pyboy.memory[0xA000 + 4095] == legacy_sentinel, (
+                "bank selection restoration did not recover legacy bank contents"
+            )
             pyboy.memory[0x4000] = 4
             before = bytes(pyboy.memory[0xA000:0xC000])
             offsets = (0, 31, 255, 511, 1023, 2047)
@@ -45,10 +57,11 @@ def main():
             pyboy.memory[0x4000] = 4
             for pos in offsets:
                 pyboy.memory[0xA000 + pos] = before[pos]
+            pyboy.memory[0xA000 + 4095] = before[4095] ^ 0xFF
             pyboy.memory[0x4000] = 0
             pyboy.memory[0x0000] = 0
             print("PASS: emulator mapper bank-4 writes did not modify banks 0..3")
-            print("NOT TESTED: caller-side context restore, legacy save migration, Pokémon serialization")
+            print("NOT TESTED: assembly routine execution, legacy save migration, Pokémon serialization")
         finally:
             pyboy.stop(save=False)
 
