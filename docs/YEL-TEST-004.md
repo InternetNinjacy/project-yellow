@@ -136,3 +136,10 @@ At branch c85714c8a27ac011549e3de09e17990acd35aed4 the latest SGB and isolated B
 - scripts/yel_test_004_sgb_live_integrity.py parses native SameBoy examine address rows fail-closed, demands complete byte coverage, checks exact species-specific 192-byte source tiles in VRAM, and checks at least four active references from both shadow and hardware OAM to the matched tile range. Each fixture archives a species-specific JSON report or the failing transcript.
 - These are NEW tests, NOT an observed SGB pass until the new CI completes and its logs/artifacts are checked. Emulator debugger command output formatting and live OAM state must be reconciled against actual workflow logs if failing. The source comparison is not a substitute for four-direction walk snapshots, sprite-background compositing, palette/border inspection, or physical hardware.
 - Keep PR #8 DRAFT, no approved artwork changes; the 0.45 room threshold remains intact.
+
+## SGB direction sampler continuation — 2026-10-10
+
+- Added scripts/yel_test_004_sgb_direction_gate.py to validate four facing states using symbol-resolved live SameBoy WRAM samples plus corresponding independent 512x448 SGB framebuffer PNGs. Requires movement state 3 and object coordinate changes; no screenshot-only direction inference.
+- Both species workflows now collect 40 live debugger-state/screenshot samples (wCurMap, facing, motion status, object X/Y) after VRAM/OAM snapshot, archive the frames, and invoke separate species-specific fail-closed direction gates. Increased job timeouts to 12 minutes for the additional captures.
+- Fixed initial regexp escaping in the new live integrity and directional parsers. The newly added verifier paths require observed completed CI before either can be marked PASS; frame/debugger scheduling and native SameBoy examine output may require repair after logs arrive.
+- SGB transparency/background compositing and palette/border correctness are not verified by this gate; physical hardware remains untested. Keep draft PR #8 unmerged, preserve artwork and recognition threshold 0.45.
