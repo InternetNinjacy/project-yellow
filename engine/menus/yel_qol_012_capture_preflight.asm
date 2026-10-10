@@ -101,3 +101,18 @@ Yel012FindCaptureBox::
 .rejected
 	scf
 	ret
+
+; Non-mutating bridge between the physical 30-slot scan and a future
+; capture transaction. Callers MUST NOT use this result as permission to
+; run legacy CopyBoxToOrFromSRAM / AutoSwitchBoxForCapture.
+;
+; Returns: carry clear, A = selected zero-based box index (0..11).
+;          carry set on uninitialized, corrupt, active transaction or full.
+; This deliberately leaves wCurrentBoxNum and the 20-slot WRAM window
+; untouched. The later live hook must establish a versioned 30-slot save,
+; atomically select the returned box and only then invoke
+; Yel012CaptureToBoxTransaction; it must not announce a caught Pokémon
+; before a successful physical commit.
+Yel012PreflightCaptureTarget::
+	call Yel012FindCaptureBox
+	ret
