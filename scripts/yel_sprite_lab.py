@@ -37,7 +37,7 @@ def case_for(manifest, ident):
         source = Path(c["sprite_source"])
         if source.is_absolute() or ".." in source.parts or not str(source).startswith("gfx/sprites/"):
             raise ValueError("Sprite source must live in gfx/sprites/")
-        if source.read_bytes().__len__() != 192:
+        if source.is_file() and len(source.read_bytes()) != 192:
             raise ValueError(f"{c['id']}: expected 192-byte 12-tile sprite source")
         location = c["test_location"]
         if not 0 <= location["map_id"] <= 255:
@@ -60,7 +60,7 @@ def prepare(c, out):
     if c["sprite_symbol"] != placeholder:
         source.write_text(data.replace(placeholder, c["sprite_symbol"], 1))
     out.mkdir(parents=True, exist_ok=True)
-    payload = {"case":c, "sprite_sha256":hashlib.sha256(Path(c["sprite_source"]).read_bytes()).hexdigest(),
+    payload = {"case":c, "sprite_sha256":hashlib.sha256(Path(c["sprite_source"]).read_bytes()).hexdigest() if Path(c["sprite_source"]).is_file() else None,
                "source_modified_only_for_ci":True, "verification":"NOT_RUN"}
     (out/"case_metadata.json").write_text(json.dumps(payload,indent=2)+"\n")
 
@@ -70,6 +70,8 @@ def validate(c, out, evidence):
     mode=c["hardware_mode"]
     if mode != "sgb-ntsc":
         raise AssertionError(f"{mode}: separate emulator adapter not implemented; no false PASS")
+    if not Path(c["sprite_source"]).is_file():
+        raise AssertionError("Generated 2bpp source missing after ROM compilation")
     prefix=c["species"].lower()
     required={
         "capture":(evidence/f"{prefix}_capture_report.json","SGB_MAP25_FRAME_CAPTURED"),
