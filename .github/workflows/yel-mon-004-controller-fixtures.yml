@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'tests/battle/probe_debug_controller_startup.py'
+      - 'tests/battle/probe_rat_debug_fight.py'
       - '.github/workflows/yel-mon-004-controller-fixtures.yml'
 jobs:
   debug-controller-fixture:
@@ -20,7 +21,7 @@ jobs:
       - name: Build DEBUG ROM with symbols
         run: make -j2 pokeyellow_debug.gbc
       - name: Check probe syntax
-        run: python -m py_compile tests/battle/probe_debug_controller_startup.py tests/battle/test_rat_move_replay.py
+        run: python -m py_compile tests/battle/probe_debug_controller_startup.py tests/battle/probe_rat_debug_fight.py tests/battle/test_rat_move_replay.py
       - name: Capture controller-only DEBUG startup diagnostics
         run: |
           mkdir -p artifacts/rat-debug-startup
@@ -28,10 +29,17 @@ jobs:
             --rom pokeyellow_debug.gbc \
             --symbols pokeyellow_debug.sym \
             --output artifacts/rat-debug-startup
+      - name: Probe real DEBUG Fight menu with controller only
+        run: |
+          mkdir -p artifacts/rat-debug-fight
+          python tests/battle/probe_rat_debug_fight.py \
+            --rom pokeyellow_debug.gbc \
+            --symbols pokeyellow_debug.sym \
+            --output artifacts/rat-debug-fight
       - name: Preserve evidence on both success and failure
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: yel-mon-004-debug-startup-controller-evidence
-          path: artifacts/rat-debug-startup/
+          path: artifacts/
           if-no-files-found: warn
