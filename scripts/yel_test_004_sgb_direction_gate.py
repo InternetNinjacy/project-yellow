@@ -13,7 +13,7 @@ from PIL import Image, ImageChops
 FACINGS = {0: "down", 4: "up", 8: "left", 12: "right"}
 # Each snapshot is five consecutively issued examine/1 commands.
 # SameBoy stdout owns its logfile: shell-side marker appends are not durable.
-READING = re.compile(r"(?im)^>\\s*([0-9a-f]{4}):\\s*([0-9a-f]{2})\\s*$")
+READING = re.compile(r"(?im)^>\s*([0-9a-f]{4}):\s*([0-9a-f]{2})\s*$")
 
 
 def main():
