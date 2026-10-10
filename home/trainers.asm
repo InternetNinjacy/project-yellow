@@ -228,11 +228,24 @@ InitBattleEnemyParameters::
 	ld [wCurOpponent], a
 	ld [wEnemyMonOrTrainerClass], a
 	cp OPP_ID_OFFSET
-	ld a, [wEngagedTrainerSet]
 	jr c, .noTrainer
+	; Trainer number bit 7 is presentation metadata, not party index.
+	; The opponent ID and class remain the original one-byte values.
+	ld a, [wEngagedTrainerSet]
+	ld b, a
+	and TRAINER_VARIANT_BIT
+	jr z, .baseTrainer
+	ld a, 1
+.baseTrainer
+	ld [wTrainerGenderVariant], a
+	ld a, b
+	and TRAINER_PARTY_INDEX_MASK
 	ld [wTrainerNo], a
 	ret
 .noTrainer
+	xor a
+	ld [wTrainerGenderVariant], a
+	ld a, [wEngagedTrainerSet]
 	ld [wCurEnemyLevel], a
 	ret
 
