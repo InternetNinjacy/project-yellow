@@ -67,9 +67,10 @@ and DEBUG encounter-room code are separate pending implementation gates.
 7. Independently complete normal-story release route.
 8. Preserve PR #6 as draft until capture, storage and persistence all PASS.
 
-**Current honest status:** navigation components committed, DEBUG capture
-station assembly NOT IMPLEMENTED, natural six-party route NOT IMPLEMENTED,
-seven matrix cases and game-native persistence NOT EXECUTED.
+**Current honest status:** navigation components committed; DEBUG capture
+station compiled and verified through wild-battle preconditions. Natural
+six-party route NOT IMPLEMENTED; actual catch and seven matrix cases,
+and game-native persistence NOT EXECUTED.
 
 ## DEBUG capture station implementation checkpoint
 
