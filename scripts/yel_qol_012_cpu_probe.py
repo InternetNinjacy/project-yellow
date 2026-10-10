@@ -113,7 +113,7 @@ def main():
         for _ in range(350):
             em.tick(1,render=False,sound=False)
             if context['done']:return context['flags']
-        raise AssertionError(f'{n}: CPU did not return to ROM0 trampoline; PC={regs.PC:04x} SP={regs.SP:04x} A={regs.A:02x} B={regs.B:02x} C={regs.C:02x} D={regs.D:02x} E={regs.E:02x} HL={regs.HL:04x} IE={em.memory[0xffff]:02x} IF={em.memory[0xff0f]:02x} interrupts={context[\"interrupts\"]}')
+        raise AssertionError(f'{n}: CPU did not return to ROM0 trampoline; PC={regs.PC:04x} SP={regs.SP:04x} A={regs.A:02x} B={regs.B:02x} C={regs.C:02x} D={regs.D:02x} E={regs.E:02x} HL={regs.HL:04x} IE={em.memory[0xffff]:02x} IF={em.memory[0xff0f]:02x} interrupts={context["interrupts"]}')
     def sram(bank,addr,length):
         return bytes(em.memory[bank,addr+i] for i in range(length))
     def set_sram(bank,addr,payload):
