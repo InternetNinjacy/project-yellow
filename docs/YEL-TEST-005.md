@@ -123,3 +123,21 @@ genuine history, while a fixture seeded afterward is synthetic in its PC
 contents. Keep separate manifests for natural replay, seeded storage
 matrix, and native save/restart/continue. Until all are executed, do not
 report YEL-QOL-011 as emulator-verified.
+
+## 2026-10-10: GitHub Actions input trace diagnostics
+
+First real instrumented per-step Actions run:
+https://github.com/InternetNinjacy/project-yellow/actions/runs/38052396716
+
+Infrastructure workflow completed PASS. Startup step probe at frames 0, 360,
+542, 724, 906, 1088 observed wPartyCount=0, wNumBagItems=0,
+wIsInBattle=0, and wCurMap=0 throughout. Therefore this trace did NOT
+reach a playable full-party state. Inspect per-step screenshots in evidence
+rather than inferring progress from changing screen hashes. SHA changes
+indicate visual changes only, not advancement to the overworld.
+
+An extended startup probe with repeated A confirmations is now being
+evaluated; these input presses are exploratory and do not qualify as a
+genuine complete six-Pokémon capture route or a passing game scenario.
+Keep the currently exercised ROM branch separate from YEL-QOL-011 PR #6:
+PR #6 behavior requires building its exact source revision before feature tests.
