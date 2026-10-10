@@ -61,24 +61,58 @@ Yel012WriteBoxRecord::
 Yel012TransferBoxRecord:
 	cp MONS_PER_BOX
 	jp nc, .invalid
-	push bc ; mode
-	push de ; buffer
+	push bc ; preserve read/write mode C
+	push de ; 55-byte source/destination buffer
 	push af ; slot
-	call GetBoxSRAMLocation ; HL=box base, B=SRAM bank
+	call GetBoxSRAMLocation ; HL physical box, B SRAM bank
 	call EnableSRAM
 	ld a, b
 	ld [rRAMB], a
 	pop af ; slot
-	pop de ; buffer
-	pop bc ; mode (C)
-	; SRAM access is now enabled. Each field restores the box base.
+	pop de ; record buffer
+	pop bc ; C is read/write mode
+	ld b, a ; physical slot index
+	ld a, [hl] ; stored occupancy
+	cp MONS_PER_BOX + 1
+	jr nc, .badOpen ; corrupt count
+	cp b
+	jr c, .badOpen ; slot beyond occupied records
+	jr z, .badOpen
+	; Verify the physical species header before allowing transfer.
+	push hl
+	push bc
+	inc hl
+	ld c, b
+	ld b, 0
+	add hl, bc
+	ld a, [hl] ; species at slot
+	pop bc
+	pop hl
+	and a
+	jr z, .badOpen
+	cp $ff
+	jr z, .badOpen
+	; The header and count remain unchanged; caller owns consistency
+	; between the record species and indexed species table.
+	ld a, b ; zero-based slot
 	YEL012_COPY_FIELD YEL012_SRAM_MON_OFFSET, BOXMON_STRUCT_LENGTH, BOXMON_STRUCT_LENGTH
 	YEL012_COPY_FIELD YEL012_SRAM_OT_OFFSET, NAME_LENGTH, NAME_LENGTH
 	YEL012_COPY_FIELD YEL012_SRAM_NICK_OFFSET, NAME_LENGTH, NAME_LENGTH
+	ld a, c
+	and a
+	jr z, .done
+	; Refresh the entire bank checksum and four per-box checksums.
+	ld hl, sBox1
+	ld bc, sBank2AllBoxesChecksum - sBox1
+	call CalcCheckSum
+	ld [sBank2AllBoxesChecksum], a
+	call CalcIndividualBoxCheckSums
+.done
 	call DisableSRAM
-	and a ; carry clear
+	and a
 	ret
+.badOpen
+	call DisableSRAM
 .invalid
 	scf
 	ret
-
