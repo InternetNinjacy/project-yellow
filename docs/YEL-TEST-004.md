@@ -49,3 +49,10 @@ Use an actual SGB-capable renderer, rather than PyBoy's CGB mode, for the remain
 - Actual SameBoy SGB-NTSC screenshot from GitHub Actions run 38010740129 proves the existing DEBUG menu progression reached Red's House upstairs (the player, Pikachu and second-floor layout are on screen). Earlier startup-only checks had not reached the gameplay map.
 - The current unresolved navigation is the upstairs stairs/warp into Red's House 1F where the DEBUG Ivysaur station is installed. We added arrow-key steps and additional before/after screenshots in the SGB CI job. The newest run must be inspected before recording this warp as successful.
 - The SGB species palette gate stays pending until the real in-map Ivysaur and independently isolated Bulbasaur have visible, archived screenshots. Startup-border or house-upstairs evidence is not species color verification.
+
+## SGB navigation checkpoint (continued 2026-10-09)
+
+- Real SameBoy `sgb-ntsc` CI run https://github.com/InternetNinjacy/project-yellow/actions/runs/38011210886: successful emulator startup, DEBUG menu row selection, DEBUG new-game intro dismissal and overworld screenshot capture. Screenshots `sgb_lab_attempt.png`, `sgb_upper_right.png`, `sgb_downstairs_attempt.png` archive the navigation attempt.
+- This demonstrates progress past the title/menu into the in-game environment, but **not yet a positively identified Red's House 1F lab or Bulbasaur/Ivysaur**. The unattended GUI key holds are insufficient for a source-confirmed map-position assertion. Do not label this as SGB species rendering QA.
+- The existing PyBoy DMG/GBC fixture reaches the lab by real overworld movement from initial map 0 `(y=6,x=5)` with a single `up` transition into Red's House 1F `(y=7,x=2)`; SameBoy GUI navigation presently differs in timing and requires independently validated in-map position or screenshot recognition.
+- Next: make SameBoy control deterministic (game-frame-aware input or stable savestate injection), assert a lab marker or player/map coordinates before screenshot capture, then stage separate Bulbasaur/Ivysaur SGB sprite fixtures. Current DMG/GBC approvals remain unchanged.
