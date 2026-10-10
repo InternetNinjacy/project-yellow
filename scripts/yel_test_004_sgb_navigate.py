@@ -72,8 +72,7 @@ def main():
     if reference.size != (160, 144):
         raise ValueError("Reference must be native 160x144 game pixels")
     # This is a bounded image-feedback walk, not a 'wait N seconds then PASS'.
-    # Starting upstairs, head toward the staircase at the upper-right.
-    steps = ["Right"] * 7 + ["Up"] * 9 + ["Left"] * 2 + ["Up"] * 4
+    # Source-grounded: DEBUG new game begins on PALLET_TOWN ($00) at\n    # (y=6, x=5), not upstairs. The existing independent PyBoy route\n    # enters REDS_HOUSE_1F via ONE up input; do not wander upstairs.\n    steps = ["Up", "Up", "Up", "Left", "Up", "Right", "Up"]
     evidence = []
     for i, direction in enumerate(["initial"] + steps):
         if direction != "initial":
