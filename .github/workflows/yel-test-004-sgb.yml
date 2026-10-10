@@ -125,7 +125,6 @@ jobs:
               import -window "$wid" "test-results/sgb-smoke/directions/direction_$(printf %02d "$i").png"
               kill -INT "$pid"
               sleep 0.22
-              printf "YEL_FRAME_%d\n" "$i" >>test-results/sgb-smoke/sameboy.log
               printf "examine/1 \$%s\nexamine/1 \$%s\nexamine/1 \$%s\nexamine/1 \$%s\nexamine/1 \$%s\n" \
                 "$map_addr" "$facing_addr" "$status_addr" "$xpos_addr" "$ypos_addr" >&3
               sleep 0.32
@@ -171,6 +170,7 @@ jobs:
             --species Ivysaur \
             --log test-results/sgb-smoke/sameboy.log \
             --frames test-results/sgb-smoke/directions \
+            --sym pokeyellow_debug.sym \
             --out test-results/sgb-smoke/ivysaur_direction_report.json
       - name: Evaluate SGB OBJ background compositing for Ivysaur
         run: |
