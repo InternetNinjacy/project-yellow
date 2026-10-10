@@ -1,0 +1,46 @@
+name: YEL-TEST-005 DEBUG capture station build
+on:
+  push:
+    branches: [yel-test-005-shared-emulator]
+    paths:
+      - 'engine/debug/debug_party.asm'
+      - '.github/workflows/yel-test-005-debug-station.yml'
+  pull_request:
+    paths:
+      - 'engine/debug/debug_party.asm'
+      - '.github/workflows/yel-test-005-debug-station.yml'
+  workflow_dispatch:
+jobs:
+  build-debug-station:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: gbdev/rgbds
+          ref: v1.0.3
+          path: .toolchain/rgbds
+      - name: Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bison libpng-dev pkg-config build-essential
+          python -m pip install 'pyboy==2.6.0' Pillow
+      - name: Build pinned RGBDS
+        working-directory: .toolchain/rgbds
+        run: sudo make -j2 install
+      - name: Build release and DEBUG ROMs
+        run: |
+          rm -rf .toolchain
+          make -j2 pokeyellow.gbc pokeyellow_debug.gbc
+          mkdir -p test-results/yel-test-005-debug
+          sha256sum pokeyellow.gbc pokeyellow_debug.gbc pokeyellow_debug.sym > test-results/yel-test-005-debug/hashes.txt
+      - name: Assert debug-mode first-stage boot
+        run: |
+          python scripts/yel_emulator_smoke.py --rom pokeyellow_debug.gbc --out test-results/yel-test-005-debug/boot
+      - name: Upload manifests and screenshots only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yel-test-005-debug-station-build
+          path: test-results/yel-test-005-debug/
