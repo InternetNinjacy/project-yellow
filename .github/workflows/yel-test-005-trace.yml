@@ -6,6 +6,10 @@ on:
       - 'tests/test_yel_test_005_*.py'
       - 'scripts/yel_test_005_capture_audit.py'
       - 'scripts/yel_test_005_record.py'
+      - 'scripts/yel_test_005_navigation.py'
+      - 'scripts/yel_test_005_navigate.py'
+      - 'scripts/yel_test_005_navigation.py'
+      - 'scripts/yel_test_005_navigate.py'
       - '.github/workflows/yel-test-005-trace.yml'
   pull_request:
     paths:
