@@ -275,6 +275,36 @@ def main():
         flag=call('Yel012FindCaptureBox')
         assert flag&16,('uninitialized storage accepted',flag)
         results.append({'mode':'physical-selector-failure-cases','status':'PASS_ASSEMBLY_CPU'})
+        # Check bank-boundary availability and rejection without altering
+        # physical SRAM. The actual capture UI is NOT exercised here.
+        for active,free,label in ((3,4,'bank2-to-3'),(7,8,'bank3-to-4'),
+                                  (11,0,'bank4-to-2-wrap')):
+            for idx in range(12):
+                set_sram(2+idx//4,get('sBox1')+(idx%4)*BOX,all_full)
+            set_count(free,29)
+            snapshot=[sram(2+i//4,get('sBox1')+(i%4)*BOX,BOX) for i in range(12)]
+            em.memory[get('wCurrentBoxNum')]=active|0x80
+            flag=call('Yel012FindCaptureBox')
+            assert flag&16==0,(label,'boundary rejected',flag)
+            assert regs.A==free,(label,'wrong destination',regs.A,free)
+            assert all(sram(2+i//4,get('sBox1')+(i%4)*BOX,BOX)==snapshot[i]
+                       for i in range(12)),(label,'preflight mutated physical storage')
+            results.append({'mode':'boundary-selector-'+label,
+                            'status':'PASS_ASSEMBLY_CPU_PRECHECK_ONLY'})
+        # Both version bytes must be valid, even if every box has space.
+        for idx in range(12):
+            set_sram(2+idx//4,get('sBox1')+(idx%4)*BOX,seed(0,idx))
+        em.memory[get('wCurrentBoxNum')]=0x80
+        set_sram(5,get('sYel012StorageVersionCheck'),bytes([0]))
+        flag=call('Yel012FindCaptureBox')
+        assert flag&16,('invalid version accepted',flag)
+        set_sram(5,get('sYel012StorageVersionCheck'),bytes([0xfe]))
+        set_sram(5,get('sYel012StorageVersion'),bytes([0]))
+        flag=call('Yel012FindCaptureBox')
+        assert flag&16,('missing version accepted',flag)
+        set_sram(5,get('sYel012StorageVersion'),bytes([1]))
+        results.append({'mode':'corrupt-version-fail-closed',
+                        'status':'PASS_ASSEMBLY_CPU_PRECHECK_ONLY'})
         # Explicit fresh-game initializer CPU test, after the selector
         # matrix. This intentionally overwrites test-only seeded SRAM.
         flag=call('Yel012InitializeFreshStorage')
