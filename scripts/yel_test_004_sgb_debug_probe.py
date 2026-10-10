@@ -9,6 +9,7 @@ import argparse
 import json
 import os
 import pty
+import re
 import select
 import signal
 import subprocess
@@ -90,12 +91,18 @@ def main():
             log += read_for(master, 1.5)
         (args.out / "debugger_transcript.txt").write_text(log)
         (args.out / "symbols.json").write_text(json.dumps(addrs, indent=2)+"\n")
-        if "wCurMap" in log and "wXCoord" in log and "wYCoord" in log:
-            pass
-        # In this first probe, demand output after each examine command.
-        if log.lower().count("examine/1") < 3 and log.lower().count("$d") < 3:
-            raise AssertionError("SameBoy debugger did not echo/read all memory commands")
-        print("SGB debugger probe collected three RAM examinations", flush=True)
+        snapshot = {}
+        for name, address in addrs.items():
+            match = re.search(rf"(?im)^\\s*{address:04x}:\\s*([0-9a-f]{{2}})\\b", log)
+            if not match:
+                raise AssertionError(f"SameBoy did not return a memory value for {name} at ${address:04x}")
+            snapshot[name] = int(match.group(1), 16)
+        (args.out / "live_coordinates.json").write_text(
+            json.dumps({"source": "SameBoy sgb-ntsc native debugger",
+                        "gameplay_state_unverified": True,
+                        "snapshot": snapshot,
+                        "addresses": {k: f"0x{v:04x}" for k, v in addrs.items()}}, indent=2) + "\\n")
+        print(f"SGB debugger values: {snapshot}", flush=True)
     finally:
         process.terminate()
         try: process.wait(timeout=3)
