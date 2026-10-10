@@ -35,6 +35,15 @@ jobs:
         run: make -j2 pokeyellow_debug.gbc
       - name: Verify SRAM bank-4 isolation in PyBoy
         run: python tests/battle/test_doubles_sram_isolation.py --rom pokeyellow_debug.gbc
+      - name: Check compatibility test syntax and fixture prerequisites
+        run: |
+          python -m py_compile tests/battle/test_legacy_save_compatibility.py
+          python - <<'PY'
+          from pathlib import Path
+          source = Path("tests/battle/test_legacy_save_compatibility.py").read_text()
+          assert "Real 32KiB legacy save fixture is required" in source
+          print("Legacy save compatibility fixture remains mandatory; no false pass.")
+          PY
       - name: Report battle fixture readiness
         run: |
           if [ -f tests/battle/fixtures.json ]; then
