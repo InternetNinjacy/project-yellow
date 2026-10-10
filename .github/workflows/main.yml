@@ -77,6 +77,23 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
 
+      - name: YEL-QOL-012 discover actual DEBUG boot inputs
+        run: |
+          mkdir -p test-results/yel-qol-012
+          python3 scripts/yel_qol_012_discover_debug_boot.py \
+            --rom pokeyellow_debug.gbc \
+            --sym pokeyellow_debug.sym \
+            --out test-results/yel-qol-012/debug-boot-controller.json
+
+      - name: Archive DEBUG boot controller trace
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yel-qol-012-debug-controller-trace
+          path: test-results/yel-qol-012/debug-boot-controller.json
+          if-no-files-found: warn
+          retention-days: 30
+
       - name: Archive allowlisted YEL-QOL-012 CPU evidence
         if: always()
         uses: actions/upload-artifact@v4
