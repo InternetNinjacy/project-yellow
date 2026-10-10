@@ -48,3 +48,27 @@ Yel012CaptureToBoxTransaction::
 .fail
 	scf
 	ret
+
+; Execute a capture insertion against the first valid physical target
+; without invoking legacy 1122-byte whole-box swaps. The box selection
+; is temporary: preserve player-visible current box and legacy window.
+; Caller MUST gate caught text, Pokédex, and ball consumption on carry.
+; Not a replacement for the full live ItemUseBall state machine yet.
+Yel012CaptureToAvailableBox::
+	call Yel012FindCaptureBox
+	ret c
+	ld b, a
+	ld a, [wCurrentBoxNum]
+	push af
+	ld a, b
+	set BIT_HAS_CHANGED_BOXES, a
+	ld [wCurrentBoxNum], a
+	call Yel012CaptureToBoxTransaction
+	; Save the transaction return flags before restoring selection.
+	push af
+	pop bc
+	pop af
+	ld [wCurrentBoxNum], a
+	push bc
+	pop af
+	ret
