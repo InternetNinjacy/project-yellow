@@ -5,7 +5,7 @@ on:
 jobs:
   sgb-bulbasaur:
     runs-on: ubuntu-latest
-    timeout-minutes: 7
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
@@ -109,6 +109,32 @@ jobs:
             test -n "$shadow_addr"
             printf "examine/6144 \$8000\nexamine/160 \$fe00\nexamine/160 %s\n" "$shadow_addr" >&3
             sleep 6
+            # The live debugger is paused after the VRAM/OAM dump.
+            # Sample independently rendered SGB frames with matching WRAM
+            # directions/step statuses. Do not substitute GBC screenshots.
+            mkdir -p test-results/sgb-smoke/directions
+            map_addr=$(awk '"'"'$2=="wCurMap" {split($1,a,":"); print a[2]; exit}'"'"' pokeyellow_debug.sym)
+            state1=$(awk '"'"'$2=="wSprite01StateData1" {split($1,a,":"); print a[2]; exit}'"'"' pokeyellow_debug.sym)
+            state2=$(awk '"'"'$2=="wSprite01StateData2" {split($1,a,":"); print a[2]; exit}'"'"' pokeyellow_debug.sym)
+            test -n "$map_addr" && test -n "$state1" && test -n "$state2"
+            facing_addr=$(printf "%04x" $((16#$state1 + 9)))
+            status_addr=$(printf "%04x" $((16#$state1 + 1)))
+            xpos_addr=$(printf "%04x" $((16#$state2 + 4)))
+            ypos_addr=$(printf "%04x" $((16#$state2 + 5)))
+            printf "continue\n" >&3
+            sleep 1
+            for i in $(seq 0 39); do
+              import -window "$wid" "test-results/sgb-smoke/directions/direction_$(printf %02d "$i").png"
+              kill -INT "$pid"
+              sleep 0.22
+              printf "YEL_FRAME_%d\n" "$i" >>test-results/sgb-smoke/sameboy.log
+              printf "examine/1 \$%s\nexamine/1 \$%s\nexamine/1 \$%s\nexamine/1 \$%s\nexamine/1 \$%s\n" \
+                "$map_addr" "$facing_addr" "$status_addr" "$xpos_addr" "$ypos_addr" >&3
+              sleep 0.32
+              printf "continue\n" >&3
+              sleep 0.55
+            done
+            sleep 2
             kill $pid || true
             wait $pid || true
           '
@@ -122,6 +148,13 @@ jobs:
             --sprite-2bpp gfx/sprites/bulbasaur.2bpp \
             --transcript test-results/sgb-smoke/sameboy.log \
             --out test-results/sgb-smoke/bulbasaur_live_integrity.json
+      - name: Verify independent live SGB directions and walking for Bulbasaur
+        run: |
+          python scripts/yel_test_004_sgb_direction_gate.py \
+            --species Bulbasaur \
+            --log test-results/sgb-smoke/sameboy.log \
+            --frames test-results/sgb-smoke/directions \
+            --out test-results/sgb-smoke/bulbasaur_direction_report.json
       - name: Audit distinct approved 2bpp sprite source assets
         run: |
           python scripts/yel_test_004_sgb_source_integrity.py \
