@@ -18,12 +18,12 @@ BaseSpecialStats::
 	db 20, 20 ; 10 caterpie
 	db 25, 25 ; 11 metapod
 	db 80, 80 ; 12 butterfree
-	db 20, 20 ; 13 weedle
-	db 25, 25 ; 14 kakuna
-	db 45, 80 ; 15 beedrill
-	db 35, 35 ; 16 pidgey
-	db 50, 50 ; 17 pidgeotto
-	db 70, 70 ; 18 pidgeot
+	db 30, 40 ; 13 weedle
+	db 30, 80 ; 14 kakuna
+	db 50, 80 ; 15 beedrill
+	db 40, 45 ; 16 pidgey
+	db 55, 60 ; 17 pidgeotto
+	db 75, 80 ; 18 pidgeot
 	db 25, 35 ; 19 rattata
 	db 50, 70 ; 20 raticate
 	db 31, 31 ; 21 spearow
