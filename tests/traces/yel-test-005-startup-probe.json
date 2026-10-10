@@ -313,58 +313,34 @@
     "after": 90
   },
   {
-    "button": "b",
-    "frames": 2,
-    "after": 60
+    "frames": 420
   },
   {
-    "button": "b",
-    "frames": 2,
-    "after": 60
-  },
-  {
-    "button": "right",
+    "button": "a",
     "frames": 8,
-    "after": 16
+    "after": 420
   },
   {
-    "button": "right",
+    "button": "start",
     "frames": 8,
-    "after": 16
+    "after": 420
   },
   {
-    "button": "right",
+    "button": "a",
     "frames": 8,
-    "after": 16
+    "after": 420
   },
   {
-    "button": "right",
-    "frames": 8,
-    "after": 16
+    "frames": 900
   },
   {
-    "button": "up",
+    "button": "down",
     "frames": 8,
-    "after": 16
+    "after": 80
   },
   {
-    "button": "up",
+    "button": "left",
     "frames": 8,
-    "after": 16
-  },
-  {
-    "button": "up",
-    "frames": 8,
-    "after": 16
-  },
-  {
-    "button": "up",
-    "frames": 8,
-    "after": 16
-  },
-  {
-    "button": "up",
-    "frames": 8,
-    "after": 16
+    "after": 80
   }
 ]
