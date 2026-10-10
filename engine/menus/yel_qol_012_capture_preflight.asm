@@ -116,3 +116,88 @@ Yel012FindCaptureBox::
 Yel012PreflightCaptureTarget::
 	call Yel012FindCaptureBox
 	ret
+
+
+; Explicit new-game-only storage initializer. Never call from the ball
+; path, Continue, or a generic "missing marker" recovery path.
+; SRAM banks 2..4 contain twelve physical 1682-byte boxes.
+DEF YEL012_STORAGE_VERSION EQU 1
+DEF YEL012_STORAGE_VERSION_CHECK EQU $fe
+
+Yel012InitializeFreshStorage::
+	; Invalidate the marker BEFORE modifying any physical boxes.
+	ld a, 5
+	call OpenSRAM
+	xor a
+	ld [sYel012StorageVersion], a
+	ld [sYel012StorageVersionCheck], a
+	ld [sYel012TransactionStatus], a
+	ld [sYel012TransactionPagePending], a
+	call CloseSRAM
+	ld c, 0
+.boxLoop
+	push bc
+	ld a, c
+	call Yel012ResolvePhysicalBox
+	ld a, b
+	call OpenSRAM
+	; Fully clear the box, not just its count and sentinel, so that
+	; future checksum validation cannot depend on old SRAM bytes.
+	ld bc, YEL012_BOX_SIZE
+	push hl
+.clear
+	xor a
+	ld [hli], a
+	dec bc
+	ld a, b
+	or c
+	jr nz, .clear
+	pop hl
+	inc hl
+	ld [hl], $ff
+	call CloseSRAM
+	pop bc
+	inc c
+	ld a, c
+	cp NUM_BOXES
+	jr c, .boxLoop
+	ld b, 2
+.checksumBanks
+	push bc
+	ld a, b
+	call OpenSRAM
+	call Yel012RefreshPhysicalChecksums
+	call CloseSRAM
+	pop bc
+	inc b
+	ld a, b
+	cp 5
+	jr c, .checksumBanks
+	ld a, 5
+	call OpenSRAM
+	ld a, YEL012_STORAGE_VERSION
+	ld [sYel012StorageVersion], a
+	ld a, YEL012_STORAGE_VERSION_CHECK
+	ld [sYel012StorageVersionCheck], a
+	call CloseSRAM
+	and a
+	ret
+
+; Strict version predicate: carry clear only for explicitly initialized
+; layout. An absent/bad version is never a request to erase storage.
+Yel012CheckStorageVersion::
+	ld a, 5
+	call OpenSRAM
+	ld a, [sYel012StorageVersion]
+	cp YEL012_STORAGE_VERSION
+	jr nz, .bad
+	ld a, [sYel012StorageVersionCheck]
+	cp YEL012_STORAGE_VERSION_CHECK
+	jr nz, .bad
+	call CloseSRAM
+	and a
+	ret
+.bad
+	call CloseSRAM
+	scf
+	ret
