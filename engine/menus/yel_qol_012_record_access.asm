@@ -60,7 +60,7 @@ Yel012WriteBoxRecord::
 
 Yel012TransferBoxRecord:
 	cp MONS_PER_BOX
-	jr nc, .invalid
+	jp nc, .invalid
 	push bc ; mode
 	push de ; buffer
 	push af ; slot
