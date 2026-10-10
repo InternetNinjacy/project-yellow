@@ -149,7 +149,7 @@ DebugUnusedList: ; unreferenced
 	db TM_SOLARBEAM, 10
 	db TM_DRAGON_RAGE, 10
 	db TM_MIMIC, 10
-	db TM_BIDE, 10
+	db TM_POISON_FANG, 10
 	db TM_METRONOME, 10
 	db TM_SELFDESTRUCT, 10
 	db TM_SWIFT, 10
