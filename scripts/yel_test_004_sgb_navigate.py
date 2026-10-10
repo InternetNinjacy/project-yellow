@@ -31,7 +31,9 @@ def screenshot(wid, path):
     # is rendered at 2x within the 256x224 SNES display.
     if image.size != (512, 448):
         raise AssertionError(f"Unexpected SGB framebuffer {image.size}")
-    return image.crop((96, 80, 416, 368)).resize((160, 144))
+    view = image.crop((96, 80, 416, 368)).resize((160, 144))
+    view.save(path.with_name(path.stem + "_game.png"))
+    return view
 
 
 def fingerprint(im):
@@ -90,6 +92,19 @@ def main():
         path = args.out / f"position_{i:02d}.png"
         view = screenshot(args.window_id, path)
         score = likeness(view, reference)
+        # A black frame at a doorway can be an actual map transition.
+        # Do not score a transient fade as final navigation failure.
+        if i == len(steps) and score < args.threshold:
+            for wait_index in range(1, 9):
+                time.sleep(1)
+                waited = screenshot(args.window_id, args.out / f"postwarp_{wait_index:02d}.png")
+                new_score = likeness(waited, reference)
+                evidence.append({"step": i, "input": f"postwarp_wait_{wait_index}", "room_likeness": round(new_score, 5), "screenshot": f"postwarp_{wait_index:02d}.png"})
+                if new_score >= args.threshold:
+                    waited.save(args.out / "lab_confirmed_160x144.png")
+                    (args.out / "navigation.json").write_text(json.dumps({"status":"LAB_SCREEN_CONFIRMED","threshold":args.threshold,"steps":evidence},indent=2)+"\n")
+                    print(f"VERIFIED SGB Red House 1F after warp: {new_score:.5f}", flush=True)
+                    return
         evidence.append({"step": i, "input": direction, "room_likeness": round(score, 5), "screenshot": path.name})
         if score >= args.threshold:
             view.save(args.out / "lab_confirmed_160x144.png")
