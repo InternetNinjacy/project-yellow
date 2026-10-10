@@ -703,24 +703,36 @@ TickProjectYellowScreens:
 	and a
 	jr z, .playerLight
 	dec [hl]
+	jr nz, .playerLight
+	ld hl, wPlayerBattleStatus3
+	res HAS_REFLECT_UP, [hl]
 .playerLight
 	ld hl, wPlayerLightScreenTurns
 	ld a, [hl]
 	and a
 	jr z, .enemyReflect
 	dec [hl]
+	jr nz, .enemyReflect
+	ld hl, wPlayerBattleStatus3
+	res HAS_LIGHT_SCREEN_UP, [hl]
 .enemyReflect
 	ld hl, wEnemyReflectTurns
 	ld a, [hl]
 	and a
 	jr z, .enemyLight
 	dec [hl]
+	jr nz, .enemyLight
+	ld hl, wEnemyBattleStatus3
+	res HAS_REFLECT_UP, [hl]
 .enemyLight
 	ld hl, wEnemyLightScreenTurns
 	ld a, [hl]
 	and a
 	ret z
 	dec [hl]
+	ret nz
+	ld hl, wEnemyBattleStatus3
+	res HAS_LIGHT_SCREEN_UP, [hl]
 	ret
 
 CheckNumAttacksLeft:
