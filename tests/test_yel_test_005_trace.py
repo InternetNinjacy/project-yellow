@@ -20,6 +20,17 @@ class TraceValidation(unittest.TestCase):
             {"button": "up", "frames": 8},
         ])
 
+    def test_debug_chord(self):
+        MODULE.validate([{"buttons": ["up", "select", "b"], "frames": 3, "after": 90}])
+
+    def test_reject_duplicate_chord(self):
+        with self.assertRaises(ValueError):
+            MODULE.validate([{"buttons": ["a", "a"], "frames": 2}])
+
+    def test_reject_mixed_single_and_multi(self):
+        with self.assertRaises(ValueError):
+            MODULE.validate([{"button": "a", "buttons": ["b"], "frames": 2}])
+
     def test_rejects_empty(self):
         with self.assertRaises(ValueError):
             MODULE.validate([])
