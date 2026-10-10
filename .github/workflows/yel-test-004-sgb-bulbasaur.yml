@@ -140,6 +140,12 @@ jobs:
           '
           test -s test-results/sgb-smoke/sameboy.log
           python scripts/yel_test_004_sgb_capture_gate.py --species Bulbasaur --log test-results/sgb-smoke/sameboy.log --frame test-results/sgb-smoke/bulbasaur_map25_candidate.png --reference test-results/sgb-reference/lab_entry.png --out test-results/sgb-smoke/bulbasaur_capture_report.json
+      - name: Verify Bulbasaur SGB border and viewport
+        run: |
+          python scripts/yel_test_004_sgb_border_gate.py \
+            --species Bulbasaur \
+            --frame test-results/sgb-smoke/bulbasaur_map25_candidate.png \
+            --out test-results/sgb-smoke/bulbasaur_border_report.json
       - name: Verify live SGB VRAM and OAM for Bulbasaur
         run: |
           python scripts/yel_test_004_sgb_live_integrity.py \
