@@ -22,6 +22,12 @@ def main():
     # A true no-op (all three fields equal) is the actual failure case.
     if values[0] == values[1]:
         raise AssertionError(f"SameBoy debug samples did not show movement or warp: {values}")
+    # ROM map constants: REDS_HOUSE_1F=$25 and REDS_HOUSE_2F=$26.
+    # Confirm the two samples are the actual lab map and upstairs map.
+    # The second sample follows the old GUI navigation routine, which walks
+    # out of the lab. This establishes the mapping, not visual sprite QA.
+    if values[0]["map_id"] != 0x25 or values[1]["map_id"] != 0x26:
+        raise AssertionError(f"Unexpected map sequence, expected Red House 1F -> 2F: {values}")
     a.out.write_text(json.dumps({"status":"SGB_LIVE_MAP_XY_READ_PASS","samples":values,"map_changed":values[0]["map_id"] != values[1]["map_id"],"source":"SameBoy debugger FIFO, symbol-resolved WRAM","sgb_species_visual_status":"PENDING"},indent=2)+"\n")
     print(f"LIVE_MAP_XY_PASS samples={values}")
 
