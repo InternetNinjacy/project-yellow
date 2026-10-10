@@ -102,6 +102,11 @@ Yel012BeginTransaction::
 	jr c, .failed
 	ld a, 5
 	call OpenSRAM
+	ld a, [wCurrentBoxNum]
+	and BOX_NUM_MASK
+	ld [sYel012TransactionBox], a
+	xor a
+	ld [sYel012TransactionPagePending], a
 	ld a, 1
 	ld [sYel012TransactionStatus], a
 	call Yel012RestoreWindow
@@ -188,6 +193,32 @@ MACRO YEL012_STAGE_FIELD
 .done\@
 ENDM
 
+; Save a validated fixed-size staging page to the bank-5 shadow.
+; Physical box remains unchanged until Yel012CommitTransaction.
+MACRO YEL012_WRITE_FIELD
+	ld de, sYel012TransactionShadow + \1
+	ld a, [sYel012TransactionPage]
+	and a
+	jr z, .start\@
+	ld hl, 20 * \2
+	add hl, de
+	ld d, h
+	ld e, l
+.start\@
+	ld hl, \3
+	ld a, [wBoxCount]
+.loop\@
+	and a
+	jr z, .done\@
+	push af
+	ld bc, \2
+	call CopyData
+	pop af
+	dec a
+	jr .loop\@
+.done\@
+ENDM
+
 Yel012StageWindow::
 	cp 0
 	jr z, .indexOK
@@ -221,6 +252,8 @@ Yel012StageWindow::
 	YEL012_STAGE_FIELD YEL012_SRAM_MON_OFFSET, BOXMON_STRUCT_LENGTH, wBoxMons
 	YEL012_STAGE_FIELD YEL012_SRAM_OT_OFFSET, NAME_LENGTH, wBoxMonOT
 	YEL012_STAGE_FIELD YEL012_SRAM_NICK_OFFSET, NAME_LENGTH, wBoxMonNicks
+	ld a, 1
+	ld [sYel012TransactionPagePending], a
 	call CloseSRAM
 	and a
 	ret
@@ -229,6 +262,78 @@ Yel012StageWindow::
 .invalidClose
 	call CloseSRAM
 .invalid
+	scf
+	ret
+
+; Commit a previously staged 0..19 or 20..29 page into bank-5
+; shadow. No physical SRAM write occurs. All validation happens before
+; any shadow bytes are changed, preserving the full rollback original.
+Yel012CommitStagedWindow::
+	ld a, 5
+	call OpenSRAM
+	ld a, [sYel012TransactionStatus]
+	cp 1
+	jp nz, .reject
+	ld a, [sYel012TransactionPagePending]
+	cp 1
+	jp nz, .reject
+	ld a, [sYel012TransactionPage]
+	ld b, a
+	ld a, [sYel012TransactionShadow]
+	sub b
+	jp c, .reject
+	cp 20
+	jr c, .expectedCount
+	ld a, 20
+.expectedCount
+	ld b, a
+	ld a, [wBoxCount]
+	cp b
+	jp nz, .reject
+	; Require the window's species list to match each Pokémon record.
+	ld hl, wBoxSpecies
+	ld de, wBoxMons
+	ld a, b
+.checkNext
+	and a
+	jr z, .sentinel
+	push af
+	ld a, [hli]
+	and a
+	jr z, .badItem
+	cp $ff
+	jr z, .badItem
+	cp [de]
+	jr nz, .badItem
+	push hl
+	ld hl, BOXMON_STRUCT_LENGTH
+	add hl, de
+	ld d, h
+	ld e, l
+	pop hl
+	pop af
+	dec a
+	jr .checkNext
+.badItem
+	pop af
+	jp .reject
+.sentinel
+	ld a, [hl]
+	cp $ff
+	jr nz, .reject
+	YEL012_WRITE_FIELD 1, 1, wBoxSpecies
+	YEL012_WRITE_FIELD YEL012_SRAM_MON_OFFSET, BOXMON_STRUCT_LENGTH, wBoxMons
+	YEL012_WRITE_FIELD YEL012_SRAM_OT_OFFSET, NAME_LENGTH, wBoxMonOT
+	YEL012_WRITE_FIELD YEL012_SRAM_NICK_OFFSET, NAME_LENGTH, wBoxMonNicks
+	xor a
+	ld [sYel012TransactionPagePending], a
+	call Yel012ValidateShadow
+	push af
+	call CloseSRAM
+	pop af
+	ret
+.reject
+	call CloseSRAM
 	scf
 	ret
 
@@ -353,6 +458,9 @@ Yel012PrepareCaptureInsert::
 	call OpenSRAM
 	ld a, [sYel012TransactionStatus]
 	cp 1
+	jr nz, .failPop
+	ld a, [sYel012TransactionPagePending]
+	and a
 	jr nz, .failPop
 	ld a, [sYel012TransactionShadow]
 	cp MONS_PER_BOX
@@ -482,6 +590,9 @@ Yel012CommitTransaction::
 	ld b, a
 	ld a, [sYel012TransactionBox]
 	cp b
+	jp nz, .invalid
+	ld a, [sYel012TransactionPagePending]
+	and a
 	jp nz, .invalid
 	call Yel012ValidateShadow
 	jp c, .invalid
