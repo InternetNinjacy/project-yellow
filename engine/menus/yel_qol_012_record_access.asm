@@ -10,10 +10,10 @@ MACRO YEL012_COPY_FIELD
 	ld bc, \2
 .loop\@
 	and a
-	jr z, .ready\@
+	jp z, .ready\@
 	add hl, bc
 	dec a
-	jr .loop\@
+	jp .loop\@
 .ready\@
 	pop bc ; C mode
 	push af
@@ -21,17 +21,17 @@ MACRO YEL012_COPY_FIELD
 .bytes\@
 	ld a, c
 	and a
-	jr nz, .write\@
+	jp nz, .write\@
 	ld a, [hli]
 	ld [de], a
-	jr .advance\@
+	jp .advance\@
 .write\@
 	ld a, [de]
 	ld [hli], a
 .advance\@
 	inc de
 	dec b
-	jr nz, .bytes\@
+	jp nz, .bytes\@
 	pop af
 	pop hl
 	pop af
@@ -52,7 +52,7 @@ ASSERT YEL012_SRAM_NICK_OFFSET + MONS_PER_BOX * NAME_LENGTH == 1682
 ; Returns carry on invalid index. Clobbers AF/BC/DE/HL.
 Yel012ReadBoxRecord::
 	ld c, 0
-	jr Yel012TransferBoxRecord
+	jp Yel012TransferBoxRecord
 
 Yel012WriteBoxRecord::
 	ld c, 1
@@ -74,10 +74,10 @@ Yel012TransferBoxRecord:
 	ld b, a ; physical slot index
 	ld a, [hl] ; stored occupancy
 	cp MONS_PER_BOX + 1
-	jr nc, .badOpen ; corrupt count
+	jp nc, .badOpen ; corrupt count
 	cp b
-	jr c, .badOpen ; slot beyond occupied records
-	jr z, .badOpen
+	jp c, .badOpen ; slot beyond occupied records
+	jp z, .badOpen
 	; Verify the physical species header before allowing transfer.
 	push hl
 	push bc
@@ -89,33 +89,33 @@ Yel012TransferBoxRecord:
 	pop bc
 	pop hl
 	and a
-	jr z, .badOpen
+	jp z, .badOpen
 	cp $ff
-	jr z, .badOpen
+	jp z, .badOpen
 	; For occupied-slot writes, reject a species mismatch before any
 	; SRAM bytes are modified; callers must transact inserts separately.
 	push bc
 	ld b, a ; expected header species
 	ld a, c
 	and a
-	jr z, .headerOK
+	jp z, .headerOK
 	ld a, [de] ; species in incoming mon_struct
 	cp b
-	jr nz, .badSpecies
+	jp nz, .badSpecies
 .headerOK
 	pop bc
 	ld a, b ; zero-based slot
-	jr .transfer
+	jp .transfer
 .badSpecies
 	pop bc
-	jr .badOpen
+	jp .badOpen
 .transfer
 	YEL012_COPY_FIELD YEL012_SRAM_MON_OFFSET, BOXMON_STRUCT_LENGTH, BOXMON_STRUCT_LENGTH
 	YEL012_COPY_FIELD YEL012_SRAM_OT_OFFSET, NAME_LENGTH, NAME_LENGTH
 	YEL012_COPY_FIELD YEL012_SRAM_NICK_OFFSET, NAME_LENGTH, NAME_LENGTH
 	ld a, c
 	and a
-	jr z, .done
+	jp z, .done
 	; Refresh the entire bank checksum and four per-box checksums.
 	call Yel012RefreshPhysicalChecksums
 .done
