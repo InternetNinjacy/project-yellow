@@ -153,6 +153,17 @@ StartNewGame:
 	; fallthrough
 StartNewGameDebug:
 	call OakSpeech
+IF DEF(_PEWTER_GYM_VISUAL_TEST)
+	; CI-only spawn adjacent to Pewter Gym's real city warp (16,17).
+	; Never enable in the production ROM. The controller must still
+	; enter the doorway, exercising normal map/tileset loading.
+	ld a, PEWTER_CITY
+	ld [wCurMap], a
+	ld a, 16
+	ld [wXCoord], a
+	ld a, 18
+	ld [wYCoord], a
+ENDC
 	ld a, PLAYER_DIR_UP
 	ld [wPlayerMovingDirection], a
 	ld c, 20
