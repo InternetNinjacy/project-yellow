@@ -94,6 +94,7 @@ jobs:
             wait $pid || true
           '
           test -s test-results/sgb-smoke/sameboy.log
+          python scripts/yel_test_004_sgb_live_xy.py --log test-results/sgb-smoke/sameboy.log --out test-results/sgb-smoke/live_xy_report.json
       - name: Archive actual SGB emulator evidence
         if: always()
         uses: actions/upload-artifact@v4
