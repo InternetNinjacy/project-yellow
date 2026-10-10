@@ -71,3 +71,39 @@ This runner establishes an explicit *replay mechanism*, not complete evidence:
 
 No deterministic emulator battle tests have passed until the runner prints
 PASS for each case **on actual savestates**. PR #5 stays draft.
+
+## Capturing the first legitimate active-battle state
+
+`tests/battle/capture.py` is a deterministic **controller-only** recorder for
+already-known traces. It can replay from emulator power-on or a previously
+captured legitimate starting state. Unlike directly modifying WRAM, it cannot
+silently manufacture a battle or bypass a broken entry event.
+
+Create `tests/battle/routes/first_battle.json` containing actual observed
+PyBoy button/frame steps, for example objects of the form
+`{"button":"a","frames":1}` and `{"release":"a","frames":30}`.
+These are **schema illustrations, not an asserted playable route**.
+
+Run:
+```
+python3 tests/battle/capture.py \
+  --rom pokeyellow_debug.gbc \
+  --symbols pokeyellow_debug.sym \
+  --trace tests/battle/routes/first_battle.json \
+  --output tests/battle/states/first_battle.state
+```
+
+The capture command refuses to save unless `wIsInBattle`,
+`wBattleMonSpecies`, and `wEnemyMonSpecies` are nonzero. It also records the
+ROM and trace SHA-256 hashes and battler IDs. No memory patch is performed.
+
+**Unresolved prerequisite:** A genuinely recorded power-on-to-battle input
+trace, or a legitimate earlier starting savestate, is not currently in this
+branch. A starter encounter with Oak or a battle with a wild Pokémon would
+qualify only if the game is in an actual active battle with usable moves.
+For Amnesia, Growth and Psychic testing, follow-on controlled battles must
+include Pokémon that actually know those moves. The first basic wild battle
+does not alone verify those effects.
+
+This capture script is not self-validating proof of the user's requested
+battle: it must be executed and produce a state plus evidence in the emulator.
