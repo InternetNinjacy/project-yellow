@@ -19,7 +19,7 @@ jobs:
         run: python3 tools/pewter_gym/verify_frozen_map.py
 
       - name: Syntax-check Pewter emulator replay tools
-        run: python3 -m py_compile tools/pewter_gym/replay_gym_entry.py tools/pewter_gym/capture_emulator_gym.py
+        run: python3 -m py_compile tools/pewter_gym/replay_gym_entry.py tools/pewter_gym/capture_emulator_gym.py tools/pewter_gym/record_city_route.py
 
       - name: Checkout rgbds
         uses: actions/checkout@v7
