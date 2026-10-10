@@ -34,3 +34,11 @@ Authority: https://docs.google.com/document/d/1hoyEIC2aI1of3iBKJF-NT-GvcBtaCGjxj
 
 Dependencies: YEL-BATTLE-001, YEL-BAL-003, starter randomization, YEL-TEST-005.
 This staged PR is not yet game-functional.
+
+## Thread retirement handoff — 2026-10-10
+
+The design conversation is RETIRED; this feature is NOT complete. Resume using draft PR #11 and the recorded Drive design/Work Registry/Master Framework. Recheck current PR head, latest CI, and all files before altering code.
+
+Committed on this branch after initial plan: `constants/event_constants.asm` reserves `EVENT_VIRIDIAN_SCHOOL_GIFT_CLAIMED` and `EVENT_VIRIDIAN_SCHOOL_LESSON_COMPLETE` in spare Viridian save flags; `scripts/ViridianMart.asm` guards original parcel sequence; new `VIRIDIANCITY_MART_SCHOOL_GUARD` object at (29,20), toggle, guard dialogue and visibility check in Viridian script; `ViridianSchoolHouseCompleteLessonAfterBattle` is a defined function which sets lesson completion only when gift-claimed flag is set. No caller to this routine is yet wired. Current source is not a complete playable event; no real win/loss, gifts or true-double battle were implemented; build/emulator pass not verified at retirement.
+
+**Resume from here:** (1) inspect PR #11 head and CI, repair compile defects; (2) safe one-time 3-option gift awarding with permanent outsider treatment and inventory/storage/save safety; (3) integrate genuine YEL-BATTLE-001 doubles instructor battle; (4) connect both victory and defeat/whiteout to completion callback; (5) confirm guard removal and Mart/Parcel progression after save/reload; (6) actual 3 starter × 3 gift × win/loss PyBoy test matrix, traces, ROM hashes, normal gameplay proof. No merge until all gates pass.
