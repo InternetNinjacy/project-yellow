@@ -70,3 +70,34 @@ and DEBUG encounter-room code are separate pending implementation gates.
 **Current honest status:** navigation components committed, DEBUG capture
 station assembly NOT IMPLEMENTED, natural six-party route NOT IMPLEMENTED,
 seven matrix cases and game-native persistence NOT EXECUTED.
+
+## DEBUG capture station implementation checkpoint
+
+Branch code now adds DEBUG-only party members PIDGEY level 5 and RATTATA
+level 5 to the existing 4 DEBUG starting members, via `AddPartyMon` in
+`engine/debug/debug_party.asm`. It also adds thirty standard POKE_BALL
+items to `DebugNewGameItemsList`; existing `AddItemToInventory` places
+them in the bag. Normal New Game does NOT activate this mode; the title
+DEBUG menu is entered by holding SELECT+START on the fully loaded title
+screen and selecting DEBUG. UP+SELECT+B opens the clear-save dialogue,
+**not** the DEBUG menu.
+
+A confirmed Actions DEBUG New Game probe reached wPartyCount=6 with
+15 inventory entries, run
+https://github.com/InternetNinjacy/project-yellow/actions/runs/38054424709 .
+That result established party setup; the new CI flag `--require-debug-setup`
+independently tests the precise POKE_BALL item quantity.
+
+The first prototype encounter trigger for Red's House 2F was reverted.
+DEBUG New Game actually begins at Pallet Town (map ID 0), coordinates (5,6).
+`scripts/PalletTown.asm` now contains a _DEBUG-only one-shot encounter
+trigger on tile (5,7), conditional on party size 6, setting
+`wCurOpponent=PIDGEY` and `wCurEnemyLevel=3` to go through the
+stock overworld battle dispatcher. The original Pallet script is untouched
+in non-DEBUG builds. The updated controller trace presses DOWN after
+DEBUG New Game to initiate this encounter; `--require-debug-encounter`
+fails if the actual wild battle flag and enemy species are not observed.
+
+**Do not call the battle stage complete unless CI passes the new
+hard gates.** The native capture, seven box layouts, SRAM persistence,
+and independent natural route are still separate pending gates.
