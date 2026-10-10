@@ -131,3 +131,37 @@ controller trace, saved a private PyBoy checkpoint and ran the read-only
 capture success, seven storage scenarios on the YEL-QOL-011 PR #6 feature
 ROM, native save/restart/continue, and independent normal-story route.
 These require their own exact-build gameplay and storage evidence.
+
+## Feature ROM integration matrix, first actual test (2026-10-10)
+
+GitHub Actions run 38055588385 built the genuine PR #6 feature branch,
+overlaid only DEBUG station setup files and replayed a documented
+clean-boot wild Pidgey capture. The Master Ball capture itself succeeded.
+Then `yel_test_005_storage_matrix.py` generated the seven scenario
+states using PR #6's fixture builder and ran its twelve-box byte audit.
+
+Memory-level results: **4 PASS / 3 FAIL**:
+- current-space FAIL, original box-1 records changed when 19 -> 20.
+- next-box PASS; selected box 2.
+- skip-full PASS; selected box 4.
+- wrap PASS; selected box 1.
+- wrap-skip PASS; selected box 2.
+- all-full FAIL; active working box became 21 Pokémon, violating max 20.
+- only-current-free FAIL; original box-4 records changed when 19 -> 20.
+
+Reviewing private captured before/after raw working boxes (NOT for publication)
+shows a shift of original Pokémon slots when the game inserts a catch into
+a box with remaining space, rather than preserving absolute slot positions.
+Distinguish intentional legacy prepend behavior from actual Pokémon data
+loss before selecting the fix. The all-full 21 count is unsafe and must
+be corrected. Do NOT merge YEL-QOL-011 PR #6.
+
+Important evidence-handling issue: this first failed run's artifact
+11671750554 mistakenly included private checkpoint states and raw box
+buffers because the YAML cleanup `run:` commands were malformed.
+The subsequent workflow revision 0dc7afaab9280e70a809159e28e716a69e2b2c1d
+switched to strict .json/.txt/.png allowlisting in a separate public
+directory. The earlier artifact must be deleted from the GitHub Actions UI;
+a separate connector action to delete artifacts was not available.
+No ROM was included, but private state/box binary files were.
+Native in-game save/restart/load remains untested.
