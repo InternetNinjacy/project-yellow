@@ -36,24 +36,36 @@ StageDoublesEnemySecondFromParty:
 InitDoublesSecondStatSnapshot:
 	ld bc, (NUM_STATS - 1) * 2
 	call CopyData
-	; Record layout places the unmodified legacy Special immediately
-	; before the two supplemental SpD fields. Fallback until the distinct
-	; species SpD derivation is integrated; cannot enable doubles yet.
+	; DE now points to supplemental current Special Defense.
+	; Initial fallback copies legacy Special into both SpD caches;
+	; final independent species-SpD calculation is still required.
 	ld h, d
 	ld l, e
 	dec hl
 	dec hl
-	ld a, [hli]
+	push hl
+	ld bc, 2
+	call CopyData
+	pop hl
+	ld bc, 2
+	call CopyData
+	; Initialize all six legacy stat stages and independent SpD to 7.
+	ld a, BASE_STAT_LEVEL
+	ld b, NUM_STAT_MODS
+.stageLoop
 	ld [de], a
 	inc de
-	ld a, [hl]
+	dec b
+	jr nz, .stageLoop
 	ld [de], a
 	inc de
-	ld a, [hld]
+	xor a
+	ld b, 3
+.statusLoop
 	ld [de], a
 	inc de
-	ld a, [hl]
-	ld [de], a
+	dec b
+	jr nz, .statusLoop
 	ret
 
 ; HL = beginning of standard party_struct; DE = second battle_struct.
