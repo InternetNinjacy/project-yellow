@@ -3,7 +3,7 @@
 
 This is NOT the Python reference model or a live game save test.
 Uses direct writable CPU registers to invoke bank $3B code
-before the regular game initializes; SRAM and WRAM are seeded explicitly.
+after normal boot initialization; SRAM and WRAM are seeded explicitly.
 Any failed check exits nonzero, producing no raw save-state artifacts.
 """
 import argparse,json,hashlib
@@ -50,6 +50,7 @@ def main():
     out=Path(args.out);out.parent.mkdir(parents=True,exist_ok=True)
     sym=symbols(args.sym)
     names=['Yel012BeginTransaction','Yel012StageWindow','Yel012CommitStagedWindow',
+           'Yel012ReadBoxRecord','wBoxCount','wBoxSpecies','wBoxMons','wBoxMonOT','wBoxMonNicks',
            'Yel012PrepareCaptureInsert','Yel012CommitTransaction','Yel012AbortTransaction',
            'wCurrentBoxNum','wBoxDataStart','sYel012TransactionStatus',
            'sYel012TransactionNewRecord','sYel012TransactionShadow','sYel012TransactionBackup']
@@ -101,7 +102,7 @@ def main():
     def get(name):return sym[name][1]
     try:
         # Start via real CPU trampoline. No synthetic Python transaction results.
-        for case,(boxid,count,mode) in enumerate([(0,29,'capture'),(4,30,'abort'),(8,20,'capture')]):
+        for case,(boxid,count,mode) in enumerate([(0,29,'capture'),(4,30,'abort'),(8,29,'capture')]):
             bank=2+boxid//4
             base=get('sBox1')+(boxid%4)*BOX
             before=seed(count,case+3)
@@ -128,10 +129,56 @@ def main():
                     assert after[OT_OFFSET+(i+1)*NAME:OT_OFFSET+(i+2)*NAME]==before[OT_OFFSET+i*NAME:OT_OFFSET+(i+1)*NAME],(case,'shift ot',i)
                     assert after[NICK_OFFSET+(i+1)*NAME:NICK_OFFSET+(i+2)*NAME]==before[NICK_OFFSET+i*NAME:NICK_OFFSET+(i+1)*NAME],(case,'shift nick',i)
             else:
+                # Exercise both WRAM pages of a full 30-record physical box.
+                for page,pagecount in ((0,20),(20,10)):
+                    flag=call('Yel012StageWindow',a=page)
+                    assert flag&16==0,(case,'page stage',page,flag)
+                    assert em.memory[get('wBoxCount')]==pagecount,(case,'page count',page)
+                    for i in range(pagecount):
+                        slot=i+page
+                        assert em.memory[get('wBoxSpecies')+i]==before[1+slot],(case,'page species',slot)
+                        for label,offset,stride,sz in (
+                            ('mon',MON_OFFSET,MON,MON),
+                            ('ot',OT_OFFSET,NAME,NAME),
+                            ('nick',NICK_OFFSET,NAME,NAME)):
+                            wrambase=get({'mon':'wBoxMons','ot':'wBoxMonOT',
+                                          'nick':'wBoxMonNicks'}[label])
+                            seen=bytes(em.memory[wrambase+i*stride+j] for j in range(sz))
+                            wanted=before[offset+slot*stride:offset+(slot+1)*stride]
+                            assert seen==wanted,(case,'staged page',label,slot)
+                    if page==0:
+                        flag=call('Yel012CommitStagedWindow')
+                        assert flag&16==0,(case,'valid page commit',flag)
+                    else:
+                        # Force a species-table mismatch: the shadow must not
+                        # be physically committed and abort must restore it.
+                        em.memory[get('wBoxSpecies')]=0
+                        flag=call('Yel012CommitStagedWindow')
+                        assert flag&16,(case,'invalid page wrongly accepted',flag)
+                assert sram(5,get('sYel012TransactionBackup'),BOX)==before,(case,'rollback snapshot')
+                inputaddr=get('wBoxDataStart')
+                new=record(150,case+3)
+                for j,c in enumerate(new):em.memory[inputaddr+j]=c
+                flag=call('Yel012PrepareCaptureInsert',de=inputaddr)
+                assert flag&16,(case,'full box insertion wrongly accepted',flag)
                 flag=call('Yel012AbortTransaction')
                 assert flag&16==0,(case,'abort',flag)
                 assert sram(bank,base,BOX)==before,(case,'abort corruption')
-            results.append({'box':boxid+1,'bank':bank,'mode':mode,'status':'PASS_ASSEMBLY_CPU'})
+            # Execute the banked LR35902 55-byte record reader for every
+            # physical 0..29 slot, including all OT/nickname fields.
+            final=sram(bank,base,BOX)
+            assert final[0]==30,(case,'final occupancy',final[0])
+            for index in range(30):
+                addr=get('wBoxDataStart')
+                flag=call('Yel012ReadBoxRecord',a=index,de=addr)
+                assert flag&16==0,(case,'record read',index,flag)
+                seen=bytes(em.memory[addr+j] for j in range(SLOT_BYTES))
+                expected=(final[MON_OFFSET+index*MON:MON_OFFSET+(index+1)*MON]
+                          +final[OT_OFFSET+index*NAME:OT_OFFSET+(index+1)*NAME]
+                          +final[NICK_OFFSET+index*NAME:NICK_OFFSET+(index+1)*NAME])
+                assert seen==expected,(case,'record bytes differ',index)
+            results.append({'box':boxid+1,'bank':bank,'mode':mode,
+                            'slots_verified':30,'status':'PASS_ASSEMBLY_CPU'})
         status='PASS_ISOLATED_ASSEMBLY_TRANSACTION_NOT_SAVE_VERIFIED'
     except Exception as exc:
         status='FAIL'
