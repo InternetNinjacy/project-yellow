@@ -121,6 +121,15 @@ def main():
         screenshot(emu,out/"bug_catcher_f_battle.png")
         if result["enemy_party_count"]!=2:
             raise AssertionError("Expected two Caterpie in original Bug Catcher #1 party")
+        if result["enemy_species_bytes"][:2] != [0x7B, 0x7B]:
+            raise AssertionError("Expected exact original party species CATERPIE ($7B) twice")
+        level_symbols = ["wEnemyMon1Level", "wEnemyMon2Level"]
+        missing_levels = [name for name in level_symbols if name not in symbols]
+        if missing_levels:
+            raise AssertionError(f"Cannot assert individual party levels; missing {missing_levels}")
+        result["enemy_party_levels"] = [mem8(emu, symbols[k]) for k in level_symbols]
+        if result["enemy_party_levels"] != [7, 7]:
+            raise AssertionError("Expected two level-7 Caterpie in the original Bug Catcher #1 party")
         portrait=symbols["BugCatcherPic"]
         actual=int.from_bytes(bytes(result["portrait_pointer"]),"little")
         if actual!=portrait:
