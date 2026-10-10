@@ -1394,14 +1394,14 @@ PoliwrathEvosMoves:
 
 WeedleEvosMoves:
 ; Evolutions
-	db EVOLVE_LEVEL, 7, KAKUNA
+	db EVOLVE_LEVEL, 16, KAKUNA
 	db 0
 ; Learnset
 	db 0
 
 KakunaEvosMoves:
 ; Evolutions
-	db EVOLVE_LEVEL, 10, BEEDRILL
+	db EVOLVE_LEVEL, 36, BEEDRILL
 	db 0
 ; Learnset
 	db 0
