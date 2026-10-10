@@ -1901,23 +1901,29 @@ RapidashEvosMoves:
 
 RattataEvosMoves:
 ; Evolutions
-	db EVOLVE_LEVEL, 20, RATICATE
+	db EVOLVE_LEVEL, 18, RATICATE
 	db 0
 ; Learnset
-	db 7, QUICK_ATTACK
-	db 14, HYPER_FANG
-	db 23, FOCUS_ENERGY
-	db 34, SUPER_FANG
+	db 5, QUICK_ATTACK
+	db 9, BITE
+	db 13, FOCUS_ENERGY
+	db 17, HYPER_FANG
+	db 21, RAGE
+	db 28, SUPER_FANG
 	db 0
 
 RaticateEvosMoves:
 ; Evolutions
+	; Rattaking evolution is approved at level 36, but requires registered species ID.
+	; Do not emit an unresolved RATTaking constant before dex integration.
 	db 0
 ; Learnset
-	db 7, QUICK_ATTACK
-	db 14, HYPER_FANG
-	db 27, FOCUS_ENERGY
-	db 41, SUPER_FANG
+	db 5, QUICK_ATTACK
+	db 9, BITE
+	db 13, FOCUS_ENERGY
+	db 17, HYPER_FANG
+	db 21, RAGE
+	db 28, SUPER_FANG
 	db 0
 
 NidorinoEvosMoves:
