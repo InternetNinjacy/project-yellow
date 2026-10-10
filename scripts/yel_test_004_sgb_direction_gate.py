@@ -42,7 +42,7 @@ def main():
     for i in range(len(entries)-4):
         if [a for a,_ in entries[i:i+5]] == expected_addrs:
             groups.append([v for _,v in entries[i:i+5]])
-    images = sorted(args.frames.glob("direction_??.png"))
+    images = sorted(args.frames.glob("direction_*.png"))
     if len(groups) != len(images) or not groups:
         raise AssertionError(f"SameBoy sample/frame mismatch: {len(groups)} complete samples, {len(images)} frames")
     frames = {}
