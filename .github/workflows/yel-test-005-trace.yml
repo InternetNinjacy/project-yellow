@@ -3,12 +3,16 @@ on:
   push:
     paths:
       - 'scripts/yel_test_005_replay.py'
-      - 'tests/test_yel_test_005_trace.py'
+      - 'tests/test_yel_test_005_*.py'
+      - 'scripts/yel_test_005_capture_audit.py'
+      - 'scripts/yel_test_005_record.py'
       - '.github/workflows/yel-test-005-trace.yml'
   pull_request:
     paths:
       - 'scripts/yel_test_005_replay.py'
-      - 'tests/test_yel_test_005_trace.py'
+      - 'tests/test_yel_test_005_*.py'
+      - 'scripts/yel_test_005_capture_audit.py'
+      - 'scripts/yel_test_005_record.py'
       - '.github/workflows/yel-test-005-trace.yml'
   workflow_dispatch:
 jobs:
@@ -20,8 +24,8 @@ jobs:
         with:
           python-version: '3.11'
       - name: Syntax check
-        run: python -m py_compile scripts/yel_test_005_replay.py tests/test_yel_test_005_trace.py
+        run: python -m py_compile scripts/yel_test_005_*.py tests/test_yel_test_005_*.py
       - name: Test controller trace schema
-        run: python -m unittest discover -s tests -p 'test_yel_test_005_trace.py' -v
+        run: python -m unittest discover -s tests -p 'test_yel_test_005_*.py' -v
       - name: Evidence boundary
         run: echo 'TRACE_SCHEMA_ONLY; NO ROM BOOT, GAMEPLAY OR CAPTURE VERIFICATION'
