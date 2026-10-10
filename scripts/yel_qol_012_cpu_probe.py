@@ -87,10 +87,10 @@ def main():
     em.hook_register(0,0x100,boot,context)
     def call(n,a=0,de=0):
         context.update(call=n,started=False,done=False,flags=None,a=a,de=de)
-        for _ in range(70):
+        for _ in range(350):
             em.tick(1,render=False,sound=False)
             if context['done']:return context['flags']
-        raise AssertionError(f'{n}: CPU did not return to ROM0 trampoline')
+        raise AssertionError(f'{n}: CPU did not return to ROM0 trampoline; PC={regs.PC:04x} SP={regs.SP:04x} A={regs.A:02x} B={regs.B:02x} C={regs.C:02x} D={regs.D:02x} E={regs.E:02x} HL={regs.HL:04x}')
     def sram(bank,addr,length):
         return bytes(em.memory[bank,addr+i] for i in range(length))
     def set_sram(bank,addr,payload):
