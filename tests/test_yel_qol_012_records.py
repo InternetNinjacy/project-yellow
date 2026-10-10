@@ -39,6 +39,18 @@ class Records(unittest.TestCase):
                 self.assertEqual(m.read_record(changed,slot),rec)
             else:
                 self.assertEqual(m.read_record(changed,slot),m.read_record(original,slot))
+    def test_single_record_write_preserves_every_other_byte(self):
+        initial=fixture()
+        replacement=m.BoxRecord(bytes([20])*33,bytes([77])*11,bytes([88])*11)
+        modified=m.write_record(initial,19,replacement)
+        m.validate_box(modified)
+        self.assertEqual(modified[0:32],initial[0:32])
+        for idx in range(30):
+            self.assertEqual(m.read_record(modified,idx),
+                             replacement if idx==19 else m.read_record(initial,idx))
+        self.assertEqual(len(modified),len(initial))
+        self.assertEqual(modified[31],255)  # species-list sentinel
+
     def test_invalid_slot_and_corruption(self):
         with self.assertRaises(IndexError):m.read_record(fixture(),30)
         with self.assertRaises(IndexError):m.read_record(fixture(10),20)
