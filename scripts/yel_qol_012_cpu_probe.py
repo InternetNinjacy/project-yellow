@@ -53,7 +53,8 @@ def main():
            'Yel012ReadBoxRecord','Yel012FindCaptureBox','wBoxCount','wBoxSpecies','wBoxMons','wBoxMonOT','wBoxMonNicks',
            'Yel012PrepareCaptureInsert','Yel012CommitTransaction','Yel012AbortTransaction',
            'wCurrentBoxNum','wBoxDataStart','sYel012TransactionStatus',
-           'sYel012TransactionNewRecord','sYel012TransactionShadow','sYel012TransactionBackup']
+           'sYel012TransactionNewRecord','sYel012TransactionShadow','sYel012TransactionBackup',
+           'sYel012StorageVersion','sYel012StorageVersionCheck']
     for n in names:
         if n not in sym:raise RuntimeError('Missing symbol '+n)
     rom=Path(args.rom).read_bytes()
@@ -230,6 +231,10 @@ def main():
             assert physical[NICK_OFFSET+(index+1)*11:NICK_OFFSET+(index+2)*11]==starting[NICK_OFFSET+index*11:NICK_OFFSET+(index+1)*11]
         results.append({'box':2,'bank':physicalBank,'mode':'bridge-stubbed-legacy',
                         'status':'PASS_ASSEMBLY_CPU_WITH_STUBBED_LEGACY_BUILDER'})
+        # Explicitly initialize the version guard for this seeded storage.
+        # This CPU fixture does not execute NEW GAME, so it must install
+        # the marker just as the dedicated initializer would.
+        set_sram(5,get('sYel012StorageVersion'),bytes([1,0xfe]))
         # Physically grounded selection matrix. Fill all 12 boxes in the
         # three SRAM banks; the selector must not consult partial WRAM count.
         all_full=seed(30,20)
