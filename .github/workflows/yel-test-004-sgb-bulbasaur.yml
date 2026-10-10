@@ -1,0 +1,118 @@
+name: Project Yellow SGB Bulbasaur isolated capture
+on:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  sgb-bulbasaur:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: gbdev/rgbds
+          ref: v1.0.3
+          path: .toolchain/rgbds
+      - uses: actions/checkout@v4
+        with:
+          repository: LIJI32/SameBoy
+          ref: v1.0.3
+          path: .toolchain/sameboy
+      - name: Syntax-check SGB navigation fixture
+        run: python -m py_compile scripts/yel_test_004_sgb_navigate.py scripts/yel_test_004_sgb_debug_probe.py
+      - name: Install SGB emulator and virtual screen
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bison libpng-dev pkg-config build-essential xvfb xdotool imagemagick libsdl2-dev
+          python -m pip install pyboy Pillow
+      - name: Build RGBDS
+        working-directory: .toolchain/rgbds
+        run: sudo make -j2 install
+      - name: Build pinned SameBoy SGB-capable emulator
+        run: make -C .toolchain/sameboy -j2 sdl CONF=release
+      - name: Compile isolated DEBUG ROM
+        run: |
+          # Keep the SameBoy build; deleting .toolchain would remove the emulator.
+          # CI-only sprite station swap; release game files are untouched.
+          sed -i 's/SPRITE_IVYSAUR/SPRITE_BULBASAUR/g' data/maps/objects/RedsHouse1F.asm
+          make -j2 pokeyellow_debug.gbc
+          mkdir -p test-results/sgb-smoke
+          sha256sum pokeyellow_debug.gbc > test-results/sgb-smoke/rom.sha256
+      - name: Generate independent Red House 1F visual reference
+        run: |
+          python scripts/yel_test_004_gbc_bulbasaur.py --cgb --rom pokeyellow_debug.gbc --sym pokeyellow_debug.sym --sprite-2bpp gfx/sprites/bulbasaur.2bpp --out test-results/sgb-reference
+          test -s test-results/sgb-reference/lab_entry.png
+      - name: Probe actual SGB map and coordinates through SameBoy debugger
+        run: |
+          xvfb-run --auto-servernum --server-args='-screen 0 1024x768x24' python scripts/yel_test_004_sgb_debug_probe.py \
+            --emulator .toolchain/sameboy/build/bin/SDL/sameboy \
+            --rom pokeyellow_debug.gbc --sym pokeyellow_debug.sym \
+            --out test-results/sgb-debugger
+      - name: Launch genuine SGB model in headless X server
+        run: |
+          xvfb-run --auto-servernum --server-args='-screen 0 1024x768x24' bash -euxo pipefail -c '
+            export SDL_AUDIODRIVER=dummy
+            mkfifo test-results/sgb-smoke/debug_commands.fifo
+            exec 3<>test-results/sgb-smoke/debug_commands.fifo
+            .toolchain/sameboy/build/bin/SDL/sameboy --nogl --model sgb-ntsc pokeyellow_debug.gbc <test-results/sgb-smoke/debug_commands.fifo >test-results/sgb-smoke/sameboy.log 2>&1 &
+            pid=$!
+            sleep 65
+            wid=$(xdotool search --name "SameBoy" | head -1)
+            test -n "$wid"
+            xdotool windowactivate --sync "$wid" || true
+            import -window "$wid" test-results/sgb-smoke/sgb_title.png
+            xdotool keydown --window "$wid" BackSpace
+            sleep 0.35
+            xdotool keyup --window "$wid" BackSpace
+            sleep 4
+            import -window "$wid" test-results/sgb-smoke/sgb_select.png
+            xdotool keydown --window "$wid" Down
+            sleep 0.4
+            xdotool keyup --window "$wid" Down
+            sleep 2
+            import -window "$wid" test-results/sgb-smoke/sgb_debug_selected.png
+            xdotool keydown --window "$wid" x
+            sleep 0.4
+            xdotool keyup --window "$wid" x
+            sleep 5
+            import -window "$wid" test-results/sgb-smoke/sgb_intro.png
+            for n in $(seq 1 28); do
+              xdotool keydown --window "$wid" x
+              sleep 0.25
+              xdotool keyup --window "$wid" x
+              sleep 0.75
+            done
+            import -window "$wid" test-results/sgb-smoke/sgb_after_intro.png
+            xdotool keydown --window "$wid" Up
+            sleep 0.6
+            xdotool keyup --window "$wid" Up
+            sleep 6
+            import -window "$wid" test-results/sgb-smoke/sgb_lab_attempt.png
+            # Capture the sprite BEFORE further movement can leave map $25.
+            import -window "$wid" test-results/sgb-smoke/bulbasaur_map25_candidate.png
+            kill -INT "$pid"
+            sleep 2
+            printf "print [wCurMap]\\nprint [wXCoord]\\nprint [wYCoord]\\ncontinue\\n" >&3
+            sleep 2
+            # No further navigation: the old step accidentally walked from $25 into $26.
+            # Preserve the confirmed downstairs frame for a map-gated capture.
+            kill -INT "$pid"
+            sleep 2
+            printf "print [wCurMap]\\nprint [wXCoord]\\nprint [wYCoord]\\ncontinue\\n" >&3
+            sleep 3
+            grep -E "SameBoy|[0-9]|CurMap|Coord" test-results/sgb-smoke/sameboy.log | tail -45 || true
+            kill $pid || true
+            wait $pid || true
+          '
+          test -s test-results/sgb-smoke/sameboy.log
+          python scripts/yel_test_004_sgb_capture_gate.py --species Bulbasaur --log test-results/sgb-smoke/sameboy.log --frame test-results/sgb-smoke/bulbasaur_map25_candidate.png --reference test-results/sgb-reference/lab_entry.png --out test-results/sgb-smoke/bulbasaur_capture_report.json
+      - name: Archive actual SGB emulator evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yel-test-004-sgb-bulbasaur-map25
+          path: |
+            test-results/sgb-smoke/
+            test-results/sgb-reference/lab_entry.png
+            test-results/sgb-debugger/
+          if-no-files-found: warn
