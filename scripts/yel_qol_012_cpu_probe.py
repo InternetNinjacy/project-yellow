@@ -129,6 +129,13 @@ def main():
                     assert after[OT_OFFSET+(i+1)*NAME:OT_OFFSET+(i+2)*NAME]==before[OT_OFFSET+i*NAME:OT_OFFSET+(i+1)*NAME],(case,'shift ot',i)
                     assert after[NICK_OFFSET+(i+1)*NAME:NICK_OFFSET+(i+2)*NAME]==before[NICK_OFFSET+i*NAME:NICK_OFFSET+(i+1)*NAME],(case,'shift nick',i)
             else:
+                # Reject a new capture with count=30 before any page is dirty.
+                inputaddr=get('wBoxDataStart')
+                new=record(150,case+3)
+                for j,c in enumerate(new):em.memory[inputaddr+j]=c
+                flag=call('Yel012PrepareCaptureInsert',de=inputaddr)
+                assert flag&16,(case,'full box insertion wrongly accepted',flag)
+                assert sram(bank,base,BOX)==before,(case,'full rejection changed physical SRAM')
                 # Exercise both WRAM pages of a full 30-record physical box.
                 for page,pagecount in ((0,20),(20,10)):
                     flag=call('Yel012StageWindow',a=page)
@@ -156,11 +163,6 @@ def main():
                         flag=call('Yel012CommitStagedWindow')
                         assert flag&16,(case,'invalid page wrongly accepted',flag)
                 assert sram(5,get('sYel012TransactionBackup'),BOX)==before,(case,'rollback snapshot')
-                inputaddr=get('wBoxDataStart')
-                new=record(150,case+3)
-                for j,c in enumerate(new):em.memory[inputaddr+j]=c
-                flag=call('Yel012PrepareCaptureInsert',de=inputaddr)
-                assert flag&16,(case,'full box insertion wrongly accepted',flag)
                 flag=call('Yel012AbortTransaction')
                 assert flag&16==0,(case,'abort',flag)
                 assert sram(bank,base,BOX)==before,(case,'abort corruption')
