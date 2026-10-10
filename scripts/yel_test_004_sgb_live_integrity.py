@@ -91,7 +91,8 @@ def main():
               "model": "SameBoy sgb-ntsc", "source_sha256": hashlib.sha256(source).hexdigest(),
               "vram_matched_address": hex(0x8000 + offsets[0]),
               "matching_vram_offsets": [hex(0x8000 + x) for x in offsets],
-              "shadow_oam_matches": shadow_matches, "hardware_oam_matches": hardware_matches,\n              "paired_oam_snapshots_inspected": len(observations),
+              "shadow_oam_matches": shadow_matches, "hardware_oam_matches": hardware_matches,
+              "paired_oam_snapshots_inspected": len(observations),
               "facing_walking_transparency_palette": "PENDING",
               "physical_hardware": "PENDING"}
     a.out.parent.mkdir(parents=True, exist_ok=True)
