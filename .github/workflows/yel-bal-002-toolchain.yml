@@ -1,0 +1,42 @@
+name: YEL-BAL-002 PyBoy and RGBDS toolchain
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/yel-bal-002-toolchain.yml'
+      - 'tests/battle/**'
+
+jobs:
+  toolchain:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install RGBDS prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bison libpng-dev pkg-config
+      - name: Checkout RGBDS v1.0.3
+        uses: actions/checkout@v4
+        with:
+          repository: gbdev/rgbds
+          ref: v1.0.3
+          path: _rgbds
+      - name: Install RGBDS
+        run: sudo make -C _rgbds -j2 install
+      - name: Install PyBoy
+        run: python -m pip install 'pyboy>=2,<3'
+      - name: Verify executable toolchain
+        run: |
+          rgbasm --version
+          python -c 'import importlib.metadata as m; import pyboy; print("PyBoy", m.version("pyboy"))'
+          python -m py_compile tests/battle/record.py tests/battle/capture.py tests/battle/replay.py
+      - name: Build ROM and symbols
+        run: make -j2 pokeyellow_debug.gbc
+      - name: Report battle fixture readiness
+        run: |
+          if [ -f tests/battle/fixtures.json ]; then
+            python tests/battle/replay.py --rom pokeyellow_debug.gbc --symbols pokeyellow_debug.sym --manifest tests/battle/fixtures.json
+          else
+            echo 'Toolchain installed and ROM built; real in-battle fixture still absent.'
+          fi
