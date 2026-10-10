@@ -17,6 +17,11 @@ DebugNewGameParty: ; unreferenced except in _DEBUG
 	db PERSIAN, 80
 	db JIGGLYPUFF, 15
 	db STARTER_PIKACHU, 5
+IF DEF(_DEBUG)
+	; YEL-TEST-005: fill all six slots using the ordinary AddPartyMon routine.
+	db PIDGEY, 5
+	db RATTATA, 5
+ENDC
 	db -1 ; end
 
 PrepareNewGameDebug: ; dummy except in _DEBUG
@@ -114,6 +119,10 @@ ENDC
 
 DebugNewGameItemsList:
 	db MASTER_BALL, 99
+IF DEF(_DEBUG)
+	; YEL-TEST-005: ordinary bag insertion, not patched emulator memory.
+	db POKE_BALL, 30
+ENDC
 	db TOWN_MAP, 1
 	db BICYCLE, 1
 	db FULL_RESTORE, 99
