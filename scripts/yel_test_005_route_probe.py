@@ -43,14 +43,15 @@ def main():
         for i, st in enumerate([{"frames": 0}] + steps):
             button = st.get("button")
             frames, after = st.get("frames", 0), st.get("after", 0)
-            if button:
-                emu.button_press(button)
+            buttons = st.get("buttons", [button] if button else [])
+            for pressed in buttons:
+                emu.button_press(pressed)
             try:
                 if frames:
                     emu.tick(frames)
             finally:
-                if button:
-                    emu.button_release(button)
+                for pressed in buttons:
+                    emu.button_release(pressed)
             if after:
                 emu.tick(after)
             frame += frames + after
