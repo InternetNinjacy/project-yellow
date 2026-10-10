@@ -107,3 +107,27 @@ does not alone verify those effects.
 
 This capture script is not self-validating proof of the user's requested
 battle: it must be executed and produce a state plus evidence in the emulator.
+
+## Recording the missing route directly from gameplay
+
+The new `tests/battle/record.py` offers a manual but genuinely reproducible
+route-capture path, without guessing input timings or editing RAM:
+
+```sh
+python3 tests/battle/record.py \
+  --rom pokeyellow_debug.gbc \
+  --symbols pokeyellow_debug.sym \
+  --trace tests/battle/routes/first_battle.json \
+  --state tests/battle/states/first_battle.state
+```
+
+Use its terminal commands while watching the graphical emulator:
+`up 8`, `a 1`, `wait 90`, etc. The recorder logs buttons, releases,
+and frame counts, shows whether the emulator is currently in battle, and
+allows `save` only if the three active-battle fields are nonzero.
+
+The recorded JSON may then be replayed from the same ROM and starting state
+with `capture.py`, creating a second deterministic state. Use checksum
+provenance from the capture utility before treating states as interchangeable.
+This procedure is a **tool for making evidence**, not itself evidence of
+any completed battle run.
