@@ -24,8 +24,8 @@ BaseSpecialStats::
 	db 40, 45 ; 16 pidgey
 	db 55, 60 ; 17 pidgeotto
 	db 75, 80 ; 18 pidgeot
-	db 25, 35 ; 19 rattata
-	db 50, 70 ; 20 raticate
+	db 25, 40 ; 19 rattata
+	db 45, 65 ; 20 raticate
 	db 31, 31 ; 21 spearow
 	db 61, 61 ; 22 fearow
 	db 40, 54 ; 23 ekans
