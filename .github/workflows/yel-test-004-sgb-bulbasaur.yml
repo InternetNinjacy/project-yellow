@@ -101,11 +101,27 @@ jobs:
             printf "print [wCurMap]\\nprint [wXCoord]\\nprint [wYCoord]\\ncontinue\\n" >&3
             sleep 3
             grep -E "SameBoy|[0-9]|CurMap|Coord" test-results/sgb-smoke/sameboy.log | tail -45 || true
+            # Native SameBoy debugger reads; stop the CPU before capturing VRAM/OAM.
+            # These dumps are NOT screenshots and must be validated independently.
+            kill -INT "$pid"
+            sleep 2
+            shadow_addr=$(awk '"'"'$2=="wShadowOAM" {split($1,a,":"); print "$"a[2]; exit}'"'"' pokeyellow_debug.sym)
+            test -n "$shadow_addr"
+            printf "examine/6144 \$8000\nexamine/160 \$fe00\nexamine/160 %s\n" "$shadow_addr" >&3
+            sleep 6
             kill $pid || true
             wait $pid || true
           '
           test -s test-results/sgb-smoke/sameboy.log
           python scripts/yel_test_004_sgb_capture_gate.py --species Bulbasaur --log test-results/sgb-smoke/sameboy.log --frame test-results/sgb-smoke/bulbasaur_map25_candidate.png --reference test-results/sgb-reference/lab_entry.png --out test-results/sgb-smoke/bulbasaur_capture_report.json
+      - name: Verify live SGB VRAM and OAM for Bulbasaur
+        run: |
+          python scripts/yel_test_004_sgb_live_integrity.py \
+            --species Bulbasaur \
+            --sym pokeyellow_debug.sym \
+            --sprite-2bpp gfx/sprites/bulbasaur.2bpp \
+            --transcript test-results/sgb-smoke/sameboy.log \
+            --out test-results/sgb-smoke/bulbasaur_live_integrity.json
       - name: Audit distinct approved 2bpp sprite source assets
         run: |
           python scripts/yel_test_004_sgb_source_integrity.py \
