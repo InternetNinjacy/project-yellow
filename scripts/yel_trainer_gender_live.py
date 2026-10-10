@@ -19,7 +19,8 @@ from yel_dev_lab_verify import (
 FOREST = 0x33
 TARGET_CLASS = 2   # BUG_CATCHER
 TARGET_PARTY = 1
-TARGET_YX = (33, 30)  # existing object_event coordinate (x=30,y=33)
+TARGET_YX = (33, 30)  # trainer tile (y=33, x=30), facing LEFT, range 4
+SIGHT_TILES = {(33,x) for x in range(26,30)}
 MAX_VISITS = 2600
 
 
@@ -32,7 +33,7 @@ def explore(emu, sym, out):
     trace = []
     while states and len(seen) < MAX_VISITS:
         (m,y,x), state, path = states.popleft()
-        if m == FOREST and abs(y-TARGET_YX[0])+abs(x-TARGET_YX[1]) <= 2:
+        if m == FOREST and (y,x) in SIGHT_TILES:
             load_state_bytes(emu,state)
             return path, trace
         for direction in DIRECTIONS:
@@ -73,12 +74,19 @@ def main():
         tick(emu,30)
         path, trace=explore(emu,symbols,out)
         result["controller_navigation"]=path
+        result["approach_map_y_x"]=[mem8(emu,symbols[k]) for k in ("wCurMap","wYCoord","wXCoord")]
         (out/"controller_inputs.json").write_text(json.dumps(path,indent=2)+"\n")
         (out/"navigation_trace.json").write_text(json.dumps(trace,indent=2)+"\n")
         screenshot(emu,out/"forest_approach.png")
         # Battle activation must occur through controller movement, not WRAM writes.
+        # We have navigated onto the four-tile LEFT sight line, not merely
+        # within Manhattan distance of the trainer's south side.
         battle=[]; triggered=False
+        tick(emu,120)
+        if mem8(emu,symbols["wTrainerClass"])==TARGET_CLASS and mem8(emu,symbols["wTrainerGenderVariant"])==1:
+            triggered=True
         for direction in DIRECTIONS:
+            if triggered:break
             saved=save_state_bytes(emu)
             for _ in range(5):
                 tap(emu,direction,hold=5,settle=40)
