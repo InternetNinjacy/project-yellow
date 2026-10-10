@@ -101,3 +101,32 @@ fails if the actual wild battle flag and enemy species are not observed.
 **Do not call the battle stage complete unless CI passes the new
 hard gates.** The native capture, seven box layouts, SRAM persistence,
 and independent natural route are still separate pending gates.
+
+## Verified DEBUG battle milestone (2026-10-10)
+
+GitHub Actions run
+https://github.com/InternetNinjacy/project-yellow/actions/runs/38054802162
+built both release and DEBUG, entered DEBUG New Game through the real
+SELECT+START title shortcut, advanced the shortened Oak dialogue, and
+walked DOWN one actual tile at frame 5560 to Pallet Town coordinate
+(5,7). The DEBUG-only one-shot script started standard wild Pidgey
+(species index 36) at level 3.
+
+A **second independent replay** from clean ROM boot, using the same
+controller trace, saved a private PyBoy checkpoint and ran the read-only
+`yel_test_005_capture_audit.py` gate. Results:
+- party_count=6; party species indices [132,144,100,84,36,165].
+- POKE_BALL count=30, exact bag item ID $04.
+- wIsInBattle=1 (wild) and wEnemyMonSpecies2=36.
+- all four pre-capture RAM conditions TRUE.
+- release and DEBUG builds completed successfully.
+- ROM SHA-256: 8368faf33393b29bf520d466ea6019ae4fb9211887da3fd1c341a0c03a129c30.
+- .sym SHA-256: f5651337da1dc7c494b9868a30975f32142051d49a3722f31e12ed11707743dc.
+- checkpoint SHA-256: 289302f2bf9140bb7d79574bdcd80dea1f46eaa945659465b314f02059cafef4.
+- Private state deleted before public artifact upload.
+
+**PASS: DEBUG engine-driven six-party pre-capture battle state**.
+**NOT YET PASS:** navigating the battle bag/capture prompt, deterministic
+capture success, seven storage scenarios on the YEL-QOL-011 PR #6 feature
+ROM, native save/restart/continue, and independent normal-story route.
+These require their own exact-build gameplay and storage evidence.
