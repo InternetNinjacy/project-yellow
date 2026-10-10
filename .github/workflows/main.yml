@@ -50,6 +50,7 @@ jobs:
           python3 -m unittest discover -s tests -p 'test_yel_qol_012_storage_layout.py' -v
           python3 -m unittest discover -s tests -p 'test_yel_qol_012_records.py' -v
           python3 -m unittest discover -s tests -p 'test_yel_qol_012_transactions.py' -v
+          python3 -m unittest discover -s tests -p 'test_yel_qol_012_fixture.py' -v
 
       - name: YEL-QOL-012 isolated real-emulator assembly transactions
         run: |
