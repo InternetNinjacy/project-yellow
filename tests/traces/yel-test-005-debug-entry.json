@@ -1,0 +1,94 @@
+[
+  {
+    "frames": 2500
+  },
+  {
+    "buttons": [
+      "select",
+      "start"
+    ],
+    "frames": 4,
+    "after": 100
+  },
+  {
+    "button": "down",
+    "frames": 2,
+    "after": 40
+  },
+  {
+    "button": "a",
+    "frames": 2,
+    "after": 240
+  },
+  {
+    "button": "a",
+    "frames": 2,
+    "after": 180
+  },
+  {
+    "button": "a",
+    "frames": 2,
+    "after": 180
+  },
+  {
+    "button": "a",
+    "frames": 2,
+    "after": 180
+  },
+  {
+    "button": "a",
+    "frames": 2,
+    "after": 180
+  },
+  {
+    "button": "a",
+    "frames": 2,
+    "after": 180
+  },
+  {
+    "button": "a",
+    "frames": 2,
+    "after": 180
+  },
+  {
+    "button": "a",
+    "frames": 2,
+    "after": 180
+  },
+  {
+    "button": "a",
+    "frames": 2,
+    "after": 180
+  },
+  {
+    "button": "a",
+    "frames": 2,
+    "after": 180
+  },
+  {
+    "button": "a",
+    "frames": 2,
+    "after": 180
+  },
+  {
+    "button": "a",
+    "frames": 2,
+    "after": 180
+  },
+  {
+    "button": "a",
+    "frames": 2,
+    "after": 180
+  },
+  {
+    "frames": 300
+  },
+  {
+    "button": "down",
+    "frames": 8,
+    "after": 180
+  },
+  {
+    "frames": 750
+  }
+]

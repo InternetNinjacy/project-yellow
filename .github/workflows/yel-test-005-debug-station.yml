@@ -1,0 +1,125 @@
+name: YEL-TEST-005 DEBUG capture station build
+on:
+  push:
+    branches: [yel-test-005-shared-emulator]
+    paths:
+      - 'engine/debug/debug_party.asm'
+      - 'scripts/RedsHouse2F.asm'
+      - 'scripts/PalletTown.asm'
+      - 'tests/traces/yel-test-005-debug-entry.json'
+      - 'scripts/yel_test_005_*.py'
+      - '.github/workflows/yel-test-005-debug-station.yml'
+  pull_request:
+    paths:
+      - 'engine/debug/debug_party.asm'
+      - '.github/workflows/yel-test-005-debug-station.yml'
+  workflow_dispatch:
+jobs:
+  build-debug-station:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: gbdev/rgbds
+          ref: v1.0.3
+          path: .toolchain/rgbds
+      - name: Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bison libpng-dev pkg-config build-essential
+          python -m pip install 'pyboy==2.6.0' Pillow
+      - name: Build pinned RGBDS
+        working-directory: .toolchain/rgbds
+        run: sudo make -j2 install
+      - name: Build release and DEBUG ROMs
+        run: |
+          rm -rf .toolchain
+          make -j2 pokeyellow.gbc pokeyellow_debug.gbc
+          mkdir -p test-results/yel-test-005-debug
+          sha256sum pokeyellow.gbc pokeyellow_debug.gbc pokeyellow_debug.sym > test-results/yel-test-005-debug/hashes.txt
+      - name: Assert debug-mode first-stage boot
+        run: |
+          python scripts/yel_emulator_smoke.py --rom pokeyellow_debug.gbc --out test-results/yel-test-005-debug/boot
+      - name: Exercise DEBUG New Game party and bag setup
+        run: |
+          python scripts/yel_test_005_route_probe.py \
+            --rom pokeyellow_debug.gbc --sym pokeyellow_debug.sym \
+            --trace tests/traces/yel-test-005-debug-entry.json \
+            --out test-results/yel-test-005-debug/new-game --require-debug-setup --require-debug-encounter
+      - name: Replay DEBUG battle into private checkpoint
+        run: |
+          python scripts/yel_test_005_replay.py \
+            --rom pokeyellow_debug.gbc --sym pokeyellow_debug.sym \
+            --trace tests/traces/yel-test-005-debug-entry.json \
+            --out test-results/yel-test-005-debug/capture --checkpoint
+          python scripts/yel_test_005_capture_audit.py \
+            --rom pokeyellow_debug.gbc --sym pokeyellow_debug.sym \
+            --state test-results/yel-test-005-debug/capture/checkpoint.state \
+            --out test-results/yel-test-005-debug/capture/audit.json
+      - name: Checkout PR 6 feature source in isolated directory
+        uses: actions/checkout@v4
+        with:
+          ref: yel-qol-011-auto-box-capture
+          path: .qol-feature
+      - name: Build QOL-011 feature code with DEBUG station overlay
+        run: |
+          git -C .qol-feature rev-parse HEAD > test-results/yel-test-005-debug/feature-source-sha.txt
+          cp engine/debug/debug_party.asm .qol-feature/engine/debug/debug_party.asm
+          cp scripts/PalletTown.asm .qol-feature/scripts/PalletTown.asm
+          make -C .qol-feature -j2 pokeyellow_debug.gbc
+          sha256sum .qol-feature/pokeyellow_debug.gbc .qol-feature/pokeyellow_debug.sym > test-results/yel-test-005-debug/feature-hashes.txt
+      - name: Probe feature-ROM battle menu from independent genuine checkpoint
+        run: |
+          python scripts/yel_test_005_replay.py \
+            --rom .qol-feature/pokeyellow_debug.gbc --sym .qol-feature/pokeyellow_debug.sym \
+            --trace tests/traces/yel-test-005-debug-entry.json \
+            --out test-results/yel-test-005-debug/qol-feature-base --checkpoint
+          python scripts/yel_test_005_capture_audit.py \
+            --rom .qol-feature/pokeyellow_debug.gbc --sym .qol-feature/pokeyellow_debug.sym \
+            --state test-results/yel-test-005-debug/qol-feature-base/checkpoint.state \
+            --out test-results/yel-test-005-debug/qol-feature-base/audit.json
+          python scripts/yel_test_005_capture_probe.py \
+            --rom .qol-feature/pokeyellow_debug.gbc --sym .qol-feature/pokeyellow_debug.sym \
+            --state test-results/yel-test-005-debug/qol-feature-base/checkpoint.state \
+            --out test-results/yel-test-005-debug/qol-feature-probes
+      - name: Run seven YEL-QOL-011 seeded box scenarios against feature ROM
+        run: |
+          python scripts/yel_test_005_storage_matrix.py \
+            --rom .qol-feature/pokeyellow_debug.gbc \
+            --sym .qol-feature/pokeyellow_debug.sym \
+            --base-state test-results/yel-test-005-debug/qol-feature-base/checkpoint.state \
+            --sequence tests/traces/yel-test-005-masterball-capture.json \
+            --fixture-builder .qol-feature/scripts/yel_qol_011_make_fixture.py \
+            --storage-harness .qol-feature/scripts/yel_qol_011_storage.py \
+            --out test-results/yel-test-005-debug/qol-feature-matrix
+      - name: Assemble allowlisted public evidence ONLY
+        if: always()
+        run: |
+          mkdir -p test-results/yel-test-005-public
+          python - <<'PY'
+          from pathlib import Path
+          import shutil
+          src = Path("test-results/yel-test-005-debug")
+          dst = Path("test-results/yel-test-005-public")
+          allowed = {".png", ".json", ".txt"}
+          for file in src.rglob("*"):
+              if not file.is_file() or file.suffix.lower() not in allowed:
+                  continue
+              target = dst / file.relative_to(src)
+              target.parent.mkdir(parents=True, exist_ok=True)
+              shutil.copyfile(file, target)
+          files = [p for p in dst.rglob("*") if p.is_file()]
+          forbidden = [p for p in files if p.suffix.lower() not in allowed]
+          if forbidden:
+              raise RuntimeError("FORBIDDEN ARTIFACTS: " + repr(forbidden))
+          print("Allowlisted files:", len(files))
+          PY
+      - name: Upload allowlisted non-binary reports and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yel-test-005-debug-station-safe-evidence
+          path: test-results/yel-test-005-public/
+          if-no-files-found: error

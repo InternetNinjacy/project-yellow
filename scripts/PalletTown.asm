@@ -1,4 +1,7 @@
 PalletTown_Script:
+IF DEF(_DEBUG)
+	call YelTest005DebugCaptureEncounter
+ENDC
 	CheckEvent EVENT_GOT_POKEBALLS_FROM_OAK
 	jr z, .next
 	SetEvent EVENT_PALLET_AFTER_GETTING_POKEBALLS
@@ -314,3 +317,34 @@ PalletTownPlayersHouseSignText:
 PalletTownRivalsHouseSignText:
 	text_far _PalletTownRivalsHouseSignText
 	text_end
+
+IF DEF(_DEBUG)
+; YEL-TEST-005: deliberate DEBUG-only capture station in Pallet Town.
+; DEBUG New Game begins here at (5,6). Step one tile south to (5,7).
+; The usual overworld battle dispatcher receives the wild species/level.
+; Use a legal script slot to suppress retriggering after the first encounter.
+YelTest005DebugCaptureEncounter:
+	ld a, [wPalletTownCurScript]
+	and a
+	ret nz
+	ld a, [wPartyCount]
+	cp PARTY_LENGTH
+	ret nz
+	ld a, [wXCoord]
+	cp 5
+	ret nz
+	ld a, [wYCoord]
+	cp 7
+	ret nz
+	; Explicitly use standard wild-battle rules, not an inherited
+	; special battle type that may bypass capacity checks.
+	xor a
+	ld [wBattleType], a
+	ld a, PIDGEY
+	ld [wCurOpponent], a
+	ld a, 3
+	ld [wCurEnemyLevel], a
+	ld a, SCRIPT_PALLETTOWN_NOOP
+	ld [wPalletTownCurScript], a
+	ret
+ENDC
