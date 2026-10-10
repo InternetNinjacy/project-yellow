@@ -278,6 +278,7 @@ INCLUDE "engine/gfx/mon_icons.asm"
 INCLUDE "engine/events/in_game_trades.asm"
 INCLUDE "engine/gfx/palettes.asm"
 INCLUDE "engine/menus/save.asm"
+INCLUDE "engine/menus/yel_qol_012_record_access.asm"
 
 
 SECTION "Itemfinder 1", ROMX
