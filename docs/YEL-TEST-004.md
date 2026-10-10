@@ -143,3 +143,10 @@ At branch c85714c8a27ac011549e3de09e17990acd35aed4 the latest SGB and isolated B
 - Both species workflows now collect 40 live debugger-state/screenshot samples (wCurMap, facing, motion status, object X/Y) after VRAM/OAM snapshot, archive the frames, and invoke separate species-specific fail-closed direction gates. Increased job timeouts to 12 minutes for the additional captures.
 - Fixed initial regexp escaping in the new live integrity and directional parsers. The newly added verifier paths require observed completed CI before either can be marked PASS; frame/debugger scheduling and native SameBoy examine output may require repair after logs arrive.
 - SGB transparency/background compositing and palette/border correctness are not verified by this gate; physical hardware remains untested. Keep draft PR #8 unmerged, preserve artwork and recognition threshold 0.45.
+
+## CI diagnosis and native SGB border checkpoint — 2026-10-10
+
+- Head 874eef71454bc3e23381d8d832536569e18e4618: CI, clean baseline, DMG smoke, and dev-lab build SUCCESS; BOTH SGB workflows FAILED at first full VRAM parser check. Runner logs explicitly report only 16 missing bytes, $8000..$800f, from 6144-byte VRAM request. This is a dump/parser failure; subsequent live OAM/directional gates were skipped, not proven incorrect.
+- Updated both SameBoy memory parsers to recognize prompt-prefixed first hex rows; remains a hypothesis until new CI/archived transcript confirms exact output. Do not weaken byte completeness or accept sparse VRAM.
+- Added scripts/yel_test_004_sgb_border_gate.py and CI invocations for each species. It uses the real independent 512x448 SGB image to assert visible non-gray border pixels, border color variability and actual central gameplay pixels. This establishes display-path/border presence only; NOT per-species assigned SGB overworld colors or SGB packet accuracy.
+- Four-direction SGB runtime proof still depends on full correct VRAM/OAM and directional debugger samples. SGB sprite-specific transparency/occlusion and packet correctness remain unverified. All source artwork and original 0.45 room threshold preserved. PR #8 remains DRAFT.
