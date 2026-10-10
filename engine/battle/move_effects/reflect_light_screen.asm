@@ -24,35 +24,6 @@ ReflectLightScreenEffect_:
 	ld [de], a
 	ld hl, LightScreenProtectedText
 	jr .playAnim
-.reflect
-	ld de, wPlayerReflectTurns
-	ldh a, [hWhoseTurn]
-	and a
-	jr z, .checkReflect
-	ld de, wEnemyReflectTurns
-.checkReflect
-	ld a, [de]
-	and a
-	jr nz, .moveFailed
-	set HAS_REFLECT_UP, [hl]
-	ld a, 5
-	ld [de], a
-	ld hl, ReflectGainedArmorText
-.playAnim
-.reflect
-	bit HAS_REFLECT_UP, [hl] ; is mon already protected by reflect?
-	jr nz, .moveFailed
-	set HAS_REFLECT_UP, [hl] ; mon is now protected by reflect
-	ld de, wPlayerReflectTurns
-	ldh a, [hWhoseTurn]
-	and a
-	jr z, .startReflect
-	ld de, wEnemyReflectTurns
-.startReflect
-	ld a, 5
-	ld [de], a
-	ld hl, ReflectGainedArmorText
-.playAnim
 	push hl
 	ld hl, PlayCurrentMoveAnimation
 	call EffectCallBattleCore
