@@ -23,7 +23,7 @@ def box_location(index: int) -> Address:
                    (index % BOXES_PER_BANK) * BOX_BYTES)
 
 def check_layout() -> None:
-    assert BOX_BYTES == 1672, BOX_BYTES
+    assert BOX_BYTES == 1682, BOX_BYTES
     assert BOXES_PER_BANK * BOX_BYTES + 5 <= BANK_BYTES
     assert len(set(BOX_BANKS)) == len(BOX_BANKS)
     assert not CORE_BANKS.intersection(BOX_BANKS)
