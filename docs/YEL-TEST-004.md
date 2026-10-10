@@ -43,3 +43,9 @@ Use an actual SGB-capable renderer, rather than PyBoy's CGB mode, for the remain
 - Run 38006042395 passed SameBoy initialization, SGB model startup, and an authentic Pikachu SGB border screenshot. Run 38006382886 passed staged console-input navigation/screenshots. Run 38006611551 passed staged shots with later entry timing; visible screenshots still show startup/Pikachu intro and not in-map species.
 - SGB archive https://drive.google.com/file/d/13ZBI9ZtTOwCp2gPacSc404jj2SYMrhQb/view is stored under QA & Integration Reports, not misrepresented as evidence for Bulbasaur or Ivysaur sprite colors.
 - Next engineering step is a deterministic method of getting into the DEBUG lab on this actual SGB emulator, then capture the on-screen Bulbasaur and Ivysaur frames separately, verify palette behavior and SGB data packets. This gate is NOT completed by the boot smoke; do not mark either species SGB-verified or merge PR #8 on this basis alone.
+
+## SGB DEBUG navigation checkpoint (2026-10-09)
+
+- Actual SameBoy SGB-NTSC screenshot from GitHub Actions run 38010740129 proves the existing DEBUG menu progression reached Red's House upstairs (the player, Pikachu and second-floor layout are on screen). Earlier startup-only checks had not reached the gameplay map.
+- The current unresolved navigation is the upstairs stairs/warp into Red's House 1F where the DEBUG Ivysaur station is installed. We added arrow-key steps and additional before/after screenshots in the SGB CI job. The newest run must be inspected before recording this warp as successful.
+- The SGB species palette gate stays pending until the real in-map Ivysaur and independently isolated Bulbasaur have visible, archived screenshots. Startup-border or house-upstairs evidence is not species color verification.
