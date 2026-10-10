@@ -30,12 +30,13 @@ DEF box_n = 0
 MACRO boxes
 	REPT \1
 		DEF box_n += 1
-	sBox{d:box_n}:: ds wBoxDataEnd - wBoxDataStart
+	sBox{d:box_n}:: ds 1682 ; YEL-QOL-012 physical 30-slot box, independent of WRAM window
 	ENDR
 ENDM
 
 SECTION "Saved Boxes 1", SRAM
 	boxes 4
+ASSERT sBox4 - sBox1 == 3 * 1682
 sBank2AllBoxesChecksum:: db
 sBank2IndividualBoxChecksums:: ds 4
 
