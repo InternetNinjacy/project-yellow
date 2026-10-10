@@ -9,7 +9,10 @@ SetDebugNewGameParty: ; unreferenced except in _DEBUG
 	ld a, [de]
 	ld [wCurEnemyLevel], a
 	inc de
+	; AddPartyMon may clobber DE; preserve the roster cursor.
+	push de
 	call AddPartyMon
+	pop de
 	jr .loop
 
 DebugNewGameParty: ; unreferenced except in _DEBUG
