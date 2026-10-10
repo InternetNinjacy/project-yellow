@@ -25,6 +25,7 @@ def main():
     p.add_argument("--sym", required=True)
     p.add_argument("--trace", required=True)
     p.add_argument("--out", required=True)
+    p.add_argument("--require-movement", action="store_true", help="Fail unless an input changes actual player coordinates")
     a = p.parse_args()
     steps = json.loads(Path(a.trace).read_text())
     validate(steps)
@@ -64,7 +65,11 @@ def main():
             record["screenshot_sha256"] = sha(filename)
             rows.append(record)
             print(json.dumps(record), flush=True)
+        moved = any((a["wXCoord"], a["wYCoord"]) != (b["wXCoord"], b["wYCoord"]) and a["wCurMap"] == b["wCurMap"] for a,b in zip(rows[1:], rows[:-1]))
+        if a.require_movement and not moved:
+            raise AssertionError("No actual player movement recorded")
         result = inspect(emu.memory, syms)
+        result["actual_coordinate_movement"] = moved
         result["steps"] = rows
         result["rom_sha256"] = sha(a.rom)
         result["symbols_sha256"] = sha(a.sym)
