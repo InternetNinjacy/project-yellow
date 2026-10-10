@@ -2511,6 +2511,7 @@ ENDR
 wBoxMonNicksEnd::
 
 wBoxDataEnd::
+ASSERT wBoxDataEnd - wBoxDataStart == 1122, "YEL012: 20-slot window must remain 1122 bytes"
 
 
 SECTION "CGB Palette Data", WRAM0
