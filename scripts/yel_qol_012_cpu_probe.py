@@ -77,7 +77,8 @@ def main():
             em.memory[0x2000]=bank
             regs.PC=addr
             regs.A=ctx.get('a',0)
-            regs.DE=ctx.get('de',0)
+            regs.D=(ctx.get('de',0)>>8)&0xff
+            regs.E=ctx.get('de',0)&0xff
         else:
             ctx['flags']=regs.F
             ctx['done']=True
