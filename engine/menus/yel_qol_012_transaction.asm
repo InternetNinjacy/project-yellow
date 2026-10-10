@@ -71,62 +71,6 @@ Yel012RefreshPhysicalChecksums::
 	jr nz, .each
 	ret
 
-; Copy a complete box between physical bank and the bank-5 snapshot.
-; Called only while window backup exists. A=0 physical -> backup and shadow;
-; A=1 backup -> physical; A=2 shadow -> physical.
-; Uses the existing 1122-byte WRAM window as a two-part transfer buffer.
-; Does not preserve WRAM, so caller must restore the window backup.
-Yel012CopyPhysicalAndSnapshot:
-	cp 0
-	jr z, .fromPhysical
-	cp 1
-	jr z, .fromOriginal
-	ld de, sYel012TransactionShadow
-	jr .toPhysical
-.fromOriginal
-	ld de, sYel012TransactionBackup
-.toPhysical
-	; Save snapshot source address on stack, then pull bank-5 to WRAM.
-	push de
-	ld a, 5
-	call OpenSRAM
-	pop hl
-	ld de, wBoxDataStart
-	ld bc, YEL012_WINDOW_SIZE
-	call CopyData
-	call Yel012GetBoxSRAMLocation
-	ld a, b
-	call OpenSRAM
-	ld de, hl
-	ld hl, wBoxDataStart
-	ld bc, YEL012_WINDOW_SIZE
-	call CopyData
-	; Second chunk.
-	ld a, 5
-	call OpenSRAM
-	ld hl, sYel012TransactionBackup + YEL012_WINDOW_SIZE
-	; Select the intended snapshot source using status-mode caller's
-	; saved mode. See explicit wrappers below.
-	ret
-.fromPhysical
-	call Yel012GetBoxSRAMLocation
-	ld a, b
-	call OpenSRAM
-	ld de, wBoxDataStart
-	ld bc, YEL012_WINDOW_SIZE
-	call CopyData
-	ld a, 5
-	call OpenSRAM
-	ld hl, wBoxDataStart
-	ld de, sYel012TransactionBackup
-	ld bc, YEL012_WINDOW_SIZE
-	call CopyData
-	ld hl, wBoxDataStart
-	ld de, sYel012TransactionShadow
-	ld bc, YEL012_WINDOW_SIZE
-	call CopyData
-	ret
-
 ; Stage a physical box to its rollback snapshot and mutable shadow.
 ; Back up the old WRAM working window before modifying it.
 ; On success carry clear, bank-5 transaction status=1.
