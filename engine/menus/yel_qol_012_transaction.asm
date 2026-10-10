@@ -466,7 +466,7 @@ Yel012ValidateShadow:
 ; The authoritative SRAM box is not touched until final commit.
 Yel012StageRecordReplacement::
 	cp MONS_PER_BOX
-	ret nc
+	jp nc, .invalidIndex
 	push af
 	push de
 	ld a, 5
@@ -509,6 +509,9 @@ Yel012StageRecordReplacement::
 	push af
 	call CloseSRAM
 	pop af
+	ret
+.invalidIndex
+	scf
 	ret
 .badStack
 	pop de
