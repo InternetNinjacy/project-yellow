@@ -99,7 +99,7 @@ BaseSpecialStats::
 	db 85, 45 ; 91 cloyster
 	db 100, 35 ; 92 gastly
 	db 115, 55 ; 93 haunter
-	db 130, 75 ; 94 gengar
+	db 130, 67 ; 94 gengar
 	db 30, 45 ; 95 onix
 	db 43, 90 ; 96 drowzee
 	db 73, 115 ; 97 hypno
