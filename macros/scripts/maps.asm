@@ -22,6 +22,7 @@ MACRO object_event
 	IF _NARG > 7
 		db TRAINER | \6
 		db \7
+		ASSERT (\8 & TRAINER_PARTY_INDEX_MASK) > 0, "Trainer party number must be nonzero"
 		db \8
 	ELIF _NARG > 6
 		db ITEM | \6
