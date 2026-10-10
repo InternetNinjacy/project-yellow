@@ -1385,7 +1385,9 @@ wBattleMon:: battle_struct wBattleMon
 
 wTrainerClass:: db
 
-	ds 1
+; Current opponent presentation variant, separate from the class ID.
+; 0 = original presentation, 1 = opposite-gender counterpart.
+wTrainerGenderVariant:: db
 
 wTrainerPicPointer:: dw
 
