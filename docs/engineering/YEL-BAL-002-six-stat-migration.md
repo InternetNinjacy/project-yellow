@@ -185,3 +185,9 @@ Ownership split affirmed: this YEL-BAL-002 thread implements game battle rules; 
 Latest mechanics source: Amnesia +2 supplemental SpD, Growth independent +1 SpA/+1 SpD with asymmetric stat cap, Psychic secondary-effect minus one supplemental target SpD. No actual in-game damage or stage replay passed. CI success only proves build/startup. Preserve draft PR, save/PC compatibility, and approved user canon.
 
 Resume bounded battle mechanics implementation: (1) Haze resets all active stat stages including supplemental SpD but preserves ordinary status/team-wide Reflect/Light Screen, (2) Transform copies/derives independent Special statistics and stages without modifying persistent records, (3) switch-in stage reset and split-cache integrity, (4) five-turn team-wide screen state and expiry; eventually doubles and verified damage handling. Track emulator replay as external QA dependency, not the active thread's toolchain task.
+
+## BAL-15: Haze stage-only reset (2026-10-10)
+
+Commit `845e6aa5ad67f649f80844cf19d58ccb3392ec30` modifies `engine/battle/move_effects/haze.asm`. The move restores active player and enemy Attack, Defense, Speed and SpA, resets their existing accuracy/evasion and other legacy stat-stage bytes to neutral (7), and additionally restores both battle-only SpD caches from unmodified SpD while setting both independent SpD stages to neutral. It intentionally removes the old Haze side effects which cured target major status and cleared disable/confusion/other volatile flags, bad poison and Reflect/Light Screen. This is a mechanics-source change, not an emulator-proven result.
+
+No persistent Pokémon record sizes changed. Build and in-game checks are required: paired split stages with divergent bases and +6/-6 modifiers, accuracy/evasion, active status unchanged, team screens unchanged, transformed battlers, and switch followup. Keep PR #5 draft. Emulator fixture execution is owned by the separate testing workstream.
