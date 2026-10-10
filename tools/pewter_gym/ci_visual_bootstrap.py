@@ -68,14 +68,55 @@ def main():
         # Report unexpected locations rather than silently claiming a warp test.
         if coords() != (16, 18):
             raise RuntimeError(f"CI-only startup did not retain test coordinates: {coords()}")
-        # Directional input must perform the original game warp.
-        for _ in range(8):
-            press("up", n=10, settle=20)
+        # Read the live event table and map/warp state without modifying WRAM.
+        def symbol(name):
+            _, addr = emulator.symbol_lookup(name)
+            return addr
+        warp_count_addr = symbol("wNumberOfWarps")
+        warp_entries_addr = symbol("wWarpEntries")
+        flags_addr = symbol("wMovementFlags")
+        def warp_snapshot():
+            count = int(emulator.memory[warp_count_addr])
+            # Four bytes per warp: y, x, target warp, target map.
+            entries = [
+                [int(emulator.memory[warp_entries_addr + i * 4 + j]) for j in range(4)]
+                for i in range(min(count, 64))
+            ]
+            return {"count": count, "entries": entries,
+                    "entrance_matches": [e for e in entries if e[:2] == [17, 16]],
+                    "movement_flags": int(emulator.memory[flags_addr])}
+        report = {"before": {"map": location(), "coords": coords(),
+                              "warp_state": warp_snapshot()}, "steps": []}
+        (args.output / "doorway_diagnostics.json").write_text(json.dumps(report, indent=2) + "\n")
+        print(f"Warp snapshot: {report['before']['warp_state']}", flush=True)
+        if not report["before"]["warp_state"]["entrance_matches"]:
+            shot("warp_table_missing.png")
+            raise RuntimeError("Pewter City live warp table has no (y=17,x=16) entrance")
+        # Controller input is pulsed briefly, never blindly held for many tiles.
+        for step_index in range(5):
+            previous = coords()
+            shot(f"before_step_{step_index:02d}.png")
+            emulator.button_press("up")
+            tick(2)
+            emulator.button_release("up")
+            tick(24)
+            # Wait for a full tile or map transition.
+            for _ in range(90):
+                if location() == GYM or coords() != previous:
+                    break
+                tick(1)
+            tick(12)
+            current = {"step": step_index, "start": previous, "end": coords(),
+                       "map": location(), "warp_state": warp_snapshot()}
+            report["steps"].append(current)
+            (args.output / "doorway_diagnostics.json").write_text(json.dumps(report, indent=2) + "\n")
+            shot(f"after_step_{step_index:02d}.png")
+            print(f"Doorway step: {current}", flush=True)
             if location() == GYM:
                 break
         if location() != GYM:
             shot("entry_failed.png")
-            raise RuntimeError(f"Gym warp did not activate, map={location():#04x}, player={coords()}")
+            raise RuntimeError(f"Gym warp did not activate: {report['steps'][-1]}")
         tick(90)
         if location() != GYM:
             raise RuntimeError("Entered Gym but could not remain in it")
