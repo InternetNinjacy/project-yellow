@@ -171,3 +171,9 @@ Branch code commits `9d7fbbf934e2fd757f76965599e43c1aaa6edcf8` and `17bc04456154
 - Existing party and box serialized records are unchanged.
 
 Verification: all four workflows passed at earlier Growth-only commit efaff938, **not** evidence for this new source. New RGBDS/DMG CI is required. Deterministic emulator battle-state fixtures have not been run and cannot be claimed; minimum required fixtures: each move from both player/enemy perspectives, +6/-6 mixed boundaries, independent stage/state reads and output damage, secondary-effect trigger and miss, switching, Haze and Transform. This change does not yet implement Haze, Transform, screens or double-battle architecture. PR stays draft.
+
+## BAL-13: deterministic PyBoy battle replay runner (2026-10-09)
+
+Committed `tests/battle/replay.py` (`11c857c9bfcb4f96e4a2b6cc96de21ed72eecf7a`) and its capture instructions (`c27ee051d22ba5cb48ff3064f9d6957b3cd48bc0`). The script parses the built ROM's symbol map, loads each real battle savestate into PyBoy, checks pre-action player/enemy Special Attack and supplemental Special Defense stage/stat memory, replays frame-explicit button input, and checks post-action state, including HP delta for a damage case. All ten baseline cases are required. Missing save-states and missing cases are hard failures, not skipped tests.
+
+**Evidence level:** test *runner source* committed; not a captured fixture. No valid pre-battle savestate or completed deterministic replay is present, and the runner is not wired into Actions without bona fide fixtures. Previously passing DMG smoke workflows remain startup-only. Next: capture genuine in-battle states, fill manifest with independently checked expected stats and damage, execute PyBoy replay, fix any confirmed code divergences, and only then promote actual mechanic cases to verified. PR #5 stays draft.
