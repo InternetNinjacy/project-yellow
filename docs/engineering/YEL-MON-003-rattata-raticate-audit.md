@@ -59,3 +59,13 @@ All other TMs excluded, explicitly including Ice Beam, Blizzard, Thunderbolt, Th
 7. Build, emulator replay, and hardware tests **not performed**; do not merge until all pass.
 
 Source references and unresolved tasks remain here so the approved design is not lost or silently altered.
+
+## Implementation checkpoint (2026-10-10)
+
+- Internal species RATTAKING added as $BF, provisional Project Yellow Pokédex row #152, with synchronized species-name/dex-order/cry/dex-pointer/base-stat/six-stat/icon/palette/evolution entries. The overall Project Yellow species plan is 159; this provisional Dex slot must be reconciled when the other approved additions are registered.
+- Raticate evolves at level 36; Rattaking receives the approved base stats and a temporary Raticate battle sprite and Pokédex text. These are not final approved art or writing.
+- Scary Face, Poison Fang and Crunch are registered in move constants, names, main records, categories, animation and sound pointers. Scary Face reuses the stock Speed -2 effect. POISON FANG and CRUNCH still use **incorrect temporary stock effects**; the approved severe poison at 50% and exact 39% Defense drop MUST be implemented before release.
+- TM34 now maps to Poison Fang and Rattata/Raticate TM compatibility includes it. All other Bide TM references, item placement and global compatibility still require validation.
+- RGBDS build and emulator checks queued in GitHub Actions; no pass established when this note was written.
+
+**Do not merge.** Complete actual custom effects and remove temporary art/text after approved assets exist, then verify 152-entry integration and full 159-species expansion, all move tables, TM scripts, and evolution behavior.
