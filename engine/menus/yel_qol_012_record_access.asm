@@ -65,9 +65,8 @@ Yel012TransferBoxRecord:
 	push de ; 55-byte source/destination buffer
 	push af ; slot
 	call Yel012GetBoxSRAMLocation ; HL physical box, B SRAM bank
-	call EnableSRAM
 	ld a, b
-	ld [rRAMB], a
+	call OpenSRAM
 	pop af ; slot
 	pop de ; record buffer
 	pop bc ; C is read/write mode
@@ -119,11 +118,11 @@ Yel012TransferBoxRecord:
 	; Refresh the entire bank checksum and four per-box checksums.
 	call Yel012RefreshPhysicalChecksums
 .done
-	call DisableSRAM
+	call CloseSRAM
 	and a
 	ret
 .badOpen
-	call DisableSRAM
+	call CloseSRAM
 .invalid
 	scf
 	ret
