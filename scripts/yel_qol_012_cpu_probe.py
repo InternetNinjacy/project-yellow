@@ -54,7 +54,8 @@ def main():
            'Yel012PrepareCaptureInsert','Yel012CommitTransaction','Yel012AbortTransaction',
            'wCurrentBoxNum','wBoxDataStart','sYel012TransactionStatus',
            'sYel012TransactionNewRecord','sYel012TransactionShadow','sYel012TransactionBackup',
-           'sYel012StorageVersion','sYel012StorageVersionCheck']
+           'sYel012StorageVersion','sYel012StorageVersionCheck',
+           'Yel012InitializeFreshStorage','Yel012CheckStorageVersion']
     for n in names:
         if n not in sym:raise RuntimeError('Missing symbol '+n)
     rom=Path(args.rom).read_bytes()
@@ -274,6 +275,18 @@ def main():
         flag=call('Yel012FindCaptureBox')
         assert flag&16,('uninitialized storage accepted',flag)
         results.append({'mode':'physical-selector-failure-cases','status':'PASS_ASSEMBLY_CPU'})
+        # Explicit fresh-game initializer CPU test, after the selector
+        # matrix. This intentionally overwrites test-only seeded SRAM.
+        flag=call('Yel012InitializeFreshStorage')
+        assert flag&16==0,('fresh initializer rejected',flag)
+        assert sram(5,get('sYel012StorageVersion'),2)==bytes([1,0xfe]),('version marker')
+        for idx in range(12):
+            box=sram(2+idx//4,get('sBox1')+(idx%4)*BOX,BOX)
+            assert box==bytes([0,255])+bytes(BOX-2),('fresh box not blank',idx)
+        flag=call('Yel012CheckStorageVersion')
+        assert flag&16==0,('version validation rejected initialized storage',flag)
+        results.append({'mode':'fresh-initialization-12x30',
+                        'status':'PASS_ASSEMBLY_CPU_NOT_GAMEPLAY_SAVE'})
         status='PASS_ISOLATED_ASSEMBLY_TRANSACTION_NOT_SAVE_VERIFIED'
     except Exception as exc:
         status='FAIL'
