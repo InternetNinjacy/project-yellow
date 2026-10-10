@@ -1,0 +1,29 @@
+# YEL-TEST-005 — Universal Sprite Lab Integration
+
+Status: IN PROGRESS / DO NOT MERGE
+Parent: draft PR #8 (YEL-TEST-004)
+
+## Objective
+Prove a single declarative sprite QA workflow reproduces the independent Bulbasaur and Ivysaur SameBoy SGB-NTSC acceptance checks. Then add a third sprite without new species-specific verification logic.
+
+## Inputs
+- tests/sprite_lab/cases.json: species ID/name, exact source sprite, DEBUG map and object location, emulated hardware, expected actions/gates.
+- scripts/yel_sprite_lab.py: validates manifests, prepares the CI-only object fixture, aggregates per-species emulator evidence, fails closed on missing or mismatched reports.
+- .github/workflows/yel-sprite-regression.yml: common two-entry species matrix with independent artifacts.
+
+## Entry audit (2026-10-10)
+PR #8 head 7ab108a initially had green build/DMG jobs but both original SGB workflows failed in the SameBoy launch shell with syntax error near unexpected token '(' at the nested single-quoted LCDC OBJ toggle. This was a CI shell syntax failure, not a Pokémon rendering result. Fixed three workflows by double-quoting/escaping debugger expressions inside the existing single-quoted bash command. Enabled the universal matrix on draft pull-request updates to exercise the actual pipeline.
+
+## Acceptance gates
+1. Pilot matrix completes both cases, not simply static lint.
+2. Independently verify matching ROM/species/config source hashes, symbol-resolved live VRAM/OAM, all four actual facings, moving status and coordinates.
+3. Verify native SGB border, and isolated sprite transparency/occlusion. Do not infer palette-packet correctness from generic border colors.
+4. Complete SGB packet proof or retain explicit PENDING, no false final signoff.
+5. Demonstrate a third actual species through manifest/config with no custom species gate.
+6. Archive independent emulator screenshots, debugger logs, and reports for each case and update the registry.
+
+## Non-goals and safeguards
+Do not modify approved art, weaken 0.45 room recognition, or claim physical hardware validation. Keep PR #8 draft until prior gates and universal pilot complete. DMG and CGB adapters are separate later deliverables; only SGB-NTSC is wired today.
+
+## Current verification
+Original per-species workflow shell failure diagnosed and repaired; new shared CI matrix triggered by PR update, outcome not yet confirmed.
