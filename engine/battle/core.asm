@@ -740,6 +740,8 @@ CheckNumAttacksLeft:
 	ret
 
 HandleEnemyMonFainted:
+	; An early knockout terminates the action round before the normal tick.
+	call TickProjectYellowScreens
 	xor a
 	ld [wInHandlePlayerMonFainted], a
 	call FaintEnemyPokemon
@@ -1013,6 +1015,8 @@ PlayBattleVictoryMusic:
 	jp Delay3
 
 HandlePlayerMonFainted:
+	; An early knockout terminates the action round before the normal tick.
+	call TickProjectYellowScreens
 	ld a, 1
 	ld [wInHandlePlayerMonFainted], a
 	call RemoveFaintedPlayerMon
