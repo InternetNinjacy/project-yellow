@@ -491,6 +491,25 @@ UpdateStat:
 	ld [hl], a
 	pop hl
 UpdateStatDone:
+	; YEL-BAL-002: Growth increases both split Special stats. The legacy
+	; effect above has already changed Special Attack; update Sp. Def only
+	; when that stage increase actually succeeded.
+	push af
+	push bc
+	push de
+	push hl
+	ldh a, [hWhoseTurn]
+	and a
+	ld a, [wPlayerMoveNum]
+	jr z, .checkGrowth
+	ld a, [wEnemyMoveNum]
+.checkGrowth
+	cp GROWTH
+	call z, RaiseGrowthSpecialDefense
+	pop hl
+	pop de
+	pop bc
+	pop af
 	ld b, c
 	inc b
 	call PrintStatText
@@ -540,6 +559,64 @@ UpdateStatDone:
 ; these shouldn't be here
 	call QuarterSpeedDueToParalysis ; apply speed penalty to the player whose turn is not, if it's paralyzed
 	jp HalveAttackDueToBurn ; apply attack penalty to the player whose turn is not, if it's burned
+
+; YEL-BAL-002: only Growth's independent Sp. Def stage. The existing
+; Special stat and stage remain Special Attack and are not modified here.
+; This helper preserves its caller's registers via UpdateStatDone.
+RaiseGrowthSpecialDefense:
+	ld hl, wPlayerSpecialDefenseMod
+	ld de, wPlayerUnmodifiedSpecialDefense
+	ld bc, wPlayerSpecialDefense
+	ldh a, [hWhoseTurn]
+	and a
+	jr z, .selected
+	ld hl, wEnemySpecialDefenseMod
+	ld de, wEnemyUnmodifiedSpecialDefense
+	ld bc, wEnemySpecialDefense
+.selected
+	ld a, [hl]
+	cp 13
+	ret nc
+	inc [hl]
+	ld a, [hl]
+	dec a
+	add a
+	push bc ; destination of the calculated current Sp. Def
+	ld c, a
+	ld b, 0
+	ld hl, StatModifierRatios
+	add hl, bc
+	xor a
+	ldh [hMultiplicand], a
+	ld a, [de]
+	ldh [hMultiplicand + 1], a
+	inc de
+	ld a, [de]
+	ldh [hMultiplicand + 2], a
+	ld a, [hli]
+	ldh [hMultiplier], a
+	call Multiply
+	ld a, [hl]
+	ldh [hDivisor], a
+	ld b, 4
+	call Divide
+	; Apply the same 999 cap as the existing stat-stage routines.
+	ldh a, [hProduct + 3]
+	sub LOW(MAX_STAT_VALUE)
+	ldh a, [hProduct + 2]
+	sbc HIGH(MAX_STAT_VALUE)
+	jr c, .write
+	ld a, HIGH(MAX_STAT_VALUE)
+	ldh [hProduct + 2], a
+	ld a, LOW(MAX_STAT_VALUE)
+	ldh [hProduct + 3], a
+.write
+	pop hl
+	ldh a, [hProduct + 2]
+	ld [hli], a
+	ldh a, [hProduct + 3]
+	ld [hl], a
+	ret
 
 RestoreOriginalStatModifier:
 	pop hl
