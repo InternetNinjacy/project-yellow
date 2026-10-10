@@ -29,7 +29,7 @@ jobs:
         run: sudo make -C rgbds -j2 install
       - name: Build isolated CI visual ROM with symbols
         run: |
-          make DEBUG=1 RGBASMFLAGS='-Weverything -Wtruncation=1 -D _PEWTER_GYM_VISUAL_TEST' -j2 pokeyellow.gbc
+          make DEBUG=1 RGBASMFLAGS='-Weverything -Wtruncation=1 -Q8 -P includes.asm -D _PEWTER_GYM_VISUAL_TEST' -j2 pokeyellow.gbc
           test -s pokeyellow.sym
       - name: Install PyBoy
         run: python3 -m pip install 'pyboy==2.6.0'
