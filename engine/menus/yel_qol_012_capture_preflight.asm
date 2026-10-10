@@ -30,6 +30,8 @@ Yel012ResolvePhysicalBox::
 ; Does not mutate wCurrentBoxNum or overwrite the working WRAM window.
 ; Fail closed on count/sentinel errors; no automatic box initialization.
 Yel012FindCaptureBox::
+	call Yel012CheckStorageVersion
+	jp c, .rejected
 	ld a, [wCurrentBoxNum]
 	bit BIT_HAS_CHANGED_BOXES, a
 	jp z, .rejected
