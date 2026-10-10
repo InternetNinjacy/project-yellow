@@ -4,9 +4,8 @@
   },
   {
     "buttons": [
-      "up",
       "select",
-      "b"
+      "start"
     ],
     "frames": 4,
     "after": 100
