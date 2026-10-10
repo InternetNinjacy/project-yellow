@@ -57,6 +57,25 @@ jobs:
           mkdir -p test-results/yel-qol-012
           python3 scripts/yel_qol_012_cpu_probe.py --rom pokeyellow_debug.gbc --sym pokeyellow_debug.sym --out test-results/yel-qol-012/cpu-transaction.json
 
+      - name: YEL-QOL-012 real capture and SAVE/CONTINUE replay
+        if: ${{ hashFiles('tests/replays/yel_qol_012_full_party_29_to_30.json') != '' }}
+        run: |
+          mkdir -p test-results/yel-qol-012
+          python3 scripts/yel_qol_012_gameplay_replay.py \
+            --rom pokeyellow_debug.gbc \
+            --sym pokeyellow_debug.sym \
+            --replay tests/replays/yel_qol_012_full_party_29_to_30.json \
+            --out test-results/yel-qol-012/real-gameplay.json
+
+      - name: Archive allowlisted YEL-QOL-012 gameplay evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yel-qol-012-gameplay-evidence
+          path: test-results/yel-qol-012/real-gameplay.json
+          if-no-files-found: ignore
+          retention-days: 30
+
       - name: Archive allowlisted YEL-QOL-012 CPU evidence
         if: always()
         uses: actions/upload-artifact@v4
