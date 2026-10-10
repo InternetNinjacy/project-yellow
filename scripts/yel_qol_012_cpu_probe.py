@@ -2,7 +2,7 @@
 """Execute isolated YEL-QOL-012 assembler entrypoints in real PyBoy CPU.
 
 This is NOT the Python reference model or a live game save test.
-Uses a ROM0 bootstrap hook to prepare CPU registers and call bank $3B code
+Uses direct writable CPU registers to invoke bank $3B code
 before the regular game initializes; SRAM and WRAM are seeded explicitly.
 Any failed check exits nonzero, producing no raw save-state artifacts.
 """
@@ -59,61 +59,37 @@ def main():
     em=PyBoy(args.rom,window='null',cgb=False,sound_emulated=False)
     em.set_emulation_speed(0)
     results=[]
-    context={'call':None,'done':False,'started':False,'flags':None}
     regs=em.register_file
-    # Isolated CPU calls have no initialized VBlank/joypad handlers;
-    # keep IME harmless by masking IE and acknowledging IF.
-    em.memory[0xffff]=0
-    em.memory[0xff0f]=0
-    # Park execution in an inert WRAM JR -2, preventing Game Freak's
-    # real startup from corrupting CPU state between isolated calls.
+    # Real CPU execution with an inert WRAM return loop, no ROM hooks.
+    # CPU calls return to $C000: JR -2. JR does not change flags.
     em.memory[0xc000]=0x18
     em.memory[0xc001]=0xfe
-    def boot(ctx):
-        # This ROM0 instruction is the emulator's CPU trampoline.
-        if ctx['call'] is None:return
-        if not ctx['started']:
-            n=ctx['call']
-            bank,addr=sym[n]
-            assert bank==BANK,(n,bank)
-            ctx['started']=True
-            regs.SP=0xcff0
-            em.memory[0xcfef]=0x01
-            em.memory[0xcfee]=0x00
-            # Return address 0x0100 (little endian), triggers hook again.
-            regs.SP=0xcfee
-            em.memory[0x2000]=bank
-            regs.PC=addr
-            regs.A=ctx.get('a',0)
-            regs.D=(ctx.get('de',0)>>8)&0xff
-            regs.E=ctx.get('de',0)&0xff
-        else:
-            ctx['flags']=regs.F
-            ctx['done']=True
-            ctx['call']=None
-            regs.PC=0xc000
-    em.hook_register(0,0x100,boot,context)
-    context['interrupts']=0
-    def isolate_interrupt(ctx):
-        ctx['interrupts']+=1
-        sp=regs.SP
-        # The isolated CPU transaction has no game IRQ initialization.
-        # Simulate an empty RETI for the pushed return address.
-        regs.PC=em.memory[sp] | (em.memory[(sp+1)&0xffff]<<8)
-        regs.SP=(sp+2)&0xffff
-        em.memory[0xffff]=0
-        em.memory[0xff0f]=0
-    for vector in (0x40,0x48,0x50,0x58,0x60):
-        em.hook_register(0,vector,isolate_interrupt,context)
+    em.memory[0xffff]=0
+    em.memory[0xff0f]=0
     def call(n,a=0,de=0):
-        context.update(call=n,started=False,done=False,flags=None,a=a,de=de)
+        bank,addr=sym[n]
+        assert bank==BANK,(n,bank)
+        # Prime mapped ROMX directly, a valid LR35902 return stack, and
+        # a distinct CPU entrypoint on each invocation.
+        em.memory[0x2000]=bank
         em.memory[0xffff]=0
         em.memory[0xff0f]=0
-        regs.PC=0x0100
+        em.memory[0xcfee]=0x00
+        em.memory[0xcfef]=0xc0
+        regs.SP=0xcfee
+        regs.A=a
+        regs.D=(de>>8)&0xff
+        regs.E=de&0xff
+        regs.PC=addr
         for _ in range(350):
             em.tick(1,render=False,sound=False)
-            if context['done']:return context['flags']
-        raise AssertionError(f'{n}: CPU did not return to ROM0 trampoline; PC={regs.PC:04x} SP={regs.SP:04x} A={regs.A:02x} B={regs.B:02x} C={regs.C:02x} D={regs.D:02x} E={regs.E:02x} HL={regs.HL:04x} IE={em.memory[0xffff]:02x} IF={em.memory[0xff0f]:02x} interrupts={context["interrupts"]}')
+            if regs.PC in (0xc000,0xc001):
+                return regs.F
+        raise AssertionError(
+          f'{n}: direct CPU call did not return; PC={regs.PC:04x} SP={regs.SP:04x} '
+          f'AF={regs.A:02x}/{regs.F:02x} BC={regs.B:02x}/{regs.C:02x} '
+          f'DE={regs.D:02x}/{regs.E:02x} HL={regs.HL:04x} '
+          f'IE={em.memory[0xffff]:02x} IF={em.memory[0xff0f]:02x}')
     def sram(bank,addr,length):
         return bytes(em.memory[bank,addr+i] for i in range(length))
     def set_sram(bank,addr,payload):
