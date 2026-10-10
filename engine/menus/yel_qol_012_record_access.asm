@@ -64,7 +64,7 @@ Yel012TransferBoxRecord:
 	push bc ; preserve read/write mode C
 	push de ; 55-byte source/destination buffer
 	push af ; slot
-	call GetBoxSRAMLocation ; HL physical box, B SRAM bank
+	call Yel012GetBoxSRAMLocation ; HL physical box, B SRAM bank
 	call EnableSRAM
 	ld a, b
 	ld [rRAMB], a
@@ -117,11 +117,7 @@ Yel012TransferBoxRecord:
 	and a
 	jr z, .done
 	; Refresh the entire bank checksum and four per-box checksums.
-	ld hl, sBox1
-	ld bc, sBank2AllBoxesChecksum - sBox1
-	call CalcCheckSum
-	ld [sBank2AllBoxesChecksum], a
-	call CalcIndividualBoxCheckSums
+	call Yel012RefreshPhysicalChecksums
 .done
 	call DisableSRAM
 	and a
