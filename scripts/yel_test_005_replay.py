@@ -27,18 +27,22 @@ def validate(steps):
     for i, step in enumerate(steps):
         if not isinstance(step, dict):
             raise ValueError(f"Step {i} is not an object")
-        if set(step) - {"button", "frames", "after"}:
+        if set(step) - {"button", "buttons", "frames", "after"}:
             raise ValueError(f"Step {i} has unknown fields")
         button = step.get("button")
         if button is not None and button not in (
             "a", "b", "start", "select", "up", "down", "left", "right"
         ):
             raise ValueError(f"Unsupported button at step {i}: {button}")
+        buttons = step.get("buttons")
+        if buttons is not None:
+            if button is not None or not isinstance(buttons, list) or not buttons or len(set(buttons)) != len(buttons) or any(b not in ("a", "b", "start", "select", "up", "down", "left", "right") for b in buttons):
+                raise ValueError(f"Invalid simultaneous buttons at step {i}")
         for key in ("frames", "after"):
             n = step.get(key, 0)
             if type(n) is not int or n < 0 or n > 100000:
                 raise ValueError(f"Step {i}: invalid {key}")
-        if button and not step.get("frames"):
+        if (button or buttons) and not step.get("frames"):
             raise ValueError(f"Step {i}: button needs positive frames")
 
 
@@ -85,14 +89,15 @@ def main():
             button = step.get("button")
             frames = step.get("frames", 0)
             after = step.get("after", 0)
-            if button:
-                emu.button_press(button)
+            buttons = step.get("buttons", [button] if button else [])
+            for pressed in buttons:
+                emu.button_press(pressed)
             try:
                 if frames:
                     emu.tick(frames)
             finally:
-                if button:
-                    emu.button_release(button)
+                for pressed in buttons:
+                    emu.button_release(pressed)
             if after:
                 emu.tick(after)
             report["frame_count"] += frames + after
