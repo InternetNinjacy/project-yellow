@@ -20,6 +20,9 @@ jobs:
           path: .toolchain/sameboy
       - name: Syntax-check SGB navigation fixture
         run: python -m py_compile scripts/yel_test_004_sgb_navigate.py scripts/yel_test_004_sgb_debug_probe.py
+      - name: Compile-check every shared SGB verifier before expensive emulator build
+        run: |
+          python -m py_compile scripts/yel_sprite_lab.py scripts/yel_test_004_sgb_live_integrity.py scripts/yel_test_004_sgb_direction_gate.py scripts/yel_test_004_sgb_compositing.py scripts/yel_test_004_sgb_border_gate.py scripts/yel_test_004_sgb_capture_gate.py
       - name: Install SGB emulator and virtual screen
         run: |
           sudo apt-get update
