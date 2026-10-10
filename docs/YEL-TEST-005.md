@@ -86,3 +86,40 @@ Gameplay route: observed six-member party, Poké Balls, wild battle, reproducibl
 throw result. Storage: all seven matrix cases with complete 12-box equality
 checks. Persistence: native SAVE/restart/CONTINUE and identical original slot
 records. Until all targeted conditions pass, PR #6 stays draft.
+
+## Controller-only authoring and checkpoint inspection (new)
+
+```bash
+python scripts/yel_test_005_record.py --rom pokeyellow.gbc --out local/qol011-natural
+python scripts/yel_test_005_replay.py --rom pokeyellow.gbc --sym pokeyellow.sym \
+  --trace local/qol011-natural/trace.json --checkpoint \
+  --out local/qol011-replayed
+python scripts/yel_test_005_capture_audit.py --rom pokeyellow.gbc \
+  --sym pokeyellow.sym --state local/qol011-replayed/checkpoint.state \
+  --out local/qol011-audit.json
+```
+
+Recorder commands are `a 1 30`, `down 8 8`, `wait 60`, and
+`done`. The recorder starts from a fresh ROM boot, writes one screenshot
+per command, and continually updates a replayable `trace.json`. The final
+private PyBoy checkpoint may be recreated by a separate clean-boot replay.
+It must be compared by state hashes and the actual final RAM values. These
+scripts do not currently include an automatically generated complete six-
+Pokémon playthrough; they provide the repeatable instrumentation needed to
+record one. Manual controller entry is legitimate input but requires an
+independent deterministic replay and read-only audit before acceptance.
+
+The audit validates six party species entries, at least one normal Poké Ball
+(item ID $04), `wIsInBattle == 1` (wild encounter), and
+`wEnemyMonSpecies2` nonzero. The checkpoint must additionally be confirmed
+to be at the correct battle bag/throw prompt, rather than any wild battle
+turn, and the ball's deterministic capture outcome must be demonstrated.
+These read-only checks cannot independently establish original game save
+persistence or a guaranteed catch. They use symbol addresses from the
+exact compiled ROM and intentionally reject missing symbols.
+
+An important distinction: an interactive clean-boot trace can establish a
+genuine history, while a fixture seeded afterward is synthetic in its PC
+contents. Keep separate manifests for natural replay, seeded storage
+matrix, and native save/restart/continue. Until all are executed, do not
+report YEL-QOL-011 as emulator-verified.
