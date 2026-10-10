@@ -84,9 +84,20 @@ jobs:
             --rom .qol-feature/pokeyellow_debug.gbc --sym .qol-feature/pokeyellow_debug.sym \
             --state test-results/yel-test-005-debug/qol-feature-base/checkpoint.state \
             --out test-results/yel-test-005-debug/qol-feature-probes
+      - name: Run seven YEL-QOL-011 seeded box scenarios against feature ROM
+        run: |
+          python scripts/yel_test_005_storage_matrix.py \
+            --rom .qol-feature/pokeyellow_debug.gbc \
+            --sym .qol-feature/pokeyellow_debug.sym \
+            --base-state test-results/yel-test-005-debug/qol-feature-base/checkpoint.state \
+            --sequence tests/traces/yel-test-005-masterball-capture.json \
+            --fixture-builder .qol-feature/scripts/yel_qol_011_make_fixture.py \
+            --storage-harness .qol-feature/scripts/yel_qol_011_storage.py \
+            --out test-results/yel-test-005-debug/qol-feature-matrix
       - name: Remove private PyBoy state before artifact upload
         if: always()
         run: find test-results/yel-test-005-debug -name '*.state' -delete
+          find test-results/yel-test-005-debug -name '*.bin' -delete
       - name: Upload manifests and screenshots only
         if: always()
         uses: actions/upload-artifact@v4
