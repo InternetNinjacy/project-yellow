@@ -129,3 +129,10 @@ At branch c85714c8a27ac011549e3de09e17990acd35aed4 the latest SGB and isolated B
 - This is intentionally **not** marked full SGB sprite verification. Tests still missing direct SameBoy VRAM readback against source, OAM tile references and geometry, four facings and walk frames, compositing/occlusion, and SGB border/palette inspection. The 0.45 independent room-recognition threshold was not changed.
 - New CI triggered on test commits and must be inspected; do not imply success until those runs complete. Physical hardware is NOT tested; PR #8 stays draft.
 - Next implement debugger-based native SameBoy VRAM/OAM snapshots and direction-specific screenshots for each separately archived DEBUG fixture. Fail closed on absent tile/animation evidence and keep source artwork unchanged.
+
+## Native debugger VRAM/OAM implementation — 2026-10-10
+
+- On the existing isolated SGB-NTSC Bulbasaur and Ivysaur fixtures, added a debugger CPU-interrupt snapshot of 6144 bytes of live VRAM ($8000-$97ff), 160 hardware OAM bytes ($fe00), and 160 shadow OAM bytes at the exact RGBDS-resolved wShadowOAM address. Kept the previously validated map-$25 image capture and room threshold intact.
+- scripts/yel_test_004_sgb_live_integrity.py parses native SameBoy examine address rows fail-closed, demands complete byte coverage, checks exact species-specific 192-byte source tiles in VRAM, and checks at least four active references from both shadow and hardware OAM to the matched tile range. Each fixture archives a species-specific JSON report or the failing transcript.
+- These are NEW tests, NOT an observed SGB pass until the new CI completes and its logs/artifacts are checked. Emulator debugger command output formatting and live OAM state must be reconciled against actual workflow logs if failing. The source comparison is not a substitute for four-direction walk snapshots, sprite-background compositing, palette/border inspection, or physical hardware.
+- Keep PR #8 DRAFT, no approved artwork changes; the 0.45 room threshold remains intact.
