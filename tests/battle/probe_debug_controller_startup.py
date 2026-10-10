@@ -16,17 +16,7 @@ SYMBOLS = ("wPartyCount", "wIsInBattle", "wStatusFlags6",
 # No claimed success: the probe fails if no initialized party is observed.
 STEPS = [
     ("start", 1, 1200),
-    ("a", 1, 100),
-    ("a", 1, 300),
-    ("a", 1, 300),
-    ("a", 1, 300),
-    ("a", 1, 300),
-    ("a", 1, 300),
-    ("a", 1, 300),
-    ("a", 1, 300),
-    ("a", 1, 300),
-    ("a", 1, 300),
-    ("a", 1, 300),
+    *[("a", 1, 180) for _ in range(45)],
 ]
 
 def parse_symbols(path):
