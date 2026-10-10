@@ -134,6 +134,10 @@ SetScrollXForSlidingPlayerBodyLeft:
 
 StartBattle:
 	xor a
+	ld [wPlayerReflectTurns], a
+	ld [wPlayerLightScreenTurns], a
+	ld [wEnemyReflectTurns], a
+	ld [wEnemyLightScreenTurns], a
 	ld [wPartyGainExpFlags], a
 	ld [wPartyFoughtCurrentEnemyFlags], a
 	ld [wActionResultOrTookBattleTurn], a
@@ -446,6 +450,7 @@ MainInBattleLoop:
 	jp z, HandlePlayerMonFainted
 	call DrawHUDsAndHPBars
 	call CheckNumAttacksLeft
+	call TickProjectYellowScreens
 	jp MainInBattleLoop
 .playerMovesFirst
 	call ExecutePlayerMove
@@ -474,6 +479,7 @@ MainInBattleLoop:
 	jp z, HandleEnemyMonFainted
 	call DrawHUDsAndHPBars
 	call CheckNumAttacksLeft
+	call TickProjectYellowScreens
 	jp MainInBattleLoop
 
 HandlePoisonBurnLeechSeed:
@@ -687,6 +693,34 @@ UpdateCurMonHPBar:
 	ld [wHPBarType], a
 	predef UpdateHPBar2
 	pop bc
+	ret
+
+; Advance screens once at a completed two-sided battle round, not per attack.
+; Each active effect starts at five and expires after five round endings.
+TickProjectYellowScreens:
+	ld hl, wPlayerReflectTurns
+	ld a, [hl]
+	and a
+	jr z, .playerLight
+	dec [hl]
+.playerLight
+	ld hl, wPlayerLightScreenTurns
+	ld a, [hl]
+	and a
+	jr z, .enemyReflect
+	dec [hl]
+.enemyReflect
+	ld hl, wEnemyReflectTurns
+	ld a, [hl]
+	and a
+	jr z, .enemyLight
+	dec [hl]
+.enemyLight
+	ld hl, wEnemyLightScreenTurns
+	ld a, [hl]
+	and a
+	ret z
+	dec [hl]
 	ret
 
 CheckNumAttacksLeft:
@@ -5932,25 +5966,39 @@ ApplyProjectYellowScreens:
 	ld a, [wPlayerMoveNum]
 	call GetBattleMoveCategory
 	ld b, a
-	ld a, [wEnemyBattleStatus3]
+	ld hl, wEnemyReflectTurns
 	jr .select
 .enemy
 	ld a, [wEnemyMoveNum]
 	call GetBattleMoveCategory
 	ld b, a
-	ld a, [wPlayerBattleStatus3]
+	ld hl, wPlayerReflectTurns
 .select
-	ld c, a
 	ld a, b
 	cp MOVE_CATEGORY_SPECIAL
 	jr z, .special
 	cp MOVE_CATEGORY_PHYSICAL
 	jr nz, .done
-	bit HAS_REFLECT_UP, c
+		ld a, [hl]
+	and a
 	jr z, .done
 	jr .halve
 .special
-	bit HAS_LIGHT_SCREEN_UP, c
+		push hl
+	ld a, h
+	cp HIGH(wEnemyReflectTurns)
+	jr nz, .playerLightTimer
+	ld a, l
+	cp LOW(wEnemyReflectTurns)
+	jr nz, .playerLightTimer
+	ld hl, wEnemyLightScreenTurns
+	jr .readLightTimer
+.playerLightTimer
+	ld hl, wPlayerLightScreenTurns
+.readLightTimer
+	ld a, [hl]
+	pop hl
+	and a
 	jr z, .done
 .halve
 	ld hl, wDamage
