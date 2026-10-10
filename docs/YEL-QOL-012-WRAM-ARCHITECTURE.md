@@ -5,7 +5,7 @@
 The original linker layout places `Current Box Data` after persistent
 `Party Data` and `Main Data`, before `CGB Palette Data` and the
 hard-anchored stack at $DF15. Its 30-mon version begins at $DA7F.
-The enlarged `wBoxDataStart..wBoxDataEnd` region is 1672 bytes, ending
+The enlarged `wBoxDataStart..wBoxDataEnd` region is 1682 bytes, ending
 at $E107 if placed contiguously. Thus the box region alone is **273 bytes
 past $E000**, and it also collides with the palette section and protected
 stack. The original 20-mon region occupies 1122 bytes: +550 bytes total.
