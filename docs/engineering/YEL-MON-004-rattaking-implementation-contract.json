@@ -1,0 +1,235 @@
+{
+  "authority": "YEL-DEX-001 locked rat family",
+  "status": "implementation_contract_not_gameplay",
+  "family": [
+    {
+      "name": "Rattata",
+      "type": [
+        "DARK",
+        "DARK"
+      ],
+      "stats": {
+        "hp": 40,
+        "attack": 65,
+        "defense": 40,
+        "sp_attack": 25,
+        "sp_defense": 40,
+        "speed": 80
+      },
+      "evolution": {
+        "level": 18,
+        "to": "Raticate"
+      }
+    },
+    {
+      "name": "Raticate",
+      "type": [
+        "DARK",
+        "DARK"
+      ],
+      "stats": {
+        "hp": 65,
+        "attack": 85,
+        "defense": 60,
+        "sp_attack": 45,
+        "sp_defense": 65,
+        "speed": 95
+      },
+      "evolution": {
+        "level": 36,
+        "to": "Rattaking"
+      }
+    },
+    {
+      "name": "Rattaking",
+      "type": [
+        "DARK",
+        "DARK"
+      ],
+      "stats": {
+        "hp": 85,
+        "attack": 115,
+        "defense": 80,
+        "sp_attack": 60,
+        "sp_defense": 85,
+        "speed": 105
+      },
+      "internal_species_id": null,
+      "internal_dex_id": null,
+      "art_status": "pending"
+    }
+  ],
+  "moves": [
+    {
+      "name": "SCARY_FACE",
+      "type": "NORMAL",
+      "category": "STATUS",
+      "effect": "lower opponent Speed 2 stages",
+      "locked_parameters": false
+    },
+    {
+      "name": "POISON_FANG",
+      "type": "POISON",
+      "category": "PHYSICAL",
+      "power": 50,
+      "accuracy": 100,
+      "pp": 15,
+      "effect": "50% badly poison",
+      "tm": 34
+    },
+    {
+      "name": "CRUNCH",
+      "type": "DARK",
+      "category": "PHYSICAL",
+      "power": 80,
+      "accuracy": 100,
+      "pp": 30,
+      "effect": "exact 39% Defense -1"
+    }
+  ],
+  "tm34": {
+    "replace": "BIDE",
+    "with": "POISON_FANG",
+    "item_location": "Fuchsia Safari Zone",
+    "exact_tile": null
+  },
+  "learnsets": {
+    "Rattata": [
+      [
+        1,
+        "TACKLE"
+      ],
+      [
+        1,
+        "TAIL_WHIP"
+      ],
+      [
+        5,
+        "QUICK_ATTACK"
+      ],
+      [
+        9,
+        "BITE"
+      ],
+      [
+        13,
+        "FOCUS_ENERGY"
+      ],
+      [
+        17,
+        "HYPER_FANG"
+      ],
+      [
+        21,
+        "RAGE"
+      ],
+      [
+        28,
+        "SUPER_FANG"
+      ]
+    ],
+    "Raticate": [
+      [
+        1,
+        "TACKLE"
+      ],
+      [
+        1,
+        "TAIL_WHIP"
+      ],
+      [
+        5,
+        "QUICK_ATTACK"
+      ],
+      [
+        9,
+        "BITE"
+      ],
+      [
+        13,
+        "FOCUS_ENERGY"
+      ],
+      [
+        17,
+        "HYPER_FANG"
+      ],
+      [
+        21,
+        "RAGE"
+      ],
+      [
+        25,
+        "SCARY_FACE"
+      ],
+      [
+        28,
+        "SUPER_FANG"
+      ],
+      [
+        32,
+        "POISON_FANG"
+      ]
+    ],
+    "Rattaking": [
+      [
+        1,
+        "TACKLE"
+      ],
+      [
+        1,
+        "TAIL_WHIP"
+      ],
+      [
+        5,
+        "QUICK_ATTACK"
+      ],
+      [
+        9,
+        "BITE"
+      ],
+      [
+        13,
+        "FOCUS_ENERGY"
+      ],
+      [
+        17,
+        "HYPER_FANG"
+      ],
+      [
+        21,
+        "RAGE"
+      ],
+      [
+        25,
+        "SCARY_FACE"
+      ],
+      [
+        28,
+        "SUPER_FANG"
+      ],
+      [
+        32,
+        "POISON_FANG"
+      ],
+      [
+        40,
+        "SLASH"
+      ],
+      [
+        44,
+        "THRASH"
+      ],
+      [
+        50,
+        "CRUNCH"
+      ]
+    ]
+  },
+  "blockers": [
+    "new species index tables and art",
+    "new move IDs and battle effects",
+    "TM34 remap",
+    "six-stat runtime",
+    "ROM build and emulation"
+  ]
+}
