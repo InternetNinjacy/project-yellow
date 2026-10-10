@@ -168,3 +168,6 @@ Native in-game save/restart/load remains untested.
 
 ## All-full diagnostic update
 PR #6 now records pre/post wBattleType, wPartyCount, wCurrentBoxNum and all 12 pre-throw box counts; do not reinterpret the 21 count as a fix. Re-run the exact feature-branch matrix and inspect the source of the bypass before changing capacity constants.
+
+## All-full root cause confirmed, 2026-10-10
+`callfar CheckBoxSpaceForCapture` uses the `Bankswitch` wrapper, which restores the prior ROM bank to register A. `ItemUseBall` incorrectly executed `and a` on that bank value, not the returned availability. This allowed the Master Ball throw even when all boxes were full. Fix on PR #6: the callee sets Z reliably (`and a` on its nonzero success path, `xor a` on failure) and the caller branches directly on Z immediately after `callfar`. Must pass genuine all-full replay and 7/7 matrix before acceptance.
