@@ -7,6 +7,7 @@
 	const_export VIRIDIANCITY_FISHER
 	const_export VIRIDIANCITY_OLD_MAN
 	const_export VIRIDIANCITY_OLD_MAN2
+	const_export VIRIDIANCITY_MART_SCHOOL_GUARD
 
 ViridianCity_Object:
 	db $f ; border block
@@ -35,5 +36,8 @@ ViridianCity_Object:
 	object_event  6, 23, SPRITE_FISHER, STAY, DOWN, TEXT_VIRIDIANCITY_FISHER
 	object_event 17,  5, SPRITE_GAMBLER, WALK, LEFT_RIGHT, TEXT_VIRIDIANCITY_OLD_MAN
 	object_event 18,  9, SPRITE_GAMBLER, STAY, NONE, TEXT_VIRIDIANCITY_OLD_MAN2
+
+	; Stands directly below the Mart entrance until the doubles lesson is done.
+	object_event 29, 20, SPRITE_YOUNGSTER, STAY, DOWN, TEXT_VIRIDIANCITY_MART_SCHOOL_GUARD
 
 	def_warps_to VIRIDIAN_CITY
