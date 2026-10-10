@@ -137,12 +137,12 @@ jobs:
             kill -INT "$pid"
             sleep 0.3
             sleep 0.3
-            printf 'print [$ff40] = ([$ff40] & $fd)\ncontinue\n' >&3
+            printf "print [\$ff40] = ([\$ff40] & \$fd)\ncontinue\n" >&3
             sleep 1.2
             import -window "$wid" test-results/sgb-smoke/obj_disabled.png
             kill -INT "$pid"
             sleep 0.3
-            printf 'print [$ff40] = ([$ff40] | $02)\ncontinue\n' >&3
+            printf "print [\$ff40] = ([\$ff40] | \$02)\ncontinue\n" >&3
             sleep 1.1
             import -window "$wid" test-results/sgb-smoke/obj_reenabled.png
             kill $pid || true
