@@ -171,6 +171,9 @@
 	const SLASH        ; a3
 	const SUBSTITUTE   ; a4
 	const STRUGGLE     ; a5
+	const SCARY_FACE   ; a6
+	const POISON_FANG  ; a7
+	const CRUNCH       ; a8
 DEF NUM_ATTACKS EQU const_value - 1
 
 DEF CANNOT_MOVE EQU $ff
