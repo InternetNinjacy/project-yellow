@@ -3745,6 +3745,16 @@ MirrorMoveCheck:
 	ld de, 1
 	call IsInArray
 	call c, JumpMoveEffect ; not done after executing effects of AlwaysHappenSideEffects
+	; YEL-MON-004: newly imported damaging-move secondary effects are not
+	; members of the original always-happen table. Dispatch them explicitly.
+	ld a, [wPlayerMoveEffect]
+	cp POISON_FANG_EFFECT
+	jr z, .yelRatPlayerEffect
+	cp CRUNCH_EFFECT
+	jr nz, .yelRatPlayerEffectDone
+.yelRatPlayerEffect
+	call JumpMoveEffect
+.yelRatPlayerEffectDone
 	ld hl, wEnemyMonHP
 	ld a, [hli]
 	ld b, [hl]
@@ -6258,6 +6268,15 @@ EnemyCheckIfMirrorMoveEffect:
 	ld de, $1
 	call IsInArray
 	call c, JumpMoveEffect
+	; YEL-MON-004: symmetric custom secondary-effect path for opponents.
+	ld a, [wEnemyMoveEffect]
+	cp POISON_FANG_EFFECT
+	jr z, .yelRatEnemyEffect
+	cp CRUNCH_EFFECT
+	jr nz, .yelRatEnemyEffectDone
+.yelRatEnemyEffect
+	call JumpMoveEffect
+.yelRatEnemyEffectDone
 	ld hl, wBattleMonHP
 	ld a, [hli]
 	ld b, [hl]
