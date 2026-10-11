@@ -180,7 +180,7 @@ def main():
         result["screenshot_sha256"]=hashlib.sha256((out/"bug_catcher_f_battle.png").read_bytes()).hexdigest()
         # Match a 56x56 battle portrait against the unmodified original PNG
         # across the actual screen. Reject uniform/blank or wrong sprite data.
-        reference=Image.open("gfx/trainers/bug_catcher.png").convert("L")
+        reference=Image.open("gfx/trainers/bugcatcher.png").convert("L")
         if reference.size!=(56,56):
             raise AssertionError(f"Unexpected reference trainer portrait size {reference.size}")
         # Compare categorical grayscale pixel ranks, independently of DMG palette.
