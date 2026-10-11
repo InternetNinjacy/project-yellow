@@ -305,6 +305,25 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
+      - name: YEL-QOL-012 discover actual Viridian ActivatePC interaction
+        run: |
+          mkdir -p test-results/yel-qol-012
+          python3 scripts/yel_qol_012_viridian_pc_interaction.py \
+            --rom pokeyellow_debug.gbc \
+            --sym pokeyellow_debug.sym \
+            --boot tests/replays/yel_qol_012_verified_debug_boot.json \
+            --route tests/replays/yel_qol_012_verified_viridian_pc_route.json \
+            --out test-results/yel-qol-012/viridian-pc-interaction.json
+
+      - name: Archive Viridian ActivatePC interaction evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yel-qol-012-viridian-pc-interaction
+          path: test-results/yel-qol-012/viridian-pc-interaction.json
+          if-no-files-found: warn
+          retention-days: 30
+
       - name: YEL-QOL-012 standalone six-party ROM CPU fixture
         run: |
           mkdir -p test-results/yel-qol-012
