@@ -11,6 +11,7 @@ on:
       - 'tests/battle/probe_rattaking_overworld_route.py'
       - 'tests/battle/probe_rattaking_route1_encounter.py'
       - 'tests/battle/probe_rattaking_evolution_battle.py'
+      - 'tests/battle/probe_rattaking_evolution_battle.py'
       - 'tests/battle/probe_rattaking_save_continue.py'
       - '.github/workflows/yel-mon-004-controller-fixtures.yml'
 jobs:
@@ -78,6 +79,16 @@ jobs:
             --evolved-state artifacts/rat-evolution-battle/rattaking_evolved.state \
             --evolved-trace artifacts/rat-evolution-battle/evolution_battle_trace.json \
             --output artifacts/rat-persistence
+      - name: Probe real wild-battle menu and Raticate switch
+        continue-on-error: true
+        run: |
+          mkdir -p artifacts/rat-evolution-battle
+          python tests/battle/probe_rattaking_evolution_battle.py \
+            --rom pokeyellow_debug.gbc \
+            --symbols pokeyellow_debug.sym \
+            --initial-state artifacts/rat-route1-encounter/route1_wild_encounter.state \
+            --initial-trace artifacts/rat-route1-encounter/route1_wild_encounter_trace.json \
+            --output artifacts/rat-evolution-battle
       - name: Probe real DEBUG Fight menu with controller only
         run: |
           mkdir -p artifacts/rat-debug-fight
