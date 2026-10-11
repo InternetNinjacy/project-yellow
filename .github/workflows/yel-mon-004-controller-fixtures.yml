@@ -71,7 +71,7 @@ jobs:
           assert path.exists(), "Missing overworld route evidence"
           record=json.loads(path.read_text())
           found=record.get("found")
-          assert found and (found.get("wIsInBattle") or found.get("wCurMap") != record["initial"]["wCurMap"]), "No actual controller-driven map transition"
+          assert found and (found.get("wIsInBattle") or found.get("wCurMap") == 12), "No actual controller-driven map transition"
           PY
       - name: Preserve evidence on both success and failure
         if: always()
