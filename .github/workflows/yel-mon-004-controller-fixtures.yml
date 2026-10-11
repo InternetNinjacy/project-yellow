@@ -65,5 +65,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: yel-mon-004-debug-startup-controller-evidence
-          path: artifacts/
+          path: |
+            artifacts/
+            pokeyellow_debug.sym
           if-no-files-found: warn
