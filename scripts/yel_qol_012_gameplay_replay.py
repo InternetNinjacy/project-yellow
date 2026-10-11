@@ -68,45 +68,6 @@ def assert_storage(em, syms, destination, count):
         raise AssertionError(f"box occupancy/terminator mismatch: expected {count}, saw {box[0]}")
     return box
 
-def stage_party_from_rom(em, syms):
-    """Fixture only: invoke actual ROM roster builder on CPU, restore CPU state."""
-    regs = em.register_file
-    registers = ("PC","SP","A","F","B","C","D","E","HL")
-    saved = {key:getattr(regs,key) for key in registers}
-    bank, address = syms["SetDebugNewGameParty"]
-    old_bank = em.memory[syms["hLoadedROMBank"][1]]
-    saved_bytes = {i:em.memory[i] for i in (0xc000,0xc001,0xcfee,0xcfef,0xffff,0xff0f)}
-    old_location = em.memory[syms["wMonDataLocation"][1]]
-    try:
-        em.memory[0xc000]=0x18
-        em.memory[0xc001]=0xfe
-        em.memory[0xcfee]=0x00
-        em.memory[0xcfef]=0xc0
-        em.memory[0xffff]=0
-        em.memory[0xff0f]=0
-        em.memory[0x2000]=bank
-        em.memory[syms["hLoadedROMBank"][1]]=bank
-        em.memory[syms["wMonDataLocation"][1]]=0
-        regs.SP=0xcfee
-        regs.PC=address
-        for _ in range(30000):
-            em.tick(1,render=False,sound=False)
-            if regs.PC in (0xc000,0xc001):
-                break
-        else:
-            raise AssertionError(f"ROM roster builder did not return: PC={regs.PC:04x} SP={regs.SP:04x} party={em.memory[syms[\"wPartyCount\"][1]]}")
-        if em.memory[syms["wPartyCount"][1]] != 6:
-            raise AssertionError("ROM roster builder did not create six Pokémon")
-    finally:
-        em.memory[0x2000]=old_bank
-        em.memory[syms["hLoadedROMBank"][1]]=old_bank
-        em.memory[syms["wMonDataLocation"][1]]=old_location
-        for location,value in saved_bytes.items():
-            em.memory[location]=value
-        for key,value in saved.items():
-            setattr(regs,key,value)
-
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--rom", required=True)
@@ -140,12 +101,7 @@ def main():
             play(em, spec["prepare"])
             if spec.get("party_fixture") == "synthetic-wram-six":
                 seed_six_party(em.memory,syms)
-            elif spec.get("party_fixture") == "rom-debug-cpu":
-                for name in ("SetDebugNewGameParty","hLoadedROMBank","wMonDataLocation"):
-                    if name not in syms:
-                        raise ValueError("missing party fixture symbol " + name)
-                stage_party_from_rom(em,syms)
-            elif "party_fixture" in spec:
+             elif "party_fixture" in spec:
                 raise ValueError("unsupported party_fixture")
             if em.memory[syms["wPartyCount"][1]] != 6:
                 raise AssertionError("replay did not prepare a six-Pokémon party")
