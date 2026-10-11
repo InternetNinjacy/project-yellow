@@ -51,7 +51,7 @@ def main():
     sym=symbols(args.sym)
     names=['Yel012BeginTransaction','Yel012StageWindow','Yel012CommitStagedWindow',
            'Yel012ReadBoxRecord','Yel012FindCaptureBox','wBoxCount','wBoxSpecies','wBoxMons','wBoxMonOT','wBoxMonNicks',
-           'Yel012PrepareCaptureInsert','Yel012CommitTransaction','Yel012AbortTransaction',
+           'Yel012PrepareCaptureInsert','Yel012StageWithdrawRemove','Yel012CommitTransaction','Yel012AbortTransaction',
            'wCurrentBoxNum','wBoxDataStart','sYel012TransactionStatus',
            'sYel012TransactionNewRecord','sYel012TransactionShadow','sYel012TransactionBackup',
            'sYel012StorageVersion','sYel012StorageVersionCheck',
@@ -185,6 +185,34 @@ def main():
                 assert seen==expected,(case,'record bytes differ',index)
             results.append({'box':boxid+1,'bank':bank,'mode':mode,
                             'slots_verified':30,'status':'PASS_ASSEMBLY_CPU'})
+        # YEL-QOL-012 PC withdrawal primitive: test 0, 20, and 29
+        # boundaries against actual LR35902 bank-5 shadow transactions.
+        for removed in (0,20,29):
+            boxid=2
+            bank=2
+            base=get('sBox1')+2*BOX
+            original=seed(30,91)
+            set_sram(bank,base,original)
+            set_sram(5,get('sYel012TransactionStatus'),b'\\x00')
+            em.memory[get('wCurrentBoxNum')]=boxid|0x80
+            flag=call('Yel012BeginTransaction')
+            assert flag&16==0,('withdraw begin',removed,flag)
+            flag=call('Yel012StageWithdrawRemove',a=removed)
+            assert flag&16==0,('withdraw stage',removed,flag)
+            staged=sram(5,get('sYel012TransactionShadow'),BOX)
+            assert staged[0]==29 and staged[30]==255,('withdraw occupancy',removed)
+            for index in range(29):
+                original_index=index if index<removed else index+1
+                for offset,stride in ((MON_OFFSET,MON),(OT_OFFSET,NAME),(NICK_OFFSET,NAME)):
+                    after_bytes=staged[offset+index*stride:offset+(index+1)*stride]
+                    expected_bytes=original[offset+original_index*stride:offset+(original_index+1)*stride]
+                    assert after_bytes==expected_bytes,('withdraw shifted record',removed,index,offset)
+            assert sram(bank,base,BOX)==original,('withdraw modified physical before commit',removed)
+            flag=call('Yel012CommitTransaction')
+            assert flag&16==0,('withdraw commit',removed,flag)
+            assert sram(bank,base,BOX)==staged,('withdraw physical differs from shadow',removed)
+            results.append({'mode':'physical-withdraw-stage','removed_slot':removed,
+                            'remaining':29,'status':'PASS_ASSEMBLY_CPU'})
         # Integration probe: execute the new capture bridge with an
         # intercepted *legacy naming/record builder* routine. This is
         # real bridge CPU code, but NOT an end-to-end battle/ball test.
