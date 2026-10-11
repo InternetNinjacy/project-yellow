@@ -61,8 +61,14 @@ def main():
   before=[box_bytes(em,syms,i) for i in range(12)]
   for direction in route["directions"]:walk(direction)
   assert loc()[0]==41,("failed to reach Viridian Center",loc())
+  result["center_entry_position"]=loc()
   for direction in ("up","up")+("right",)*10+("up",):walk(direction)
+  result["before_pc_action"]=loc()
   press("a",4,150)
+  result["after_pc_action"]=loc()
+  if not visited["ActivatePC"]:
+   # Unlike screenshot-driven guesses, record precise controller position.
+   result["pc_facing_byte"]=em.memory[syms["wSpritePlayerStateData1FacingDirection"][1]]
   assert visited["ActivatePC"]>0,"PC interaction never ran"
   for i in range(18):
    if visited["BillsPC_"]:break
