@@ -1,9 +1,9 @@
 	db DEX_RATTATA ; pokedex id
 
-	db  30,  56,  35,  72,  25
+	db  40,  65,  40,  80,  25
 	;   hp  atk  def  spd  spc
 
-	db NORMAL, NORMAL ; type
+	db DARK, DARK ; type
 	db 255 ; catch rate
 	db 57 ; base exp
 
@@ -13,11 +13,10 @@
 	db TACKLE, TAIL_WHIP, NO_MOVE, NO_MOVE ; level 1 learnset
 	db GROWTH_MEDIUM_FAST ; growth rate
 
-	; tm/hm learnset
-	tmhm TOXIC,        BODY_SLAM,    TAKE_DOWN,    DOUBLE_EDGE,  BUBBLEBEAM,   \
-	     WATER_GUN,    BLIZZARD,     RAGE,         THUNDERBOLT,  THUNDER,      \
-	     DIG,          MIMIC,        DOUBLE_TEAM,  BIDE,         SWIFT,        \
-	     SKULL_BASH,   REST,         SUBSTITUTE
+	; tm/hm learnset (approved set; TM34 pending Poison Fang remap)
+	tmhm BODY_SLAM, DOUBLE_EDGE, HYPER_BEAM, RAGE, DIG, \
+	     TOXIC, MIMIC, DOUBLE_TEAM, REST, SUBSTITUTE, POISON_FANG, \
+	     CUT
 	; end
 
 	db 0 ; padding

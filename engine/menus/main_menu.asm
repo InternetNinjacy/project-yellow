@@ -146,13 +146,24 @@ NotEnoughMemoryText:
 
 StartNewGame:
 	ld hl, wStatusFlags6
-	; Ensure debug mode is not used when starting a regular new game.
-	; Debug mode persists in saved games for both debug and non-debug builds, and is
-	; only reset here by the main menu.
+IF DEF(_DEBUG)
+	; An explicit DEBUG ROM New Game uses its DEBUG startup fixture.
+	; This does not affect non-DEBUG ROMs or existing saves.
+	set BIT_DEBUG_MODE, [hl]
+ELSE
+	; Production New Game must always start without DEBUG mode.
 	res BIT_DEBUG_MODE, [hl]
+ENDC
 	; fallthrough
 StartNewGameDebug:
 	call OakSpeech
+IF DEF(_DEBUG)
+	; OakSpeech/InitPlayerData clears party storage before this point.
+	; Only initialize fixture Pokémon after that reset, when DEBUG mode is set.
+	ld hl, wStatusFlags6
+	bit BIT_DEBUG_MODE, [hl]
+	call nz, PrepareNewGameDebug
+ENDC
 	ld a, PLAYER_DIR_UP
 	ld [wPlayerMovingDirection], a
 	ld c, 20

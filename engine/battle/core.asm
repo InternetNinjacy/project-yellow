@@ -3741,10 +3741,8 @@ MirrorMoveCheck:
 	ld [wMoveDidntMiss], a
 .notDone
 	ld a, [wPlayerMoveEffect]
-	ld hl, AlwaysHappenSideEffects
-	ld de, 1
-	call IsInArray
-	call c, JumpMoveEffect ; not done after executing effects of AlwaysHappenSideEffects
+	call YelRatCheckSecondary
+	call c, JumpMoveEffect ; original list or custom rat secondary effect
 	ld hl, wEnemyMonHP
 	ld a, [hli]
 	ld b, [hl]
@@ -5537,9 +5535,10 @@ MetronomePickMove:
 	call BattleRandom
 	and a
 	jr z, .pickMoveLoop
-	cp STRUGGLE
-	ASSERT NUM_ATTACKS == STRUGGLE ; random numbers greater than STRUGGLE are not moves
+	cp NUM_ATTACKS + 1 ; include appended moves, reject out-of-range IDs
 	jr nc, .pickMoveLoop
+	cp STRUGGLE ; Struggle remains ineligible for Metronome
+	jr z, .pickMoveLoop
 	cp METRONOME
 	jr z, .pickMoveLoop
 	ld [hl], a
@@ -6253,9 +6252,7 @@ EnemyCheckIfMirrorMoveEffect:
 	ld [wMoveDidntMiss], a
 .handleExplosionMiss
 	ld a, [wEnemyMoveEffect]
-	ld hl, AlwaysHappenSideEffects
-	ld de, $1
-	call IsInArray
+	call YelRatCheckSecondary
 	call c, JumpMoveEffect
 	ld hl, wBattleMonHP
 	ld a, [hli]
@@ -7264,4 +7261,18 @@ PlayMoveAnimation:
 	call Delay3
 	predef MoveAnimation
 	callfar Func_78e98
+	ret
+
+; YEL-MON-004: shared, bank-size-conscious side-effect classifier.
+; Preserve the original one-byte side-effect table, plus the new custom moves.
+YelRatCheckSecondary:
+	cp POISON_FANG_EFFECT
+	jr z, .matched
+	cp CRUNCH_EFFECT
+	jr z, .matched
+	ld hl, AlwaysHappenSideEffects
+	ld de, 1
+	jp IsInArray
+.matched
+	scf
 	ret

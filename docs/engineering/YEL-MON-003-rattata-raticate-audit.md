@@ -1,31 +1,71 @@
-# YEL-MON-003: Rattata and Raticate audit
+# YEL-MON-003 / YEL-MON-004 — Rat family corrected audit
 
-Status: audit documented; no species or engine data changed. Branch: feature/yel-mon-003-rattata-audit.
+**Authoritative design:** YEL-DEX-001 Google Drive registry, latest October 9, 2026 locked family update. This document supersedes the former two-stage, level-20 baseline audit. Design approval does not imply complete ROM implementation.
 
-## Confirmed approval
-- Rattata and Raticate must both be pure DARK, not Normal/Dark.
-- The currently inherited type constants do NOT define DARK; changing species to DARK immediately would fail assembly. Dark engine integration is a prerequisite.
+## Locked family
+| Species | Type | HP | Atk | Def | SpA | SpD | Spe | BST |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| Rattata | Dark | 40 | 65 | 40 | 25 | 40 | 80 | 290 |
+| Raticate | Dark | 65 | 85 | 60 | 45 | 65 | 95 | 415 |
+| **Rattaking** | Dark | 85 | 115 | 80 | 60 | 85 | 105 | 530 |
 
-## Inspected existing values (not newly approved balance changes)
-| Species | HP | Atk | Def | SpA | SpD | Speed | BST |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| Rattata | 30 | 56 | 35 | 25 | 35 | 72 | 253 |
-| Raticate | 55 | 81 | 60 | 50 | 70 | 97 | 363 |
+Evolution: Rattata to Raticate at **level 18**, Raticate to Rattaking at **level 36**. Third species spelling is exactly **Rattaking**.
 
-In base_stats, legacy five values HP/Atk/Def/Speed/Spc remain 30/56/35/72/25 and 55/81/60/97/50, and six-stat supplemental rows are 25/35 and 50/70.
-Evolution: Rattata at level 20 to Raticate; currently implemented.
-Starting moves: Rattata Tackle/Tail Whip; Raticate Tackle/Tail Whip/Quick Attack.
-Level-up:
-- Rattata Quick Attack 7, Hyper Fang 14, Focus Energy 23, Super Fang 34.
-- Raticate Quick Attack 7, Hyper Fang 14, Focus Energy 27, Super Fang 41.
+Approved Rattaking visual direction: approximately five-foot, black-furred muscular upright/slightly hunched rat with cream accents, red eyes, thick balancing tail, familiar Raticate-like snout, prominent incisors, ears and whiskers. No completed sprite is claimed.
 
-## Implementation prerequisites
-1. Add DARK type ID while preserving stable existing numeric type values and checking unused slots, type-string pointer table length, type name display, and battle code assumptions.
-2. Update type matchups using approved Gen 2 Dark chart: Dark attacks strong against Psychic/Ghost, resisted by Fighting/Dark/Steel (Steel only if present); Dark defenders weak to Fighting/Bug, resist Ghost/Dark, immune to Psychic. Ensure compatibility with currently implemented type roster and corrected Gen 1 Ghost/Psychic behavior. Preserve all other chart choices.
-3. Verify battle-type effectiveness, STAB, UI typing, Pokémon storage, and interactions with dual-type duplicates (DARK/DARK).
-4. Assign DARK/DARK to Rattata and Raticate only after DARK constant and lookup tables work.
-5. Review Dark move availability and any proposed family learnset or TM updates; no replacement learnset or stats are currently authorized.
-6. Validate via rgbds build and emulator tests: dark immunity/resistances/weaknesses, STAB, evolution, party/box saving.
-7. Six-stat runtime integration remains prerequisite, inherited from YEL-BAL-002.
+## Locked natural moves
+- All three: level 1 Tackle + Tail Whip, 5 Quick Attack, 9 Bite, 13 Focus Energy, 17 Hyper Fang, 21 Rage, 28 Super Fang.
+- Raticate and Rattaking additionally: 25 Scary Face and 32 Poison Fang.
+- Rattaking additionally: 40 Slash, 44 Thrash, 50 Crunch (not Hyper Beam naturally).
+- Crunch: Dark / Physical, power 80, accuracy 100%, PP 30; **exact 39%** Defense -1 chance.
+- Poison Fang: Poison / Physical, power 50, accuracy 100%, PP 15; 50% chance to badly poison. Replaces global TM34 Bide; Safari Zone Poké Ball pickup (exact area/tile TBD).
+- Globally approved Dark retypes: Bite, Rage, Thrash, Glare, Pay Day. Categories: Bite/Rage/Thrash/Pay Day Physical; Glare Status.
 
-No build, emulator run, or merge performed. No unrelated Pokémon modified.
+## Locked TM/HM eligibility
+| TM/HM | Rattata | Raticate | Rattaking |
+|---|---|---|---|
+| TM01 Mega Punch | no | yes | yes |
+| TM05 Mega Kick | no | yes | yes |
+| TM08 Body Slam | yes | yes | yes |
+| TM10 Double-Edge | yes | yes | yes |
+| TM15 Hyper Beam | yes | yes | yes |
+| TM17 Submission | no | no | yes |
+| TM20 Rage | yes | yes | yes |
+| TM26 Earthquake | no | no | yes |
+| TM28 Dig | yes | yes | yes |
+| TM34 Poison Fang | yes | yes | yes |
+| TM40 Skull Bash | no | yes | yes |
+| TM06 Toxic / TM31 Mimic / TM32 Double Team / TM44 Rest / TM50 Substitute | yes | yes | yes |
+| HM01 Cut | yes | yes | yes |
+| HM04 Strength | no | yes | yes |
+| HM02 Fly / HM03 Surf / HM05 Flash | no | no | no |
+
+All other TMs excluded, explicitly including Ice Beam, Blizzard, Thunderbolt, Thunder, Psychic and Fire Blast. Check actual TM numbering against eventual remaps.
+
+## Source changes on feature/yel-mon-004-rat-family-approved
+- DARK constant at previously unused type 09, display name and Gen II Dark matchup entries. Ghost vs Psychic changed from Gen I bugged immunity to effectiveness.
+- Existing Rattata/Raticate base stat tables and special-stat table aligned to approved six-stat values. Pure DARK encoded DARK/DARK.
+- Rattata evolves at level 18. Shared learnable existing level-up attacks staged at approved levels for Rattata and Raticate.
+- Available pre-existing TMs/HMs in the approved set staged for Rattata/Raticate, excluding Poison Fang until global TM34 remap.
+- Five global Dark move retypes staged.
+
+## NOT YET IMPLEMENTED (hard blockers)
+1. Rattaking not yet assigned a collision-free internal species ID. Requires *all* dependent tables: species constant/index, names, National Dex mapping, base stats (six-stat access must accommodate new dex row), evolution pointer, cries, Pokédex entries, graphics, sprites, menus, storage, wild/trainer compatibility. **Do not write unresolved RATT AKING symbols into runnable evolution data.**
+2. Raticate L36 evolution not activated until Rattaking has its registered species ID.
+3. Scary Face, Poison Fang and Crunch move imports and their effects, move names/IDs, animation/SFX tables, exact custom 39% chance, category table, evolution-stage learnset additions.
+4. TM34 Bide-to-Poison Fang replacement, all global TM item/script text/map sources and matching species eligibility.
+5. Dark-type engine compatibility, Gen II chart coverage, physical/special category integration and monotype UI checks.
+6. Full legacy-special to six-stat runtime migration, save/capture/PC and linking tests.
+7. Build, emulator replay, and hardware tests **not performed**; do not merge until all pass.
+
+Source references and unresolved tasks remain here so the approved design is not lost or silently altered.
+
+## Implementation checkpoint (2026-10-10)
+
+- Internal species RATTAKING added as $BF, provisional Project Yellow Pokédex row #152, with synchronized species-name/dex-order/cry/dex-pointer/base-stat/six-stat/icon/palette/evolution entries. The overall Project Yellow species plan is 159; this provisional Dex slot must be reconciled when the other approved additions are registered.
+- Raticate evolves at level 36; Rattaking receives the approved base stats and a temporary Raticate battle sprite and Pokédex text. These are not final approved art or writing.
+- Scary Face, Poison Fang and Crunch are registered in move constants, names, main records, categories, animation and sound pointers. Scary Face reuses the stock Speed -2 effect. POISON FANG and CRUNCH still use **incorrect temporary stock effects**; the approved severe poison at 50% and exact 39% Defense drop MUST be implemented before release.
+- TM34 now maps to Poison Fang and Rattata/Raticate TM compatibility includes it. All other Bide TM references, item placement and global compatibility still require validation.
+- RGBDS build and emulator checks queued in GitHub Actions; no pass established when this note was written.
+
+**Do not merge.** Complete actual custom effects and remove temporary art/text after approved assets exist, then verify 152-entry integration and full 159-species expansion, all move tables, TM scripts, and evolution behavior.

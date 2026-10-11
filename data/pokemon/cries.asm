@@ -196,4 +196,5 @@ CryData::
 	mon_cry SFX_CRY_21, $55, $01 ; Bellsprout
 	mon_cry SFX_CRY_25, $44, $20 ; Weepinbell
 	mon_cry SFX_CRY_25, $66, $CC ; Victreebel
+	mon_cry SFX_CRY_22, $20, $FF ; Rattaking placeholder
 	assert_table_length NUM_POKEMON_INDEXES

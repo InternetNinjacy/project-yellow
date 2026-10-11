@@ -72,8 +72,8 @@ MoveEffectPointerTable:
 	dw StatModifierDownEffect    ; DEFENSE_DOWN_SIDE_EFFECT
 	dw StatModifierDownEffect    ; SPEED_DOWN_SIDE_EFFECT
 	dw StatModifierDownEffect    ; SPECIAL_DOWN_SIDE_EFFECT
-	dw StatModifierDownEffect    ; unused effect
-	dw StatModifierDownEffect    ; unused effect
+	dw PoisonEffect              ; POISON_FANG_EFFECT
+	dw StatModifierDownEffect    ; CRUNCH_EFFECT
 	dw StatModifierDownEffect    ; unused effect
 	dw StatModifierDownEffect    ; unused effect
 	dw ConfusionSideEffect       ; CONFUSION_SIDE_EFFECT

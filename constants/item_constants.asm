@@ -191,7 +191,7 @@ DEF TM01 EQU const_value
 	add_tm MIMIC        ; $E7
 	add_tm DOUBLE_TEAM  ; $E8
 	add_tm REFLECT      ; $E9
-	add_tm BIDE         ; $EA
+	add_tm POISON_FANG  ; $EA
 	add_tm METRONOME    ; $EB
 	add_tm SELFDESTRUCT ; $EC
 	add_tm EGG_BOMB     ; $ED
@@ -216,6 +216,9 @@ DEF NUM_TM_HM EQU NUM_TMS + NUM_HMS
 ; These fit in 7 bytes, with one unused bit left over.
 DEF __tmhm_value__ = NUM_TM_HM + 1
 DEF UNUSED_TMNUM EQU __tmhm_value__
+; Legacy BIDE entries in species TM/HM masks are mapped to the unused 56th bit.
+; This deliberately does NOT grant TM34 Poison Fang to former Bide learners.
+DEF BIDE_TMNUM EQU UNUSED_TMNUM
 
 DEF MAX_HIDDEN_ITEMS EQU 112
 DEF MAX_HIDDEN_COINS EQU 16

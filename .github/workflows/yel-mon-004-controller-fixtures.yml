@@ -1,0 +1,56 @@
+name: YEL-MON-004 DEBUG Controller Fixture Probe
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'tests/battle/probe_debug_controller_startup.py'
+      - 'tests/battle/probe_rat_debug_fight.py'
+      - 'tests/battle/capture_rat_move_outcomes.py'
+      - 'tests/battle/test_rat_move_replay.py'
+      - '.github/workflows/yel-mon-004-controller-fixtures.yml'
+jobs:
+  debug-controller-fixture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bison libpng-dev pkg-config
+          git clone --depth 1 --branch v1.0.3 https://github.com/gbdev/rgbds.git _rgbds
+          sudo make -C _rgbds -j2 install
+          python -m pip install 'pyboy>=2,<3' pillow
+      - name: Build DEBUG ROM with symbols
+        run: make -j2 pokeyellow_debug.gbc
+      - name: Check probe syntax
+        run: python -m py_compile tests/battle/probe_debug_controller_startup.py tests/battle/probe_rat_debug_fight.py tests/battle/capture_rat_move_outcomes.py tests/battle/test_rat_move_replay.py
+      - name: Capture controller-only DEBUG startup diagnostics
+        run: |
+          mkdir -p artifacts/rat-debug-startup
+          python tests/battle/probe_debug_controller_startup.py \
+            --rom pokeyellow_debug.gbc \
+            --symbols pokeyellow_debug.sym \
+            --output artifacts/rat-debug-startup
+      - name: Probe real DEBUG Fight menu with controller only
+        run: |
+          mkdir -p artifacts/rat-debug-fight
+          python tests/battle/probe_rat_debug_fight.py \
+            --rom pokeyellow_debug.gbc \
+            --symbols pokeyellow_debug.sym \
+            --output artifacts/rat-debug-fight
+      - name: Capture all four legitimate Poison Fang and Crunch outcomes
+        run: |
+          mkdir -p artifacts/rat-move-fixtures
+          python tests/battle/capture_rat_move_outcomes.py \
+            --rom pokeyellow_debug.gbc \
+            --symbols pokeyellow_debug.sym \
+            --starting-state artifacts/rat-debug-fight/debug_fight_pre_action.state \
+            --starting-trace artifacts/rat-debug-fight/debug_fight_pre_action_trace.json \
+            --output artifacts/rat-move-fixtures
+      - name: Preserve evidence on both success and failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yel-mon-004-debug-startup-controller-evidence
+          path: artifacts/
+          if-no-files-found: warn

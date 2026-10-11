@@ -10,6 +10,7 @@ TypeNames:
 	dw .Bird
 	dw .Bug
 	dw .Ghost
+	dw .Dark
 
 REPT UNUSED_TYPES_END - UNUSED_TYPES
 	dw .Normal
@@ -40,4 +41,5 @@ ENDR
 .Bird:     db "BIRD@"
 .Bug:      db "BUG@"
 .Ghost:    db "GHOST@"
+.Dark:     db "DARK@"
 .Dragon:   db "DRAGON@"

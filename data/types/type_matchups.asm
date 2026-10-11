@@ -75,11 +75,20 @@ TypeEffects:
 	db ROCK,         BUG,          SUPER_EFFECTIVE
 	db ROCK,         ICE,          SUPER_EFFECTIVE
 	db GHOST,        NORMAL,       NO_EFFECT
-	db GHOST,        PSYCHIC_TYPE, NO_EFFECT
+	db GHOST,        PSYCHIC_TYPE, SUPER_EFFECTIVE
 	db FIRE,         DRAGON,       NOT_VERY_EFFECTIVE
 	db WATER,        DRAGON,       NOT_VERY_EFFECTIVE
 	db ELECTRIC,     DRAGON,       NOT_VERY_EFFECTIVE
 	db GRASS,        DRAGON,       NOT_VERY_EFFECTIVE
 	db ICE,          DRAGON,       SUPER_EFFECTIVE
 	db DRAGON,       DRAGON,       SUPER_EFFECTIVE
+	; Project Yellow Gen II Dark effectiveness against existing types.
+	db DARK,         PSYCHIC_TYPE, SUPER_EFFECTIVE
+	db DARK,         GHOST,        SUPER_EFFECTIVE
+	db DARK,         FIGHTING,     NOT_VERY_EFFECTIVE
+	db DARK,         DARK,         NOT_VERY_EFFECTIVE
+	db FIGHTING,     DARK,         SUPER_EFFECTIVE
+	db BUG,          DARK,         SUPER_EFFECTIVE
+	db GHOST,        DARK,         NOT_VERY_EFFECTIVE
+	db PSYCHIC_TYPE, DARK,         NO_EFFECT
 	db -1 ; end
