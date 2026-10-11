@@ -84,14 +84,22 @@ def attempt(pb, start, sym, prefix, slot, offset):
     expected = 0xA7 if slot == 0 else 0xA8
     if actual_moves[slot] != expected:
         raise AssertionError("Wrong move in slot " + str(slot) + ": " + repr(actual_moves))
-    # The move selector is a two-column Gen 1 cursor: index 3 is
-    # reached from index 0 by right then down, not three down presses.
-    if slot == 3:
-        press(pb, steps, "right", 75)
-        press(pb, steps, "down", 75)
+    # Gen 1's verified battle screen has four VERTICAL move rows.
+    # Use discrete DOWN presses and verify the cursor in live WRAM.
+    initial_index = read(pb, sym)["menu_index"]
+    if offset == 0:
+        print("move-menu-initial", slot, initial_index, flush=True)
+    for step in range(slot):
+        press(pb, steps, "down", 100)
+        if offset == 0:
+            print("move-menu-down", slot, step + 1, read(pb, sym)["menu_index"], flush=True)
     selected_menu = read(pb, sym)
     if offset == 0:
         print("selected-menu-observation", slot, selected_menu, flush=True)
+    # The cursor is zero-based. Reject any navigation that fails to
+    # reach the target slot instead of accidentally using Poison Fang.
+    if selected_menu["menu_index"] != slot:
+        return None
     if offset:
         steps.append({"frames": offset})
         tick(pb, offset)
