@@ -38,7 +38,13 @@ IF DEF(_DEBUG)
 	ld a, ~(1 << BIT_EARTHBADGE)
 	ld [wObtainedBadges], a
 
+	; The DEBUG initialization entry can be reached more than once during
+	; intro navigation. Never append another copy of the fixture party.
+	ld a, [wPartyCount]
+	and a
+	jr nz, .partyAlreadyInitialized
 	call SetDebugNewGameParty
+.partyAlreadyInitialized
 
 	; YEL-MON-004 DEBUG-only evolution fixture. Ordinary AddPartyMon
 	; created the level-35 Raticate as party member five; put its
