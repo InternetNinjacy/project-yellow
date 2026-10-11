@@ -96,9 +96,9 @@ def attempt(pb, start, sym, prefix, slot, offset):
     selected_menu = read(pb, sym)
     if offset == 0:
         print("selected-menu-observation", slot, selected_menu, flush=True)
-    # The cursor is zero-based. Reject any navigation that fails to
+    # The Gen 1 move cursor is ONE-based. Reject navigation that fails to
     # reach the target slot instead of accidentally using Poison Fang.
-    if selected_menu["menu_index"] != slot:
+    if selected_menu["menu_index"] != slot + 1:
         return None
     if offset:
         steps.append({"frames": offset})
