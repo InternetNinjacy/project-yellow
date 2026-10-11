@@ -91,6 +91,8 @@ def main():
                 tick(1)
                 samples.append({"frame": frame, "map": location(),
                                 "coords": coords(), "dispatch": dispatch_snapshot()})
+                if location() == GYM:
+                    break
             emulator.button_release(key)
             return samples
         warp_count_addr = symbol("wNumberOfWarps")
@@ -118,7 +120,9 @@ def main():
         for step_index in range(5):
             previous = coords()
             shot(f"before_step_{step_index:02d}.png")
-            input_frames = record_frames("up", 2)
+            # Keep Up held through the complete walking/warp eligibility window.
+            # A 2-frame tap releases before the overworld warp-dispatch check.
+            input_frames = record_frames("up", 12)
             tick(24)
             # Wait for a full tile or map transition.
             for _ in range(90):
