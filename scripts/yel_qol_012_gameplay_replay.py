@@ -97,6 +97,16 @@ def main():
             emulator.set_emulation_speed(0)
             return emulator
         em = boot()
+        # Acceptance requires evidence that controller input executed the
+        # actual game Ball and Save routines, not merely SRAM mutation.
+        reached = {"ItemUseBall": 0, "SaveGameData": 0}
+        for routine in reached:
+            if routine not in syms:
+                raise ValueError("missing live acceptance symbol " + routine)
+            bank, address = syms[routine]
+            def visited(context, label=routine):
+                reached[label] += 1
+            em.hook_register(bank, address, visited, None)
         try:
             play(em, spec["prepare"])
             if spec.get("party_fixture") == "synthetic-wram-six":
@@ -119,6 +129,8 @@ def main():
             before = assert_storage(em, syms, destination, starting_count)
             prior_boxes = [box_bytes(em, syms, i) for i in range(12)]
             play(em, spec["capture"])
+            if reached["ItemUseBall"] == 0:
+                raise AssertionError("controller capture never executed ROM ItemUseBall")
             after = assert_storage(em, syms, destination, 30)
             if record(after, 0) == record(before, 0):
                 raise AssertionError("captured record not prepended")
@@ -132,6 +144,8 @@ def main():
             if len(captured) != 55 or captured[0] in (0, 255):
                 raise AssertionError("invalid captured species/record")
             play(em, spec["save"])
+            if reached["SaveGameData"] == 0:
+                raise AssertionError("controller save never executed ROM SaveGameData")
             em.stop(save=True)
             em = boot()  # New emulator instance, battery SRAM loaded from disk
             play(em, spec["continue"])
@@ -146,7 +160,9 @@ def main():
             report = {"party_fixture":spec.get("party_fixture","controller-only"), "fixture_mode": spec.get("fixture_mode", "controller-only"), "contract": "YEL-QOL-012-REAL-GAMEPLAY/1", "status": "PASS",
                       "destination_box": destination + 1, "before": 29, "after": 30,
                       "captured_record_hex": captured.hex(),
-                      "reboot": "new PyBoy instance; actual battery SRAM"}
+                      "reboot": "new PyBoy instance; actual battery SRAM",
+                      "ball_routine_calls": reached["ItemUseBall"],
+                      "save_routine_calls": reached["SaveGameData"]}
             output = Path(args.out)
             output.parent.mkdir(parents=True, exist_ok=True)
             output.write_text(json.dumps(report, indent=2) + "\n")
