@@ -35,6 +35,11 @@ def main():
                 em.load_state(io.BytesIO(state))
                 move(direction)
                 nxt=loc()
+                # Allow warp fade and map-script locks to clear before
+                # snapshotting the new indoor state.
+                if nxt[0]!=position[0]:
+                    play(em,[{"frames":300}])
+                    nxt=loc()
                 if nxt==position or nxt in seen:continue
                 if nxt[0] not in (0,37,38):continue
                 candidate=path+[direction]
