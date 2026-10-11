@@ -17,11 +17,11 @@ from yel_dev_lab_verify import (
     move_one_step, DIRECTIONS,
 )
 
-FOREST = 0x33
+FOREST = 0x0e  # DEBUG Route 3 fixture
 TARGET_CLASS = 1   # BUG_CATCHER
 TARGET_PARTY = 1
-TARGET_YX = (33, 28)  # trainer tile (y=33, x=30), facing LEFT, range 4
-SIGHT_TILES = {(33,x) for x in range(26,30)}
+TARGET_YX = (4, 14)  # trainer tile (y=33, x=30), facing LEFT, range 4
+SIGHT_TILES = {(4,13)}  # left-adjacent talk tile
 MAX_VISITS = 2600
 
 
@@ -30,7 +30,7 @@ def explore(emu, sym, out):
     start = (mem8(emu,map_addr), mem8(emu,y_addr), mem8(emu,x_addr))
     states = deque([(start,save_state_bytes(emu),[])])
     seen = {start}
-    accepted = {0, 1, 0x0c, 0x0d, 0x25, 0x26, 0x32, FOREST}
+    accepted = {0, 0x25, 0x26, FOREST}
     trace = []
     while states and len(seen) < MAX_VISITS:
         (m,y,x), state, path = states.popleft()
@@ -89,10 +89,10 @@ def main():
         # trainer line-of-sight logic; talk to the adjacent trainer instead.
         pos=(mem8(emu,symbols["wYCoord"]),mem8(emu,symbols["wXCoord"]))
         result["interaction_origin_y_x"]=list(pos)
-        if pos==(33,29):
-            tap(emu,"left",hold=2,settle=18)
+        if pos==(4,13):
+            tap(emu,"right",hold=2,settle=18)
             tap(emu,"a",hold=4,settle=30)
-            battle=["left","a"]
+            battle=["right","a"]
             for _ in range(40):
                 tick(emu,20)
                 if (mem8(emu,symbols["wTrainerClass"])==TARGET_CLASS
