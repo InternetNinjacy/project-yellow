@@ -14,7 +14,7 @@ from pathlib import Path
 FIELDS=("wCurMap","wXCoord","wYCoord","wPartyCount","wIsInBattle",
         "wBattleMonSpecies","wEnemyMonSpecies","wJoyIgnore",
         "wWalkCounter","wMovementFlags","wCurrentMapScriptFlags",
-        "wPalletTownCurScript","wPlayerMovingDirection")
+        "wPalletTownCurScript","wPlayerMovingDirection","wStatusFlags5")
 
 def labels(path):
     out={}
@@ -39,7 +39,7 @@ def main():
     args=ap.parse_args()
     from pyboy import PyBoy
     w=labels(args.symbols)
-    joy_names={"hJoyPressed","hJoyHeld","hJoy5","hJoy7"}
+    joy_names={"hJoyPressed","hJoyHeld","hJoy5","hJoy7","hDisableJoypadPolling","hJoyInput","hJoyLast"}
     joy={}
     for line in args.symbols.read_text().splitlines():
         words=line.split(";")[0].split()
