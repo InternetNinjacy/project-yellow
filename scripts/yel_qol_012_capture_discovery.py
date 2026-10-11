@@ -27,7 +27,7 @@ def main():
         wanted=[n for n in syms if any(token in n for token in
                 ("BattleMenu","ItemUseBall","ItemUseItem","DisplayBattleMenu","StartBattle","HandleBattleMenu"))]
         report["available_battle_symbols"]=wanted[:75]
-        for name in wanted[:35]:
+        for name in dict.fromkeys([n for n in ("StartBattle","DisplayBattleMenu","DisplayBattleMenu.handleBattleMenuInput","ItemUseBall","ItemUseBall.captureStorageReady","ItemUseBall.sendToBox") if n in syms]+wanted[:65]):
             bank,address=syms[name]
             def callback(context,label=name):
                 if len(report["hooks"])<250:
