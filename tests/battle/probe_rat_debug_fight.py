@@ -45,6 +45,11 @@ def main():
         for label,addr in symbols.items():
             rec[label] = int(pyboy.memory[addr])
         checkpoints.append(rec)
+        try:
+            a.output.mkdir(parents=True, exist_ok=True)
+            pyboy.screen.image.save(a.output / (name + ".png"))
+        except Exception as exc:
+            rec["screen_capture_error"] = repr(exc)
     def press(button, settle=32):
         pyboy.button(button)
         trace.append({"button":button,"frames":2})
@@ -53,8 +58,8 @@ def main():
         trace.append({"release":button,"frames":settle})
         tick(settle)
     try:
-        tick(1300)
-        trace.append({"frames":1300})
+        tick(240)
+        trace.append({"frames":240})
         check("title")
         # SELECT from title enters DEBUG menu; A enters FIGHT menu.
         press("select", 350)
