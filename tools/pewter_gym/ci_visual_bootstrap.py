@@ -81,9 +81,16 @@ def main():
                 observed_symbols[name] = symbol(name)
             except (ValueError, KeyError):
                 pass
+        # The native door check reads the lower-left background tile at
+        # hlcoord 8,9 (20-column wTileMap), comparing against $1b/$58.
+        tilemap_addr = symbol("wTileMap")
         def dispatch_snapshot():
-            return {name: int(emulator.memory[addr])
-                    for name, addr in observed_symbols.items()}
+            state = {name: int(emulator.memory[addr])
+                     for name, addr in observed_symbols.items()}
+            tile = int(emulator.memory[tilemap_addr + 9 * 20 + 8])
+            state["door_check_tile_8_9"] = tile
+            state["door_check_tile_eligible"] = tile in (0x1b, 0x58)
+            return state
         def record_frames(key, count):
             samples = []
             emulator.button_press(key)
