@@ -327,9 +327,7 @@ VictreebelPicBack::    INCBIN "gfx/pokemon/back/victreebelb.pic"
 SECTION "Trainer Pics", ROMX
 
 YoungsterPic::     INCBIN "gfx/trainers/youngster.pic"
-YoungsterFemalePic:: INCBIN "gfx/trainers/youngsterf.pic"
 BugCatcherPic::    INCBIN "gfx/trainers/bugcatcher.pic"
-BugCatcherFemalePic:: INCBIN "gfx/trainers/bugcatcherf.pic"
 LassPic::          INCBIN "gfx/trainers/lass.pic"
 SailorPic::        INCBIN "gfx/trainers/sailor.pic"
 JrTrainerMPic::    INCBIN "gfx/trainers/jr.trainerm.pic"
@@ -382,3 +380,8 @@ SECTION "Pics 7", ROMX
 RedPicBack::       INCBIN "gfx/player/redb.pic"
 OldManPicBack::    INCBIN "gfx/battle/oldmanb.pic"
 ProfOakPicBack::   INCBIN "gfx/battle/prof.oakb.pic"
+
+SECTION "Trainer Variant Pics", ROMX
+
+YoungsterFemalePic:: INCBIN "gfx/trainers/youngsterf.pic"
+BugCatcherFemalePic:: INCBIN "gfx/trainers/bugcatcherf.pic"
