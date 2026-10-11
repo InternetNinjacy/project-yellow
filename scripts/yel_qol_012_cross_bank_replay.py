@@ -55,7 +55,7 @@ def main():
             # Never memcpy the physical SRAM record over unrelated WRAM.
             em.memory[sym["wBoxCount"][1]]=30
             assert em.memory[sym["wBoxCount"][1]]==30
-            assert all(box_bytes(em,sym,i)[0]==(29 if i==a.target_box else 30) for i in range(12)
+            assert all(box_bytes(em,sym,i)[0]==(29 if i==a.target_box else 30) for i in range(12))
             play(em,route["movements"])
             assert em.memory[sym["wIsInBattle"][1]]==1,"wild battle missing"
             action(None,1400,0)
