@@ -45,14 +45,12 @@ IF DEF(_DEBUG)
 	; medium-fast experience one point short of level 36 (36^3-1).
 	; The next level must still be earned by a real battle.
 	ld hl, wPartyMon5Exp
-	ld a, HIGH(46655)
-	ld [hli], a
-	ld a, LOW(46655)
-	ld [hl], a
-	dec hl
-	dec hl
 	xor a
-	ld [hl], a
+	ld [hli], a ; high byte $00
+	ld a, HIGH(46655)
+	ld [hli], a ; middle byte $B6
+	ld a, LOW(46655)
+	ld [hl], a ; low byte $3F
 
 	; Pikachu gets Surf.
 	ld a, SURF
