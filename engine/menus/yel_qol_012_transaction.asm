@@ -744,22 +744,22 @@ ENDM
 
 Yel012StageWithdrawRemove::
 	cp MONS_PER_BOX
-	jr nc, .invalid
+	jp nc, .invalid
 	push af
 	ld a, 5
 	call OpenSRAM
 	ld a, [sYel012TransactionStatus]
 	cp 1
-	jr nz, .badStack
+	jp nz, .badStack
 	ld a, [sYel012TransactionPagePending]
 	and a
-	jr nz, .badStack
+	jp nz, .badStack
 	pop af
 	ld b, a
 	ld a, [sYel012TransactionShadow]
 	cp b
-	jr c, .bad
-	jr z, .bad
+	jp c, .bad
+	jp z, .bad
 	ld a, b
 	ld [sYel012TransactionPage], a
 	YEL012_COMPACT_FIELD 1, 1
