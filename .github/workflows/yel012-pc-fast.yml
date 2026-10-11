@@ -1,0 +1,43 @@
+name: YEL-QOL-012 fast PC acceptance
+on:
+  pull_request:
+    paths:
+      - 'engine/pokemon/bills_pc.asm'
+      - 'engine/menus/yel_qol_012*.asm'
+      - 'scripts/yel_qol_012_viridian_pc_acceptance.py'
+      - 'tests/replays/yel_qol_012_verified_viridian_pc_route.json'
+      - '.github/workflows/yel012-pc-fast.yml'
+jobs:
+  pc-acceptance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: gbdev/rgbds
+          ref: v1.0.3
+          path: rgbds
+      - name: Install RGBDS and PyBoy
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -yq bison libpng-dev pkg-config
+          make -C rgbds -j"$(nproc)" install
+          python3 -m pip install 'pyboy==2.6.0'
+      - name: Build only test ROM
+        run: make -j"$(nproc)" pokeyellow_debug.gbc pokeyellow_debug.sym
+      - name: Run strict controller-driven PC acceptance
+        run: |
+          mkdir -p test-results/yel-qol-012
+          python3 scripts/yel_qol_012_viridian_pc_acceptance.py \
+            --rom pokeyellow_debug.gbc \
+            --sym pokeyellow_debug.sym \
+            --boot tests/replays/yel_qol_012_verified_debug_boot.json \
+            --route tests/replays/yel_qol_012_verified_viridian_pc_route.json \
+            --out test-results/yel-qol-012/viridian-pc-acceptance.json
+      - name: Evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yel012-fast-pc-acceptance
+          path: test-results/yel-qol-012/viridian-pc-acceptance.json
+          if-no-files-found: warn
