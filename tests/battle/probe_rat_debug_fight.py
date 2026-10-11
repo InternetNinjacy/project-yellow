@@ -58,8 +58,8 @@ def main():
         trace.append({"release":button,"frames":settle})
         tick(settle)
     try:
-        tick(240)
-        trace.append({"frames":240})
+        tick(2200)
+        trace.append({"frames":2200})
         check("title")
         # SELECT from title enters DEBUG menu; A enters FIGHT menu.
         # Hold SELECT through title startup rather than tapping before it is ready.
