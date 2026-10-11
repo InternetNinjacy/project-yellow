@@ -9,6 +9,7 @@ import hashlib
 import json
 from collections import deque
 from pathlib import Path
+from PIL import Image
 from pyboy import PyBoy
 from yel_dev_lab_verify import (
     parse_sym, mem8, mem_bytes, tick, tap, screenshot, save_state_bytes,
@@ -143,7 +144,23 @@ def main():
         if result["enemy_species_bytes"][0] != result["enemy_species_bytes"][1]:
             raise AssertionError("Bug Catcher #1 party did not load two identical Caterpie")
         result["portrait_pointer"]=list(mem_bytes(emu,symbols["wTrainerPicPointer"],2))
-        screenshot(emu,out/"bug_catcher_f_battle.png")
+        # A trainer pointer can be correct while the LCD is still black.
+        # Require an actual nonblank battle frame before claiming graphics pass.
+        frames=[]
+        for frame in range(1500):
+            emu.tick(1)
+            if frame % 15: continue
+            frame_img=emu.screen.image.convert("L")
+            colors=len(set(frame_img.getdata()))
+            if colors >= 3:
+                frames.append((frame,colors,frame_img.copy()))
+        if not frames:
+            screenshot(emu,out/"battle_still_black.png")
+            raise AssertionError("Trainer data loaded but no nonblank battle screenshot appeared")
+        selected=max(frames,key=lambda item:item[1])
+        selected[2].convert("RGB").save(out/"bug_catcher_f_battle.png")
+        result["screenshot_frame_after_trigger"]=selected[0]
+        result["screenshot_unique_colors"]=selected[1]
         if result["enemy_party_count"]!=2:
             raise AssertionError("Expected two Caterpie in original Bug Catcher #1 party")
         if result["enemy_species_bytes"][:2] != [0x7B, 0x7B]:
@@ -161,8 +178,37 @@ def main():
             raise AssertionError(f"Wrong portrait pointer: {actual:#06x} != {portrait:#06x}")
         result["portrait_symbol_address"]=portrait
         result["screenshot_sha256"]=hashlib.sha256((out/"bug_catcher_f_battle.png").read_bytes()).hexdigest()
-        result["status"]="BATTLE_WRAM_AND_PORTRAIT_POINTER_PASS"
-        # A separate graphics-level comparison is needed to prove rendered tiles.
+        # Match a 56x56 battle portrait against the unmodified original PNG
+        # across the actual screen. Reject uniform/blank or wrong sprite data.
+        reference=Image.open("gfx/trainers/bug_catcher.png").convert("L")
+        if reference.size!=(56,56):
+            raise AssertionError(f"Unexpected reference trainer portrait size {reference.size}")
+        # Compare categorical grayscale pixel ranks, independently of DMG palette.
+        ref_colors=sorted(set(reference.getdata()))
+        if len(ref_colors)<2:
+            raise AssertionError("Reference sprite has no visual detail")
+        ref_pixels=list(reference.getdata())
+        ref_rank={c:i for i,c in enumerate(ref_colors)}
+        expected=[ref_rank[c] for c in ref_pixels]
+        from collections import Counter
+        best={"matched":-1,"x":None,"y":None}
+        screen=selected[2]
+        # Trainer battle sprite appears in the upper half of the LCD.
+        for y in range(0,73,4):
+            for x in range(0,105,4):
+                crop=screen.crop((x,y,x+56,y+56))
+                colors=sorted(set(crop.getdata()))
+                if len(colors)!=len(ref_colors):continue
+                rank={c:i for i,c in enumerate(colors)}
+                observed=[rank[c] for c in crop.getdata()]
+                matched=sum(a==b for a,b in zip(expected,observed))
+                if matched>best["matched"]:best={"matched":matched,"x":x,"y":y}
+        result["portrait_pixel_match"]=best
+        # The sprite might be transposed in the LCD by a few pixels; require
+        # a high exact-match fraction after permitted palette normalization.
+        if best["matched"] < 2800:
+            raise AssertionError(f"Original Bug Catcher sprite pixels not verified: {best}")
+        result["status"]="BATTLE_VISUAL_PASS"
     except Exception as e:
         result["error"]=f"{type(e).__name__}: {e}"
         raise
