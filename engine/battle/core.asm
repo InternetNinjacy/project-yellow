@@ -3741,8 +3741,10 @@ MirrorMoveCheck:
 	ld [wMoveDidntMiss], a
 .notDone
 	ld a, [wPlayerMoveEffect]
-	call YelRatCheckSecondary
-	call c, JumpMoveEffect ; original list or custom rat secondary effect
+	ld hl, AlwaysHappenSideEffects
+	ld de, 1
+	call IsInArray
+	call c, JumpMoveEffect ; original always-happen effects
 	ld hl, wEnemyMonHP
 	ld a, [hli]
 	ld b, [hl]
@@ -6252,7 +6254,9 @@ EnemyCheckIfMirrorMoveEffect:
 	ld [wMoveDidntMiss], a
 .handleExplosionMiss
 	ld a, [wEnemyMoveEffect]
-	call YelRatCheckSecondary
+	ld hl, AlwaysHappenSideEffects
+	ld de, 1
+	call IsInArray
 	call c, JumpMoveEffect
 	ld hl, wBattleMonHP
 	ld a, [hli]
@@ -7258,18 +7262,4 @@ PlayMoveAnimation:
 	call Delay3
 	predef MoveAnimation
 	callfar Func_78e98
-	ret
-
-; YEL-MON-004: shared, bank-size-conscious side-effect classifier.
-; Preserve the original one-byte side-effect table, plus the new custom moves.
-YelRatCheckSecondary:
-	cp POISON_FANG_EFFECT
-	jr z, .matched
-	cp CRUNCH_EFFECT
-	jr z, .matched
-	ld hl, AlwaysHappenSideEffects
-	ld de, 1
-	jp IsInArray
-.matched
-	scf
 	ret
