@@ -79,6 +79,8 @@ IF DEF(_DEBUG)
 	ld hl, wPokedexSeen
 	call DebugSetPokedexEntries
 	SetEvent EVENT_GOT_POKEDEX
+	; DEBUG party starts after Oak's tutorial; allow exit north to Route 1.
+	SetEvent EVENT_FOLLOWED_OAK_INTO_LAB
 
 	; Rival chose Jolteon.
 	ld hl, wRivalStarter
