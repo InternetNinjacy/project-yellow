@@ -12,7 +12,9 @@ import json
 from pathlib import Path
 
 FIELDS=("wCurMap","wXCoord","wYCoord","wPartyCount","wIsInBattle",
-        "wBattleMonSpecies","wEnemyMonSpecies")
+        "wBattleMonSpecies","wEnemyMonSpecies","wJoyIgnore",
+        "wWalkCounter","wMovementFlags","wCurrentMapScriptFlags",
+        "wPalletTownCurScript","wPlayerMovingDirection")
 
 def labels(path):
     out={}
