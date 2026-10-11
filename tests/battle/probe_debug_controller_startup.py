@@ -35,10 +35,21 @@ def parse_symbols(path):
         raise AssertionError("Missing WRAM symbols: " + repr(sorted(missing)))
     return found
 
-def run(rom, symbols, output):
+def run(rom, symbols, output, symbol_path):
     from pyboy import PyBoy
     pb = PyBoy(str(rom), window="null")
     trace, checkpoints = [{"frames": 240}], []
+    hooks = []
+    for line in symbol_path.read_text().splitlines():
+        words = line.split(";")[0].split()
+        if len(words) != 2 or words[1] not in ("PrepareNewGameDebug", "SetDebugNewGameParty", "AddPartyMon"):
+            continue
+        bank, addr = (int(x, 16) for x in words[0].split(":", 1))
+        label = words[1]
+        def observe(_context, label=label):
+            if len(hooks) < 100:
+                hooks.append({"label": label, "party": int(pb.memory[symbols["wPartyCount"]])})
+        pb.hook_register(bank, addr, observe, None)
     try:
         total_frames = 0
         def record(phase):
@@ -61,12 +72,16 @@ def run(rom, symbols, output):
             trace.append({"release": button, "frames": release_frames})
             frames(release_frames)
             record(f"step_{idx:02d}_{button}")
+            if idx in (55, 65, 73, 80, 89):
+                output.mkdir(parents=True, exist_ok=True)
+                pb.screen.image.save(output / f"startup_{idx:02d}.png")
         output.mkdir(parents=True, exist_ok=True)
         (output / "debug_startup_inputs.json").write_text(json.dumps(trace, indent=2) + "\n")
         (output / "debug_startup_checkpoints.json").write_text(json.dumps({
             "rom_sha256": hashlib.sha256(rom.read_bytes()).hexdigest(),
             "checkpoints": checkpoints,
         }, indent=2) + "\n")
+        (output / "debug_startup_calls.json").write_text(json.dumps(hooks, indent=2) + "\\n")
         with (output / "debug_startup_final.state").open("wb") as f:
             pb.save_state(f)
         if not any(row["wPartyCount"] == 5 and row["party_species"][4] == 0xA6
@@ -82,4 +97,4 @@ if __name__ == "__main__":
     p.add_argument("--symbols", type=Path, required=True)
     p.add_argument("--output", type=Path, required=True)
     args = p.parse_args()
-    run(args.rom, parse_symbols(args.symbols), args.output)
+    run(args.rom, parse_symbols(args.symbols), args.output, args.symbols)
