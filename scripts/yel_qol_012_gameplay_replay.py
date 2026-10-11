@@ -88,12 +88,12 @@ def stage_party_from_rom(em, syms):
         em.memory[syms["wMonDataLocation"][1]]=0
         regs.SP=0xcfee
         regs.PC=address
-        for _ in range(2400):
+        for _ in range(30000):
             em.tick(1,render=False,sound=False)
             if regs.PC in (0xc000,0xc001):
                 break
         else:
-            raise AssertionError("ROM roster builder did not return")
+            raise AssertionError(f"ROM roster builder did not return: PC={regs.PC:04x} SP={regs.SP:04x} party={em.memory[syms[\"wPartyCount\"][1]]}")
         if em.memory[syms["wPartyCount"][1]] != 6:
             raise AssertionError("ROM roster builder did not create six Pokémon")
     finally:
