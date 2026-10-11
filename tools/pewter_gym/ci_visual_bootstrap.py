@@ -72,6 +72,27 @@ def main():
         def symbol(name):
             _, addr = emulator.symbol_lookup(name)
             return addr
+        # Read-only warp-dispatch diagnostics. Never change emulator RAM.
+        observed_symbols = {}
+        for name in ("wCurMapTileset", "wWalkCounter", "wMovementFlags",
+                     "wPlayerDirection", "wPlayerMovingDirection",
+                     "wCurrentMapScriptFlags", "wStatusFlags7"):
+            try:
+                observed_symbols[name] = symbol(name)
+            except (ValueError, KeyError):
+                pass
+        def dispatch_snapshot():
+            return {name: int(emulator.memory[addr])
+                    for name, addr in observed_symbols.items()}
+        def record_frames(key, count):
+            samples = []
+            emulator.button_press(key)
+            for frame in range(count):
+                tick(1)
+                samples.append({"frame": frame, "map": location(),
+                                "coords": coords(), "dispatch": dispatch_snapshot()})
+            emulator.button_release(key)
+            return samples
         warp_count_addr = symbol("wNumberOfWarps")
         warp_entries_addr = symbol("wWarpEntries")
         flags_addr = symbol("wMovementFlags")
@@ -86,6 +107,7 @@ def main():
                     "entrance_matches": [e for e in entries if e[:2] == [17, 16]],
                     "movement_flags": int(emulator.memory[flags_addr])}
         report = {"before": {"map": location(), "coords": coords(),
+                              "dispatch": dispatch_snapshot(),
                               "warp_state": warp_snapshot()}, "steps": []}
         (args.output / "doorway_diagnostics.json").write_text(json.dumps(report, indent=2) + "\n")
         print(f"Warp snapshot: {report['before']['warp_state']}", flush=True)
@@ -96,9 +118,7 @@ def main():
         for step_index in range(5):
             previous = coords()
             shot(f"before_step_{step_index:02d}.png")
-            emulator.button_press("up")
-            tick(2)
-            emulator.button_release("up")
+            input_frames = record_frames("up", 2)
             tick(24)
             # Wait for a full tile or map transition.
             for _ in range(90):
@@ -107,7 +127,8 @@ def main():
                 tick(1)
             tick(12)
             current = {"step": step_index, "start": previous, "end": coords(),
-                       "map": location(), "warp_state": warp_snapshot()}
+                       "map": location(), "warp_state": warp_snapshot(),
+                       "dispatch": dispatch_snapshot(), "input_frames": input_frames}
             report["steps"].append(current)
             (args.output / "doorway_diagnostics.json").write_text(json.dumps(report, indent=2) + "\n")
             shot(f"after_step_{step_index:02d}.png")
