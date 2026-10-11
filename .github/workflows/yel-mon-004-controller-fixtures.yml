@@ -17,7 +17,7 @@ jobs:
           sudo apt-get install -y bison libpng-dev pkg-config
           git clone --depth 1 --branch v1.0.3 https://github.com/gbdev/rgbds.git _rgbds
           sudo make -C _rgbds -j2 install
-          python -m pip install 'pyboy>=2,<3'
+          python -m pip install 'pyboy>=2,<3' pillow
       - name: Build DEBUG ROM with symbols
         run: make -j2 pokeyellow_debug.gbc
       - name: Check probe syntax
