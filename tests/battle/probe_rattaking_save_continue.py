@@ -78,7 +78,9 @@ def main():
             "rattaking_dex_owned":bool(owned[18] & 0x80),
             "rattaking_dex_seen":bool(seen[18] & 0x80),
             "box_num":int(pb.memory[sym["wCurrentBoxNum"]]),
-            "box_counts":from_mem(pb,"wBoxMonCounts",12).hex(),
+            # wBoxMonCounts is a NEXTU temporary overlay, not persistent box metadata.
+            # Its bytes are not valid storage counts across CONTINUE.
+            "current_box_count":int(pb.memory[sym["wBoxCount"]]),
             "box_view_sha256":sha(box),
         }
     def ticks(pb,n):
@@ -144,7 +146,7 @@ def main():
         for key in ("party_species","species","level","exp","moves","attack","defense",
                     "speed","special","maxhp","party_mon_bytes","party_mon_ot",
                     "party_mon_nick","pokedex_owned","pokedex_seen","box_num",
-                    "box_counts","box_view_sha256"):
+                    "current_box_count","box_view_sha256"):
             if after[key]!=before[key]:
                 raise AssertionError("SRAM CONTINUE changed field "+key+" from "+repr(before[key])+" to "+repr(after[key]))
         print("PASS genuine game SAVE/CONTINUE restored Rattaking and all party/Pokedex/box records",flush=True)
