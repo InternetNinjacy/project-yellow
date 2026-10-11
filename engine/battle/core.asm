@@ -6585,14 +6585,8 @@ GetCurrentMove:
 	jr .selected
 .player
 	ld de, wPlayerMoveNum
-	; Apply InitBattleVariables to FightDebugMenu.
-	ld a, [wStatusFlags7]
-	bit BIT_TEST_BATTLE, a
-	jr z, .normalSelection
-	ld a, [wTestBattlePlayerSelectedMove]
-	and a
-	jr nz, .selected
-.normalSelection
+	; Even in DEBUG battles, load the move selected from the party's menu.
+	; wTestBattlePlayerSelectedMove is a separate animation-preview control.
 	ld a, [wPlayerSelectedMove]
 .selected
 	ld [wNameListIndex], a
