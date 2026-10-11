@@ -149,7 +149,9 @@ def main():
                 raise AssertionError("SRAM CONTINUE changed field "+key+" from "+repr(before[key])+" to "+repr(after[key]))
         print("PASS genuine game SAVE/CONTINUE restored Rattaking and all party/Pokedex/box records",flush=True)
     finally:
-        fresh.stop(save=True)
+        # CONTINUE is a read-only verification session: do not persist any
+        # incidental runtime SRAM writes when closing this fresh emulator.
+        fresh.stop(save=False)
     after_sram=ram_path.read_bytes()
     if sha(after_sram)!=sha(saved_sram):
         raise AssertionError("Fresh CONTINUE modified battery SRAM bytes")
