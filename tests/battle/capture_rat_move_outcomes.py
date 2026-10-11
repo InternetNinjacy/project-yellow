@@ -151,7 +151,7 @@ def main():
         raise AssertionError("Missing real controller-driven proc/no-proc cases: " + repr(sorted(missing)))
 
     cases = {}
-    for name, _, expected_proc, expected_effect in CASES:
+    for name, slot, expected_proc, expected_effect in CASES:
         item = discoveries[name]
         trace_name = name + "_capture_trace.json"
         state_name = name + ".state"
@@ -167,6 +167,7 @@ def main():
         cases[name] = {
             "state": state_name,
             "rom_sha256": sha,
+            "move_slot": slot,
             "steps": item["attack"],
         }
     manifest = args.output / "rat_move_fixtures.json"
