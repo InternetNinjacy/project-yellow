@@ -49,6 +49,13 @@ def main():
         observations.append(r)
         pb.screen.image.save(args.output/(label+".png"))
         with (args.output/(label+".state")).open("wb") as h:pb.save_state(h)
+    def preserve_diagnostics():
+        (args.output/"evolution_battle_diagnostics.json").write_text(json.dumps({
+            "rom_sha256":hashlib.sha256(args.rom.read_bytes()).hexdigest(),
+            "observations":observations,
+            "steps":len(trace)
+        },indent=2)+"\\n")
+        (args.output/"evolution_battle_trace.json").write_text(json.dumps(trace,indent=2)+"\\n")
     def press(button,settle=120):
         pb.button_press(button)
         trace.append({"button":button,"frames":2})
@@ -98,6 +105,8 @@ def main():
             raise AssertionError("Raticate has not evolved into level-36 Rattaking; inspect post-switch screenshots")
         with (args.output/"rattaking_evolved.state").open("wb") as h:pb.save_state(h)
         print("PASS genuine battle EXP and evolution into level-36 Rattaking",flush=True)
-    finally:pb.stop()
+    finally:
+        preserve_diagnostics()
+        pb.stop()
 
 if __name__=="__main__":main()
