@@ -194,6 +194,28 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
+      - name: YEL-QOL-012 reject unsafe real Poké Ball captures
+        run: |
+          mkdir -p test-results/yel-qol-012
+          for case in all_full bad_version bad_sentinel interrupted_stage interrupted_commit; do
+            python3 scripts/yel_qol_012_rejection_replay.py \
+              --rom pokeyellow_debug.gbc \
+              --sym pokeyellow_debug.sym \
+              --boot tests/replays/yel_qol_012_verified_debug_boot.json \
+              --route tests/replays/yel_qol_012_verified_route1_encounter.json \
+              --case "$case" \
+              --out "test-results/yel-qol-012/reject-${case}.json"
+          done
+
+      - name: Archive rejected-capture integrity evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yel-qol-012-rejected-capture
+          path: test-results/yel-qol-012/reject-*.json
+          if-no-files-found: warn
+          retention-days: 30
+
       - name: YEL-QOL-012 standalone six-party ROM CPU fixture
         run: |
           mkdir -p test-results/yel-qol-012
