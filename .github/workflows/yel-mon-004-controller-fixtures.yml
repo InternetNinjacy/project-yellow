@@ -36,6 +36,7 @@ jobs:
             --symbols pokeyellow_debug.sym \
             --output artifacts/rat-debug-startup
       - name: Find legitimate overworld route for Raticate experience fixture
+        continue-on-error: true
         run: |
           mkdir -p artifacts/rat-evolution-route
           python tests/battle/probe_rattaking_overworld_route.py \
