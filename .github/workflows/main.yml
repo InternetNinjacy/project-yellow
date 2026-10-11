@@ -170,6 +170,30 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
+      - name: YEL-QOL-012 cross-bank full-box capture SAVE/CONTINUE
+        run: |
+          mkdir -p test-results/yel-qol-012
+          for pair in 3:4 7:8 11:0; do
+            src="${pair%%:*}"
+            dst="${pair##*:}"
+            python3 scripts/yel_qol_012_cross_bank_replay.py \
+              --rom pokeyellow_debug.gbc \
+              --sym pokeyellow_debug.sym \
+              --boot tests/replays/yel_qol_012_verified_debug_boot.json \
+              --route tests/replays/yel_qol_012_verified_route1_encounter.json \
+              --source-box "$src" --target-box "$dst" \
+              --out "test-results/yel-qol-012/cross-bank-${src}-to-${dst}.json"
+          done
+
+      - name: Archive cross-bank capture persistence evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yel-qol-012-cross-bank-gameplay
+          path: test-results/yel-qol-012/cross-bank-*.json
+          if-no-files-found: warn
+          retention-days: 30
+
       - name: YEL-QOL-012 standalone six-party ROM CPU fixture
         run: |
           mkdir -p test-results/yel-qol-012
