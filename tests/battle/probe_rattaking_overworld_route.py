@@ -52,6 +52,8 @@ def main():
     tracked_labels={"JoypadOverworld","ReadJoypad_","_Joypad","PrepareOAMData",
                     "SpecialEnterMap","CheckForceBikeOrSurf","EnterMap"}
     counters={key:0 for key in tracked_labels}
+    poll_samples=[]
+    tracing=[False]
     for line in args.symbols.read_text().splitlines():
         parts=line.split(";")[0].split()
         if len(parts)<2 or parts[1] not in tracked_labels or ":" not in parts[0]:
@@ -60,6 +62,8 @@ def main():
         name=parts[1]
         def seen(_ctx,name=name):
             counters[name]+=1
+            if tracing[0] and name in ("ReadJoypad_","_Joypad","JoypadOverworld") and len(poll_samples)<120:
+                poll_samples.append({"name":name,"rJOYP":int(p.memory[0xff00]),"pc":int(p.register_file.PC)})
         p.hook_register(bank,addr,seen,None)
     args.output.mkdir(parents=True,exist_ok=True)
     records=[]
@@ -92,6 +96,7 @@ def main():
         # before launching graph traversal.
         origin=snapshot()
         trials=[]
+        tracing[0]=True
         for direction in ("up","right","left","down","start","b","a"):
             for hold in ((24,72,180) if direction in ("up","right","left","down") else (24,)):
                 restore(origin)
@@ -105,6 +110,7 @@ def main():
                 if hold==180 or direction in ("start","b","a"):p.screen.image.save(args.output/f"move_{direction}.png")
         (args.output/"movement_trials.json").write_text(json.dumps(trials,indent=2)+"\n")
         (args.output/"input_routine_call_counts.json").write_text(json.dumps(counters,indent=2)+"\n")
+        (args.output/"poll_samples.json").write_text(json.dumps(poll_samples,indent=2)+"\n")
         q=deque([(origin,[])])
         seen={(first["wCurMap"],first["wXCoord"],first["wYCoord"])}
         found=None
