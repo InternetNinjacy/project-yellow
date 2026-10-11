@@ -9,7 +9,9 @@ SetDebugNewGameParty: ; unreferenced except in _DEBUG
 	ld a, [de]
 	ld [wCurEnemyLevel], a
 	inc de
+	push de ; AddPartyMon clobbers registers: preserve table cursor.
 	call AddPartyMon
+	pop de
 	jr .loop
 
 DebugNewGameParty: ; unreferenced except in _DEBUG
