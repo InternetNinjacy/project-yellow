@@ -98,6 +98,12 @@ def attempt(pb, start, sym, prefix, slot, offset):
             break
         press(pb, attack, "a", 100)
     after = read(pb, sym)
+    # Preserve diagnostics for the first selected attack and every proc/nonproc
+    # experiment; no emulator-memory writes or RNG manipulation.
+    if offset in (0, 1, 2, 3, 7, 15, 31, 63):
+        print("effect-observation", slot, offset, json.dumps({
+            "before": before, "after": after, "controller_steps": len(attack),
+        }), flush=True)
     if not after["battle"] or after["enemy_hp"] >= before["enemy_hp"]:
         return None
     if slot == 0:
