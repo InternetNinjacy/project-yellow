@@ -155,12 +155,37 @@ def main():
     args.output.mkdir(parents=True, exist_ok=True)
     sha = hashlib.sha256(args.rom.read_bytes()).hexdigest()
     pb = PyBoy(str(args.rom), window="null")
+    # Read-only CPU execution hooks: determine whether the custom effects
+    # actually execute, without writing WRAM or changing the RNG.
+    observations = []
+    hook_names = {"YelRatCheckSecondary", "JumpMoveEffect",
+                  "_JumpMoveEffect", "PoisonEffect", "StatModifierDownEffect"}
+    def observe(label):
+        def callback(_context):
+            if len(observations) < 300:
+                observations.append({"handler":label,
+                                     "a":int(pb.register_file.A),
+                                     "effect":int(pb.memory[sym["wPlayerMoveEffect"]]),
+                                     "move":int(pb.memory[sym["wPlayerSelectedMove"]])})
+        return callback
+    hooks_registered = []
+    for line in args.symbols.read_text().splitlines():
+        words = line.split(";")[0].split()
+        if len(words) < 2 or words[1] not in hook_names or ":" not in words[0]:
+            continue
+        bank, address = (int(v,16) for v in words[0].split(":",1))
+        pb.hook_register(bank,address,observe(words[1]),None)
+        hooks_registered.append(words[1])
+    print("CPU handlers traced:", hooks_registered, flush=True)
     discoveries = {}
     try:
         # Iterate by move, not by expected result; preserve both outcomes.
         for slot in (0, 3):
             for offset in range(args.max_offset):
+                observations.clear()
                 result = attempt(pb, args.starting_state, sym, original_trace, slot, offset)
+                if offset == 0:
+                    print("CPU-execution-trace",slot,observations[:90],flush=True)
                 if result is None:
                     continue
                 if offset in (0, 5, 25, 50):
