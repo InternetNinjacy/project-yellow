@@ -81,7 +81,7 @@ def run(rom, symbols, output, symbol_path):
             "rom_sha256": hashlib.sha256(rom.read_bytes()).hexdigest(),
             "checkpoints": checkpoints,
         }, indent=2) + "\n")
-        (output / "debug_startup_calls.json").write_text(json.dumps(hooks, indent=2) + "\\n")
+        (output / "debug_startup_calls.json").write_text(json.dumps(hooks, indent=2) + "\n")
         with (output / "debug_startup_final.state").open("wb") as f:
             pb.save_state(f)
         if not any(row["wPartyCount"] == 5 and row["party_species"][4] == 0xA6
