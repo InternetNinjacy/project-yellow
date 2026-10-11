@@ -49,6 +49,18 @@ def main():
     def joy_state():
         return {label:int(p.memory[address]) for label,address in joy.items()}
     p=PyBoy(str(args.rom),window="null")
+    tracked_labels={"JoypadOverworld","ReadJoypad_","_Joypad","PrepareOAMData",
+                    "SpecialEnterMap","CheckForceBikeOrSurf","EnterMap"}
+    counters={key:0 for key in tracked_labels}
+    for line in args.symbols.read_text().splitlines():
+        parts=line.split(";")[0].split()
+        if len(parts)<2 or parts[1] not in tracked_labels or ":" not in parts[0]:
+            continue
+        bank,addr=(int(v,16) for v in parts[0].split(":",1))
+        name=parts[1]
+        def seen(_ctx,name=name):
+            counters[name]+=1
+        p.hook_register(bank,addr,seen,None)
     args.output.mkdir(parents=True,exist_ok=True)
     records=[]
     def get():
@@ -85,6 +97,7 @@ def main():
                 trials.append(trial)
                 if hold==180 or direction in ("start","b","a"):p.screen.image.save(args.output/f"move_{direction}.png")
         (args.output/"movement_trials.json").write_text(json.dumps(trials,indent=2)+"\n")
+        (args.output/"input_routine_call_counts.json").write_text(json.dumps(counters,indent=2)+"\n")
         q=deque([(origin,[])])
         seen={(first["wCurMap"],first["wXCoord"],first["wYCoord"])}
         found=None
