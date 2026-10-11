@@ -99,6 +99,18 @@ def main():
                 break
             press("a", 100)
         check("battle_candidate")
+        # Preserve the real battle BEFORE selecting an attack. These snapshots
+        # and inputs are independently reproducible by capture.py.
+        out = a.output
+        out.mkdir(parents=True, exist_ok=True)
+        pre_trace = list(trace)
+        (out/"debug_fight_pre_action_trace.json").write_text(json.dumps(pre_trace, indent=2)+"\n")
+        with (out/"debug_fight_pre_action.state").open("wb") as handle:
+            pyboy.save_state(handle)
+        # Diagnostic only: observe successive real UI stages with controller A.
+        for index in range(4):
+            press("a", 200)
+            check("battle_ui_" + str(index))
         out = a.output
         out.mkdir(parents=True, exist_ok=True)
         (out/"debug_fight_trace.json").write_text(json.dumps(trace,indent=2)+"\n")
