@@ -27,7 +27,7 @@ CRUNCH_EFFECT = 0x49
 SYMBOLS = (
     "wIsInBattle", "wBattleMonSpecies", "wEnemyMonSpecies",
     "wEnemyMonStatus", "wEnemyBattleStatus3", "wEnemyMonStatMods",
-    "wPlayerMoveNum", "wPlayerMoveEffect", "wBattleMonMoves",
+    "wPlayerMoveNum", "wPlayerMoveEffect", "wBattleMonMoves", "wEnemyMonHP",
 )
 
 def addresses(path):
@@ -56,6 +56,7 @@ def snapshot(pb, a):
         "move": pb.memory[a["wPlayerMoveNum"]],
         "effect": pb.memory[a["wPlayerMoveEffect"]],
         "moves": [pb.memory[a["wBattleMonMoves"] + i] for i in range(4)],
+        "enemy_hp": (pb.memory[a["wEnemyMonHP"]] << 8) | pb.memory[a["wEnemyMonHP"] + 1],
     }
 
 def replay(pb, steps):
@@ -112,17 +113,19 @@ def main():
                 raise AssertionError(name + ": not an active battle")
             replay(pb, case["steps"])
             after = snapshot(pb, a)
+            expected_id = POISON_FANG if move == "poison_fang" else CRUNCH
+            slot = case.get("move_slot")
+            if type(slot) is not int or slot not in range(4) or before["moves"][slot] != expected_id:
+                raise AssertionError(name + ": captured move slot does not match approved move")
+            if after["enemy_hp"] >= before["enemy_hp"]:
+                raise AssertionError(name + ": damaging move did not reduce target HP")
             if move == "poison_fang":
-                if after["effect"] != POISON_FANG_EFFECT or POISON_FANG not in after["moves"]:
-                    raise AssertionError(name + ": Poison Fang effect/moves not active")
                 succeeded = bool(after["status"] & PSN_MASK and after["toxic"] & BADLY_POISONED_MASK)
                 if not expected_proc and (after["status"] != before["status"] or after["toxic"] != before["toxic"]):
                     raise AssertionError(name + ": unexpected status change")
                 if expected_proc and not succeeded:
                     raise AssertionError(name + ": did not apply badly poisoned status")
             else:
-                if after["effect"] != CRUNCH_EFFECT or CRUNCH not in after["moves"]:
-                    raise AssertionError(name + ": Crunch effect/moves not active")
                 delta = before["defense_stage"] - after["defense_stage"]
                 if delta != (1 if expected_proc else 0):
                     raise AssertionError(name + ": unexpected Defense stage delta " + str(delta))
