@@ -120,9 +120,11 @@ def main():
         for step_index in range(5):
             previous = coords()
             shot(f"before_step_{step_index:02d}.png")
-            # Keep Up held through the complete walking/warp eligibility window.
-            # A 2-frame tap releases before the overworld warp-dispatch check.
-            input_frames = record_frames("up", 12)
+            # A 12-frame pulse still ends with wWalkCounter at 2 or 3.
+            # Hold real Up input beyond a complete tile step so the native
+            # warp dispatcher sees hJoyHeld while standing on the doorway.
+            # record_frames stops early on a genuine Gym map transition.
+            input_frames = record_frames("up", 60)
             tick(24)
             # Wait for a full tile or map transition.
             for _ in range(90):
