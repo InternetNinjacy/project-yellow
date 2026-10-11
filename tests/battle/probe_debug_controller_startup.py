@@ -69,7 +69,7 @@ def run(rom, symbols, output):
         }, indent=2) + "\n")
         with (output / "debug_startup_final.state").open("wb") as f:
             pb.save_state(f)
-        if not any(row["wPartyCount"] == 5 and row["party_species"][4] == 20
+        if not any(row["wPartyCount"] == 5 and row["party_species"][4] == 0xA6
                    and row["wPartyMon5Level"] == 35 for row in checkpoints):
             raise AssertionError("No genuine level-35 fifth-party Raticate in DEBUG startup evidence.")
         print("DEBUG startup party observed; verify count and battle access separately.")
