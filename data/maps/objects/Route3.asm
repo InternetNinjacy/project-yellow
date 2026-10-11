@@ -13,6 +13,9 @@ Route3_Object:
 	db $2c ; border block
 
 	def_warp_events
+IF DEF(_DEBUG)
+	warp_event 13, 4, REDS_HOUSE_2F, 3
+ENDC
 
 	def_bg_events
 	bg_event 59,  9, TEXT_ROUTE3_SIGN
