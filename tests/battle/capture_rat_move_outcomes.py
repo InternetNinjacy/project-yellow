@@ -120,15 +120,11 @@ def attempt(pb, start, sym, prefix, slot, offset):
         print("effect-observation", slot, offset, json.dumps({
             "before": before, "after": after, "controller_steps": len(attack),
         }), flush=True)
-    # Gen 1 stores the chosen slot as a 1-based move number. A damaging hit
-    # from some *other* move must never become a Crunch/Poison Fang oracle.
-    if after.get("move_num") != slot + 1:
+    # wPlayerMoveNum is not the move slot. wPlayerSelectedMove is the
+    # actual move ID (0xA7 Poison Fang, 0xA8 Crunch).
+    if after.get("selected_move") != expected:
         return None
     if not after["battle"] or after["enemy_hp"] >= before["enemy_hp"]:
-        return None
-    if after["move_num"] != slot + 1:
-        if offset == 0:
-            print("REJECT wrong selected slot", slot, "actual", after["move_num"], "before", before["menu_index"], flush=True)
         return None
     if slot == 0:
         proc = bool(after["status"] & PSN and after["badly_poisoned"])
