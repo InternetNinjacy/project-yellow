@@ -22,7 +22,7 @@ CASES = (
 )
 NAMES = ("wIsInBattle", "wBattleMonSpecies", "wEnemyMonSpecies",
          "wEnemyMonStatus", "wEnemyBattleStatus3", "wEnemyMonStatMods",
-         "wEnemyMonHP", "wPlayerMoveEffect", "wPlayerMoveNum", "wBattleMonMoves", "wMoveMissed")
+         "wEnemyMonHP", "wPlayerMoveEffect", "wPlayerMoveNum", "wPlayerSelectedMove", "wCurrentMenuItem", "wBattleMonMoves", "wMoveMissed")
 PSN = 1 << 3
 BAD_POISON = 1
 
@@ -52,6 +52,8 @@ def read(pb, sym):
         "enemy_hp": byte("wEnemyMonHP") * 256 + byte("wEnemyMonHP", 1),
         "effect": byte("wPlayerMoveEffect"),
         "move_num": byte("wPlayerMoveNum"),
+        "selected_move": byte("wPlayerSelectedMove"),
+        "menu_index": byte("wCurrentMenuItem"),
         "missed": byte("wMoveMissed"),
         "moves": [byte("wBattleMonMoves", i) for i in range(4)],
     }
@@ -105,6 +107,10 @@ def attempt(pb, start, sym, prefix, slot, offset):
             "before": before, "after": after, "controller_steps": len(attack),
         }), flush=True)
     if not after["battle"] or after["enemy_hp"] >= before["enemy_hp"]:
+        return None
+    if after["move_num"] != slot + 1:
+        if offset == 0:
+            print("REJECT wrong selected slot", slot, "actual", after["move_num"], "before", before["menu_index"], flush=True)
         return None
     if slot == 0:
         proc = bool(after["status"] & PSN and after["badly_poisoned"])
