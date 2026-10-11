@@ -155,5 +155,6 @@ def main():
         raise AssertionError("Fresh CONTINUE modified battery SRAM bytes")
     evidence["after_continue_sram_sha256"]=sha(after_sram)
     (args.output/"persistence_comparison.json").write_text(json.dumps(evidence,indent=2)+"\n")
+    (args.output/"persistence_gate_passed.json").write_text(json.dumps({"passed":True,"rom_sha256":sha(args.rom.read_bytes()),"sram_sha256":sha(after_sram)},indent=2)+"\n")
 
 if __name__=="__main__":main()
