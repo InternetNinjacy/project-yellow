@@ -74,6 +74,11 @@ IF DEF(_DEBUG)
 	ld a, STRENGTH
 	ld [hl], a
 
+	; The DEBUG New Game party skips Oak's capture/lab introduction.
+	; Match the story gate to that test-only setup so Route 1 is traversable
+	; by ordinary controller inputs, without changing production gameplay.
+	SetEvent EVENT_FOLLOWED_OAK_INTO_LAB
+
 	; Get some debug items.
 	ld hl, wNumBagItems
 	ld de, DebugNewGameItemsList
