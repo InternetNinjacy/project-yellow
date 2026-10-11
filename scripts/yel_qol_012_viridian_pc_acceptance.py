@@ -62,8 +62,12 @@ def main():
   for direction in route["directions"]:walk(direction)
   assert loc()[0]==41,("failed to reach Viridian Center",loc())
   result["center_entry_position"]=loc()
-  for direction in ("up","up")+("right",)*10+("up",):walk(direction)
+  for direction in ("up","up")+("right",)*10:walk(direction)
   result["before_pc_action"]=loc()
+  assert loc()==(41,13,5),("PC interaction base position differs",loc())
+  # Set facing UP without stepping onto the PC's interaction tile.
+  press("up",1,22)
+  result["facing_before_pc_action"]=em.memory[syms["wSpritePlayerStateData1FacingDirection"][1]]
   press("a",4,150)
   result["after_pc_action"]=loc()
   if not visited["ActivatePC"]:
