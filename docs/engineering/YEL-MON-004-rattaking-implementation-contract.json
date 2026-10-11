@@ -54,9 +54,9 @@
         "sp_defense": 85,
         "speed": 105
       },
-      "internal_species_id": null,
-      "internal_dex_id": null,
-      "art_status": "pending"
+      "internal_species_id": 191,
+      "internal_dex_id": 152,
+      "art_status": "placeholder; approved final art pending"
     }
   ],
   "moves": [
@@ -226,10 +226,21 @@
     ]
   },
   "blockers": [
-    "new species index tables and art",
-    "new move IDs and battle effects",
-    "TM34 remap",
-    "six-stat runtime",
-    "ROM build and emulation"
-  ]
+    "final Rattaking battle art, dex/cry placeholders and aesthetic approval",
+    "TM34 Poison Fang Safari Zone item placement and legitimate pickup replay; exact tile still TBD",
+    "rat-family move/TM/HM eligibility and expanded table/global integration regression",
+    "final source/code review, PR #13 merge-readiness and explicit user approval"
+  ],
+  "verification_checkpoint": {
+    "thread_status": "retired",
+    "pr": 13,
+    "branch": "feature/yel-mon-004-rat-family-approved",
+    "source_and_gameplay": "controller-verified level-35 Raticate to level-36 Rattaking, in-game SAVE and fresh SRAM CONTINUE exact records",
+    "gameplay_run": "https://github.com/InternetNinjacy/project-yellow/actions/runs/38134106846",
+    "rom_sha256": "7ebf1af6403c7f14e2403bc3e3b35c8b643c6febb35898dfc783be6607787d7b",
+    "sram_sha256": "5ee793cc5179bede3f23695e051c999209822b3b2ee4ee0aa0bed777c8b1fe61",
+    "pokédex_caveat": "DEBUG starter Pokédex entries already populated; cannot claim owned-bit acquisition transition",
+    "merge_status": "DRAFT / UNMERGED",
+    "next_gate": "review artwork, TM34 overworld location, full TM/HM/move and table regressions; no automatic merge"
+  }
 }
