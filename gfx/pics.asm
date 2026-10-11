@@ -385,3 +385,4 @@ SECTION "Trainer Variant Pics", ROMX
 
 YoungsterFemalePic:: INCBIN "gfx/trainers/youngsterf.pic"
 BugCatcherFemalePic:: INCBIN "gfx/trainers/bugcatcherf.pic"
+LadPic:: INCBIN "gfx/trainers/lad.pic"
