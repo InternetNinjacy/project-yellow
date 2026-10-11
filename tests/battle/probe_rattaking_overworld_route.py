@@ -64,13 +64,13 @@ def main():
         # before launching graph traversal.
         origin=snapshot()
         trials=[]
-        for direction in ("up","right","left","down"):
-            for hold in (24,72,180):
+        for direction in ("up","right","left","down","start","b","a"):
+            for hold in ((24,72,180) if direction in ("up","right","left","down") else (24,)):
                 restore(origin)
                 p.button(direction);tick(hold);p.button_release(direction);tick(30)
                 trial={"button":direction,"frames":hold,"after":get()}
                 trials.append(trial)
-                if hold==180:p.screen.image.save(args.output/f"move_{direction}.png")
+                if hold==180 or direction in ("start","b","a"):p.screen.image.save(args.output/f"move_{direction}.png")
         (args.output/"movement_trials.json").write_text(json.dumps(trials,indent=2)+"\n")
         q=deque([(origin,[])])
         seen={(first["wCurMap"],first["wXCoord"],first["wYCoord"])}
