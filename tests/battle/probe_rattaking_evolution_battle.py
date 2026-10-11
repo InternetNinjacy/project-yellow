@@ -76,6 +76,16 @@ def main():
         sample("party_select_fifth")
         press("a",160)
         sample("party_switch_confirm")
+        if observations[-1]["wBattleMonSpecies"]!=RATICATE:
+            raise AssertionError("Real wild battle did not switch to Raticate")
+        # Continue only with genuine button A presses. Raticate should use
+        # its first (Rage) move to defeat the low-level Route 1 encounter,
+        # earn the remaining EXP and evolve through the normal animation.
+        for index in range(32):
+            press("a",160)
+            sample("post_switch_a"+str(index))
+            if observations[-1]["fifth_species"]==0xBF and observations[-1]["wPartyMon5Level"]==36:
+                break
         (args.output/"evolution_battle_diagnostics.json").write_text(json.dumps({
             "rom_sha256":hashlib.sha256(args.rom.read_bytes()).hexdigest(),
             "observations":observations,
@@ -83,8 +93,11 @@ def main():
         },indent=2)+"\n")
         (args.output/"evolution_battle_trace.json").write_text(json.dumps(trace,indent=2)+"\n")
         if not any(x["wBattleMonSpecies"]==RATICATE for x in observations):
-            raise AssertionError("Raticate not yet switched into the wild battle; inspect battle-menu screenshots")
-        print("PASS real wild battle switched Raticate into active position",flush=True)
+            raise AssertionError("Raticate not switched into actual battle")
+        if observations[-1]["fifth_species"]!=0xBF or observations[-1]["wPartyMon5Level"]!=36:
+            raise AssertionError("Raticate has not evolved into level-36 Rattaking; inspect post-switch screenshots")
+        with (args.output/"rattaking_evolved.state").open("wb") as h:pb.save_state(h)
+        print("PASS genuine battle EXP and evolution into level-36 Rattaking",flush=True)
     finally:pb.stop()
 
 if __name__=="__main__":main()
