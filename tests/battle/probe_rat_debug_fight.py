@@ -83,7 +83,9 @@ def main():
             press("a", 24)
         check("player_selected")
         press("start", 350)  # add Rattaking to DEBUG party
-        press("b", 350)      # decline AddPartyMon nickname prompt
+        press("b", 200)      # advance nickname question to Yes/No
+        press("down", 60)    # choose No
+        press("a", 350)     # confirm No, return to DEBUG opponent settings
         check("enemy_type")
         press("down", 50)    # enemy species row
         press("a", 50)       # species 1 = Rhydon
