@@ -8,7 +8,7 @@ IF DEF(_DEBUG)
 	warp_event  7,  2, VIRIDIAN_FOREST, 7
 	; Separate Youngster female fixture from the Bug Catcher forest fixture.
 	warp_event  7,  3, ROUTE_3, 1
-	warp_event  7,  4, POKEMON_TOWER_7F, 1
+	warp_event  7,  4, ROUTE_3, 2
 	warp_event  7,  5, SILPH_CO_11F, 4
 ENDC
 
