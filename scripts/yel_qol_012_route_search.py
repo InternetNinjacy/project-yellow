@@ -67,6 +67,30 @@ def main():
             report["destination"]=found[0]
             report["movement_inputs"]=found[1]
             report["status"]="PASS_CONTROLLER_PATH_TO_ROUTE1_OR_BATTLE"
+            # Continue from authentic Route 1 state to discover the FIRST
+            # wild battle through real directional input, never RAM forcing.
+            if found[0][0]==12:
+                battle_queue=deque([(found[0],snapshot(em),found[1])])
+                battle_seen={found[0]}
+                battle=None
+                while battle_queue and len(battle_seen)<450:
+                    pos,blob,steps=battle_queue.popleft()
+                    for direction in directions:
+                        em.load_state(io.BytesIO(blob))
+                        movement(direction)
+                        play(em,[{"frames":80}])
+                        nxt=locate()
+                        candidate=steps+[direction]
+                        if em.memory[sym["wIsInBattle"][1]]==1:
+                            battle={"location":nxt,"inputs":candidate}
+                            break
+                        if nxt[0]!=12 or nxt in battle_seen:continue
+                        battle_seen.add(nxt)
+                        battle_queue.append((nxt,snapshot(em),candidate))
+                    if battle:break
+                report["route1_explored_positions"]=len(battle_seen)
+                report["wild_battle"]=battle
+                if battle:report["status"]="PASS_REAL_WILD_BATTLE_CONTROLLER_PATH"
         else:
             report["status"]="NO_ROUTE_FOUND"
     except Exception as e:
