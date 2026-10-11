@@ -139,9 +139,15 @@ MaybeUseTrainerVariantPic::
 	and a
 	ret z
 	ld a, [wTrainerClass]
+	cp YOUNGSTER
+	jr nz, .checkBugCatcher
+	ld de, YoungsterFemalePic
+	jr .setPortrait
+.checkBugCatcher
 	cp BUG_CATCHER
 	ret nz
 	ld de, BugCatcherFemalePic
+.setPortrait
 	ld hl, wTrainerPicPointer
 	ld a, e
 	ld [hli], a
