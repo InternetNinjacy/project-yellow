@@ -51,9 +51,9 @@ def main():
             before=box_bytes(em,sym,a.target_box)
             prior=[box_bytes(em,sym,i) for i in range(12)]
             em.memory[sym["wCurrentBoxNum"][1]]=a.source_box | 0x80
-            base=sym["wBoxDataStart"][1]
-            for i,value in enumerate(selected):
-                em.memory[base+i]=value
+            # The legacy WRAM box window is smaller than physical 30 slots.
+            # Never memcpy the physical SRAM record over unrelated WRAM.
+            em.memory[sym["wBoxCount"][1]]=30
             assert em.memory[sym["wBoxCount"][1]]==30
             assert all(box_bytes(em,sym,i)[0]==(29 if i==a.target_box else 30) for i in range(12)
             play(em,route["movements"])
