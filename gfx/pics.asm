@@ -328,6 +328,7 @@ SECTION "Trainer Pics", ROMX
 
 YoungsterPic::     INCBIN "gfx/trainers/youngster.pic"
 BugCatcherPic::    INCBIN "gfx/trainers/bugcatcher.pic"
+BugCatcherFemalePic:: INCBIN "gfx/trainers/bugcatcherf.pic"
 LassPic::          INCBIN "gfx/trainers/lass.pic"
 SailorPic::        INCBIN "gfx/trainers/sailor.pic"
 JrTrainerMPic::    INCBIN "gfx/trainers/jr.trainerm.pic"
