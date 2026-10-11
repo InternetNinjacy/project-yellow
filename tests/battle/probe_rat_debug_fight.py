@@ -63,12 +63,6 @@ def main():
             rec["screen_capture_error"] = repr(exc)
     def press(button, settle=32):
         pyboy.button(button)
-        if len(input_samples)<40:
-            before=input_snapshot()
-            tick(2)
-            during=input_snapshot()
-            input_samples.append({"button":button,"before":before,"held_2frames":during,
-                                  "joystick_register":int(pyboy.memory[0xFF00])})
         trace.append({"button":button,"frames":2})
         tick(2)
         pyboy.button_release(button)
