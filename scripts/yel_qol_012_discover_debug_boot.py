@@ -58,7 +58,7 @@ def main():
             return n==6 and (v,c)==(1,0xfe)
         # Title accepts SELECT, opens DEBUG menu. Its second choice is DEBUG.
         step(frames=1100)
-        step("select",frames=500)
+        step("select",frames=2200)
         step(frames=40)
         step("down",frames=12)
         step(frames=25)
