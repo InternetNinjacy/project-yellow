@@ -62,7 +62,14 @@ def main():
         trace.append({"frames":240})
         check("title")
         # SELECT from title enters DEBUG menu; A enters FIGHT menu.
-        press("select", 350)
+        # Hold SELECT through title startup rather than tapping before it is ready.
+        # DEBUG title handler recognizes held SELECT and enters DebugMenu.
+        pyboy.button("select")
+        trace.append({"button":"select","frames":1200})
+        tick(1200)
+        pyboy.button_release("select")
+        trace.append({"release":"select","frames":80})
+        tick(80)
         check("debug_menu")
         press("a", 350)
         check("fight_menu")
