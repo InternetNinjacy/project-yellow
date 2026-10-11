@@ -151,7 +151,7 @@ PoisonEffect:
 .ok
 	cp TOXIC
 	jr z, .badPoison
-	cp POISON_FANG
+	cp POISON_FANG_EFFECT
 	jr nz, .normalPoison
 .badPoison
 	set BADLY_POISONED, [hl] ; else set Toxic battstatus
