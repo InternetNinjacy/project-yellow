@@ -147,8 +147,22 @@ _LoadTrainerPic:
 	ld d, a ; de contains pointer to trainer pic
 	ld a, [wLinkState]
 	and a
+	jr nz, .linkPic
+	ld a, [wTrainerGenderVariant]
+	and a
+	jr z, .originalPic
+	ld a, [wTrainerClass]
+	cp YOUNGSTER
+	jr z, .variantPic
+	cp BUG_CATCHER
+	jr z, .variantPic
+.originalPic
 	ld a, BANK("Trainer Pics")
-	jr z, .loadSprite
+	jr .loadSprite
+.variantPic
+	ld a, BANK("Trainer Variant Pics")
+	jr .loadSprite
+.linkPic
 	ld a, BANK(RedPicFront)
 .loadSprite
 	call UncompressSpriteFromDE
