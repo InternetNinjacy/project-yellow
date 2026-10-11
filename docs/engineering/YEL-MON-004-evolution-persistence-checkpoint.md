@@ -30,3 +30,12 @@ See [current draft PR #13](https://github.com/InternetNinjacy/project-yellow/pul
 - `tests/battle/check_rattaking_evolution_contract.py`: source-only gate, does not prove gameplay evolution.
 
 **Current status: blocked on real overworld controls, NOT verified as evolution or persistence complete.**
+
+## 2026-10-11 input-path investigation — verified new evidence
+- A power-on replay of the actual startup controller trace, followed by a continuous 18-step UP hold sequence (60 frames held, 20 released) **never changed** Pallet Town map/coordinates from (0,5,6). This also occurs without loading the saved .state, so savestate restoration alone is not the cause.
+- DEBUG-party startup is valid: five members including level-35 Raticate internal ID $A6; level-35 EXP fixture $00B63F; no battle/evolution observed.
+- Read-only PyBoy CPU hooks while trial buttons are held recorded 1626 calls to `ReadJoypad_`, 813 calls to `_Joypad`, and 813 calls to `JoypadOverworld`. The map logic is actively polling; it is **not a nonexecuting game loop**.
+- At the polling hooks, the JOYP hardware register read $CF. Held UP / START trials show `hJoyInput`, `hJoyLast`, `hJoyHeld`, and `hJoyPressed` all zero. `hDisableJoypadPolling`, `wStatusFlags5`, and `wJoyIgnore` are zero, ruling out the standard joypad-disable paths.
+- CPU register snapshots at PC $4A0E (bank 1 `PrepareOAMData.loop`) show C=3 and changing HL values, so the CPU **is progressing** through sprite drawing. Do not call it an infinite loop.
+- Latest unsuccessful route probe: [run #38129216504](https://github.com/InternetNinjacy/project-yellow/actions/runs/38129216504). Latest JOYP polling hook trace: [run #38129094784](https://github.com/InternetNinjacy/project-yellow/actions/runs/38129094784). No successful route, encounter, evolution, or SRAM replay yet.
+- Suggested next diagnostic: compare JOYP input sampling in an actual working DEBUG Fight menu (same PyBoy process and ROM) against `JoypadOverworld` to find why the hardware button state is not delivered in overworld mode. Do not write WRAM or fabricate savestates.
