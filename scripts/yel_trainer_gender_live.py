@@ -157,7 +157,7 @@ def main():
         if not frames:
             screenshot(emu,out/"battle_still_black.png")
             raise AssertionError("Trainer data loaded but no nonblank battle screenshot appeared")
-        selected=max(frames,key=lambda item:item[1])
+        selected=frames[-1]  # overridden below by best actual portrait pixel match
         selected[2].convert("RGB").save(out/"bug_catcher_f_battle.png")
         result["screenshot_frame_after_trigger"]=selected[0]
         result["screenshot_unique_colors"]=selected[1]
@@ -192,17 +192,23 @@ def main():
         expected=[ref_rank[c] for c in ref_pixels]
         from collections import Counter
         best={"matched":-1,"x":None,"y":None}
-        screen=selected[2]
-        # Trainer battle sprite appears in the upper half of the LCD.
-        for y in range(0,73,4):
-            for x in range(0,105,4):
-                crop=screen.crop((x,y,x+56,y+56))
-                colors=sorted(set(crop.getdata()))
-                if len(colors)!=len(ref_colors):continue
-                rank={c:i for i,c in enumerate(colors)}
-                observed=[rank[c] for c in crop.getdata()]
-                matched=sum(a==b for a,b in zip(expected,observed))
-                if matched>best["matched"]:best={"matched":matched,"x":x,"y":y}
+        # Sample throughout the trainer's entrance animation; the earliest
+        # nonblank frame may show only a few pixels of the portrait.
+        best_frame=None
+        for frame_no,color_count,screen in frames:
+            for y in range(0,73,4):
+                for x in range(0,105,4):
+                    crop=screen.crop((x,y,x+56,y+56))
+                    colors=sorted(set(crop.getdata()))
+                    if len(colors)!=len(ref_colors):continue
+                    rank={c:i for i,c in enumerate(colors)}
+                    observed=[rank[c] for c in crop.getdata()]
+                    matched=sum(a==b for a,b in zip(expected,observed))
+                    if matched>best["matched"]:
+                        best={"matched":matched,"x":x,"y":y,"frame":frame_no}
+                        best_frame=screen.copy()
+        if best_frame is not None:
+            best_frame.convert("RGB").save(out/"bug_catcher_f_battle.png")
         result["portrait_pixel_match"]=best
         # The sprite might be transposed in the LCD by a few pixels; require
         # a high exact-match fraction after permitted palette normalization.
