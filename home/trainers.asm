@@ -224,17 +224,7 @@ TrainerWalkUpToPlayer_Bank0::
 
 ; sets opponent trainer class and party level based on the engaging trainer data
 InitBattleEnemyParameters::
-	ld a, [wEngagedTrainerClass]
-	ld [wCurOpponent], a
-	ld [wEnemyMonOrTrainerClass], a
-	cp OPP_ID_OFFSET
-	ld a, [wEngagedTrainerSet]
-	jr c, .noTrainer
-	ld [wTrainerNo], a
-	ret
-.noTrainer
-	ld [wCurEnemyLevel], a
-	ret
+	farjp InitBattleEnemyParameters_
 
 GetSpritePosition1::
 	ld hl, _GetSpritePosition1

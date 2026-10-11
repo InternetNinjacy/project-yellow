@@ -1,0 +1,11 @@
+name: Trainer gender DEBUG fixture validation
+on:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  debug-fixture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify variant class/name/party/portrait source wiring
+        run: python scripts/yel_trainer_gender_fixture_check.py
