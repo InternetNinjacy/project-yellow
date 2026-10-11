@@ -216,6 +216,22 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
+      - name: YEL-QOL-012 PC and legacy-save compatibility audit
+        run: |
+          mkdir -p test-results/yel-qol-012
+          python3 scripts/yel_qol_012_pc_compat_audit.py \
+            --root . \
+            --out test-results/yel-qol-012/pc-compat-audit.json
+
+      - name: Archive PC compatibility blockers
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yel-qol-012-pc-compat-audit
+          path: test-results/yel-qol-012/pc-compat-audit.json
+          if-no-files-found: warn
+          retention-days: 30
+
       - name: YEL-QOL-012 standalone six-party ROM CPU fixture
         run: |
           mkdir -p test-results/yel-qol-012
