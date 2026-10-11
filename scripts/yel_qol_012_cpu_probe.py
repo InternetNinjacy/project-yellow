@@ -193,7 +193,7 @@ def main():
             base=get('sBox1')+2*BOX
             original=seed(30,91)
             set_sram(bank,base,original)
-            set_sram(5,get('sYel012TransactionStatus'),b'\\x00')
+            set_sram(5,get('sYel012TransactionStatus'),bytes([0]))
             em.memory[get('wCurrentBoxNum')]=boxid|0x80
             flag=call('Yel012BeginTransaction')
             assert flag&16==0,('withdraw begin',removed,flag)
