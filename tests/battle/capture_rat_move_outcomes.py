@@ -158,7 +158,7 @@ def main():
     # Read-only CPU execution hooks: determine whether the custom effects
     # actually execute, without writing WRAM or changing the RNG.
     observations = []
-    hook_names = {"YelRatCheckSecondary", "JumpMoveEffect",
+    hook_names = {"GetCurrentMove", "YelRatCheckSecondary", "JumpMoveEffect",
                   "_JumpMoveEffect", "PoisonEffect", "StatModifierDownEffect"}
     def observe(label):
         def callback(_context):
