@@ -132,3 +132,18 @@ InitBattleEnemyParameters_::
 	ld [wCurEnemyLevel], a
 	ret
 
+
+; Presentation-only override. The original class and party stay unchanged.
+MaybeUseTrainerVariantPic::
+	ld a, [wTrainerGenderVariant]
+	and a
+	ret z
+	ld a, [wTrainerClass]
+	cp BUG_CATCHER
+	ret nz
+	ld de, BugCatcherFemalePic
+	ld hl, wTrainerPicPointer
+	ld a, e
+	ld [hli], a
+	ld [hl], d
+	ret
