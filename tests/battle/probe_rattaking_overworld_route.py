@@ -92,6 +92,7 @@ def main():
             raise AssertionError("Not verified five-Pokémon overworld state")
         p.screen.image.save(args.output/"overworld_start.png")
         original_trace=json.loads(args.initial_trace.read_text())
+        pre_diagnostic_state=snapshot()
         # Observe every emulator frame while an input is held, not merely
         # the final frame. Game Boy joypad data is transient and may be
         # cleared before a once-per-press snapshot.
@@ -109,7 +110,7 @@ def main():
             json.dumps(frame_samples,indent=2)+"\\n")
         # Diagnose whether an action changes the real overworld position
         # before launching graph traversal.
-        origin=snapshot()
+        origin=pre_diagnostic_state
         trials=[]
         tracing[0]=True
         for direction in ("up","right","left","down","start","b","a"):
@@ -154,7 +155,7 @@ def main():
             state,inputs=q.popleft()
             restore(state)
             before=get()
-            if before["wCurMap"]!=first["wCurMap"]:
+            if before["wCurMap"]==12:
                 found=(state,inputs,before)
                 break
             for button in ("up","right","left","down"):
@@ -162,7 +163,7 @@ def main():
                 added=step(button)
                 after=get()
                 key=(after["wCurMap"],after["wXCoord"],after["wYCoord"])
-                if after["wIsInBattle"]:
+                if after["wCurMap"]==12 or after["wIsInBattle"]:
                     found=(snapshot(),inputs+added,after)
                     break
                 if key in seen:continue
@@ -172,7 +173,7 @@ def main():
                 q.append((snapshot(),inputs+added))
             if found:break
         (args.output/"route_search.json").write_text(json.dumps({
-            "initial":first,"seen_positions":len(seen),"steps":records,
+            "initial":first,"target_route_1_map_id":12,"seen_positions":len(seen),"steps":records,
             "found":None if found is None else found[2]
         },indent=2)+"\n")
         if found:
@@ -182,7 +183,7 @@ def main():
             with (args.output/"overworld_route_found.state").open("wb") as h:p.save_state(h)
             (args.output/"overworld_route_trace.json").write_text(json.dumps(original_trace+inputs,indent=2)+"\n")
         if not found:
-            raise AssertionError("Controller search did not reach another map or a battle; see route_search.json")
+            raise AssertionError("Controller search did not reach Route 1 ($0C) or a real battle; see route_search.json")
         print("Real controller-only overworld route discovered:",first,last)
     finally:p.stop()
 
