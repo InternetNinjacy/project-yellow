@@ -17,6 +17,9 @@ DebugNewGameParty: ; unreferenced except in _DEBUG
 	db PERSIAN, 80
 	db JIGGLYPUFF, 15
 	db STARTER_PIKACHU, 5
+	; YEL-MON-004 controller-only evolution fixture: ordinary AddPartyMon,
+	; not a scripted evolution or emulator WRAM insertion.
+	db RATICATE, 35
 	db -1 ; end
 
 PrepareNewGameDebug: ; dummy except in _DEBUG
