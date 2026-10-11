@@ -707,3 +707,81 @@ Yel012CommitTransaction::
 	call CloseSRAM
 	scf
 	ret
+
+; Prepare deletion of an occupied physical slot in the bank-5 shadow.
+; This is a low-level building block for eventual transactional WITHDRAW;
+; it does NOT add a party member or commit physical SRAM. The PC caller
+; must not expose it before a safe party/SRAM durability protocol exists.
+; Input A=slot 0..29, transaction status=1, no page pending.
+MACRO YEL012_COMPACT_FIELD
+	ld hl, sYel012TransactionShadow + \1
+	ld bc, \2
+	ld a, [sYel012TransactionPage]
+	call AddNTimes
+	ld d, h
+	ld e, l
+	add hl, bc
+	ld a, [sYel012TransactionShadow]
+	ld b, a
+	ld a, [sYel012TransactionPage]
+	inc a
+	ld c, a
+	ld a, b
+	sub c
+	ld b, a
+.loop\@
+	ld a, b
+	and a
+	jr z, .done\@
+	push bc
+	ld bc, \2
+	call CopyData
+	pop bc
+	dec b
+	jr .loop\@
+.done\@
+ENDM
+
+Yel012StageWithdrawRemove::
+	cp MONS_PER_BOX
+	jr nc, .invalid
+	push af
+	ld a, 5
+	call OpenSRAM
+	ld a, [sYel012TransactionStatus]
+	cp 1
+	jr nz, .badStack
+	ld a, [sYel012TransactionPagePending]
+	and a
+	jr nz, .badStack
+	pop af
+	ld b, a
+	ld a, [sYel012TransactionShadow]
+	cp b
+	jr c, .bad
+	jr z, .bad
+	ld a, b
+	ld [sYel012TransactionPage], a
+	YEL012_COMPACT_FIELD 1, 1
+	YEL012_COMPACT_FIELD YEL012_SRAM_MON_OFFSET, BOXMON_STRUCT_LENGTH
+	YEL012_COMPACT_FIELD YEL012_SRAM_OT_OFFSET, NAME_LENGTH
+	YEL012_COMPACT_FIELD YEL012_SRAM_NICK_OFFSET, NAME_LENGTH
+	ld hl, sYel012TransactionShadow
+	dec [hl]
+	ld e, [hl]
+	ld d, 0
+	inc hl
+	add hl, de
+	ld [hl], $ff
+	call Yel012ValidateShadow
+	push af
+	call CloseSRAM
+	pop af
+	ret
+.badStack
+	pop af
+.bad
+	call CloseSRAM
+.invalid
+	scf
+	ret
