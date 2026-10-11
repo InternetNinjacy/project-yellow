@@ -27,12 +27,15 @@ def main():
  "pc_current_box_has_legacy_working_window": "DEF YEL012_WINDOW_SIZE EQU 1122" in txn,
  "physical_box_is_1682_bytes": "ASSERT YEL012_BOX_SIZE == 1682" in txn,
  "legacy_save_loader_checks_physical_version": "Yel012CheckStorageVersion" in save.split("TryLoadSaveFile:",1)[1].split("LoadMainData:",1)[0],
- "capture_uses_transaction_engine": "call Yel012BeginTransaction" in bridge}
+ "capture_uses_transaction_engine": "call Yel012BeginTransaction" in bridge,
+ "readonly_pc_pages_stage_0_and_20": ("ld a, 20" in pc and "farcall Yel012StageWindow" in pc and "farcall Yel012AbortTransaction" in pc),
+ "readonly_pc_selects_without_legacy_copy": "Yel012SafePCNextBox:" in pc and "set BIT_HAS_CHANGED_BOXES, a" in pc,
+ "legacy_loader_rejects_unversioned_storage": "farcall Yel012CheckStorageVersion" in save.split("TryLoadSaveFile:",1)[1].split("LoadMainData:",1)[0]}
  blockers=[k for k,v in checks.items() if (k in
   ("pc_deposit_still_calls_legacy_MoveMon","pc_withdraw_still_calls_legacy_MoveMon",
    "pc_withdraw_still_calls_legacy_RemovePokemon","pc_release_still_calls_legacy_RemovePokemon",
    "pc_change_box_still_calls_legacy_ChangeBox","pc_display_uses_legacy_wBoxCount") and v)
-  or (k in ("pc_physical_transaction_bridge_called","legacy_save_loader_checks_physical_version") and not v)]
+  or (k in ("pc_physical_transaction_bridge_called") and not v)]
  result={"status":"BLOCKED_LEGACY_PC_UNSAFE","source_audit":checks,"blockers":blockers,
          "required_before_approval":[
          "Route PC deposit/withdraw/release through 30-slot bank-5 transactions",
