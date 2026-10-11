@@ -84,8 +84,14 @@ def attempt(pb, start, sym, prefix, slot, offset):
     expected = 0xA7 if slot == 0 else 0xA8
     if actual_moves[slot] != expected:
         raise AssertionError("Wrong move in slot " + str(slot) + ": " + repr(actual_moves))
-    for _ in range(slot):
-        press(pb, steps, "down", 45)
+    # The move selector is a two-column Gen 1 cursor: index 3 is
+    # reached from index 0 by right then down, not three down presses.
+    if slot == 3:
+        press(pb, steps, "right", 75)
+        press(pb, steps, "down", 75)
+    selected_menu = read(pb, sym)
+    if offset == 0:
+        print("selected-menu-observation", slot, selected_menu, flush=True)
     if offset:
         steps.append({"frames": offset})
         tick(pb, offset)
