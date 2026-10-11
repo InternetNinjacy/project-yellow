@@ -138,7 +138,7 @@ pokeyellow.gbc:       RGBLINKFLAGS += -p 0x00
 pokeyellow_debug.gbc: RGBLINKFLAGS += -p 0xff
 pokeyellow_vc.gbc:    RGBLINKFLAGS += -p 0x00
 
-RGBFIXFLAGS += -cjsv -k 01 -l 0x33 -m MBC5+RAM+BATTERY -r 03 -t "POKEMON YELLOW"
+RGBFIXFLAGS += -cjsv -k 01 -l 0x33 -m MBC5+RAM+BATTERY -r 05 -t "POKEMON YELLOW"
 pokeyellow.gbc:       RGBFIXFLAGS += -p 0x00
 pokeyellow_debug.gbc: RGBFIXFLAGS += -p 0xff
 pokeyellow_vc.gbc:    RGBFIXFLAGS += -p 0x00

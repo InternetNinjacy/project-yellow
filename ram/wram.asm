@@ -2482,33 +2482,36 @@ wDayCareMon:: box_struct wDayCareMon
 wMainDataEnd::
 
 
+; YEL-QOL-012: bounded 20-record staging window; physical capacity stays 30 in SRAM.
+DEF YEL012_WORKING_SLOTS EQU 20
 SECTION "Current Box Data", WRAM0
 
 wBoxDataStart::
 
 wBoxCount:: db
-wBoxSpecies:: ds MONS_PER_BOX + 1
+wBoxSpecies:: ds YEL012_WORKING_SLOTS + 1
 
 wBoxMons::
 ; wBoxMon1 - wBoxMon20
-FOR n, 1, MONS_PER_BOX + 1
+FOR n, 1, YEL012_WORKING_SLOTS + 1
 wBoxMon{d:n}:: box_struct wBoxMon{d:n}
 ENDR
 
 wBoxMonOT::
 ; wBoxMon1OT - wBoxMon20OT
-FOR n, 1, MONS_PER_BOX + 1
+FOR n, 1, YEL012_WORKING_SLOTS + 1
 wBoxMon{d:n}OT:: ds NAME_LENGTH
 ENDR
 
 wBoxMonNicks::
 ; wBoxMon1Nick - wBoxMon20Nick
-FOR n, 1, MONS_PER_BOX + 1
+FOR n, 1, YEL012_WORKING_SLOTS + 1
 wBoxMon{d:n}Nick:: ds NAME_LENGTH
 ENDR
 wBoxMonNicksEnd::
 
 wBoxDataEnd::
+ASSERT wBoxDataEnd - wBoxDataStart == 1122, "YEL012: 20-slot window must remain 1122 bytes"
 
 
 SECTION "CGB Palette Data", WRAM0

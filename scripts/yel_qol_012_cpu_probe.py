@@ -1,0 +1,331 @@
+#!/usr/bin/env python3
+"""Execute isolated YEL-QOL-012 assembler entrypoints in real PyBoy CPU.
+
+This is NOT the Python reference model or a live game save test.
+Uses direct writable CPU registers to invoke bank $3B code
+after normal boot initialization; SRAM and WRAM are seeded explicitly.
+Any failed check exits nonzero, producing no raw save-state artifacts.
+"""
+import argparse,json,hashlib
+from pathlib import Path
+from pyboy import PyBoy
+
+BOX=1682
+MON=33
+NAME=11
+MON_OFFSET=32
+OT_OFFSET=1022
+NICK_OFFSET=1352
+BANK=0x3b
+SLOT_BYTES=55
+
+def symbols(path):
+    found={}
+    for line in Path(path).read_text().splitlines():
+        word=line.split(';')[0].split()
+        if len(word)>=2 and ':' in word[0]:
+            bank,addr=word[0].split(':',1)
+            try:found[word[1]]=(int(bank,16),int(addr,16))
+            except ValueError:pass
+    return found
+
+def seed(count,offset):
+    data=bytearray(BOX);data[0]=count;data[count+1]=255
+    for i in range(count):
+        species=((i+offset)%150)+1
+        data[1+i]=species
+        data[MON_OFFSET+i*MON:MON_OFFSET+(i+1)*MON]=bytes([species])+bytes([(i*11+offset)%256])*32
+        data[OT_OFFSET+i*NAME:OT_OFFSET+(i+1)*NAME]=bytes([(i+61+offset)%256])*NAME
+        data[NICK_OFFSET+i*NAME:NICK_OFFSET+(i+1)*NAME]=bytes([(i+117+offset)%256])*NAME
+    return bytes(data)
+
+def record(i,offset):
+    return bytes([((i+offset)%150)+1])+bytes([(i*11+offset)%256])*32+bytes([(i+61+offset)%256])*NAME+bytes([(i+117+offset)%256])*NAME
+
+def main():
+    p=argparse.ArgumentParser()
+    p.add_argument('--rom',required=True);p.add_argument('--sym',required=True)
+    p.add_argument('--out',required=True)
+    args=p.parse_args()
+    out=Path(args.out);out.parent.mkdir(parents=True,exist_ok=True)
+    sym=symbols(args.sym)
+    names=['Yel012BeginTransaction','Yel012StageWindow','Yel012CommitStagedWindow',
+           'Yel012ReadBoxRecord','Yel012FindCaptureBox','wBoxCount','wBoxSpecies','wBoxMons','wBoxMonOT','wBoxMonNicks',
+           'Yel012PrepareCaptureInsert','Yel012CommitTransaction','Yel012AbortTransaction',
+           'wCurrentBoxNum','wBoxDataStart','sYel012TransactionStatus',
+           'sYel012TransactionNewRecord','sYel012TransactionShadow','sYel012TransactionBackup',
+           'sYel012StorageVersion','sYel012StorageVersionCheck',
+           'Yel012InitializeFreshStorage','Yel012CheckStorageVersion']
+    for n in names:
+        if n not in sym:raise RuntimeError('Missing symbol '+n)
+    rom=Path(args.rom).read_bytes()
+    em=PyBoy(args.rom,window='null',cgb=False,sound_emulated=False)
+    em.set_emulation_speed(0)
+    # Finish the emulator's actual boot ROM/startup before manipulating PC.
+    # The real game may then sit at its title screen; transaction tests
+    # replace the CPU entry and SRAM contents explicitly.
+    em.tick(400,render=False,sound=False)
+    results=[]
+    regs=em.register_file
+    # Real CPU execution with an inert WRAM return loop, no ROM hooks.
+    # CPU calls return to $C000: JR -2. JR does not change flags.
+    em.memory[0xc000]=0x18
+    em.memory[0xc001]=0xfe
+    em.memory[0xffff]=0
+    em.memory[0xff0f]=0
+    def call(n,a=0,de=0):
+        bank,addr=sym[n]
+        assert bank==BANK,(n,bank)
+        # Prime mapped ROMX directly, a valid LR35902 return stack, and
+        # a distinct CPU entrypoint on each invocation.
+        em.memory[0x2000]=bank
+        if 'hLoadedROMBank' in sym:
+            em.memory[sym['hLoadedROMBank'][1]]=bank
+        em.memory[0xffff]=0
+        em.memory[0xff0f]=0
+        em.memory[0xcfee]=0x00
+        em.memory[0xcfef]=0xc0
+        regs.SP=0xcfee
+        regs.A=a
+        regs.D=(de>>8)&0xff
+        regs.E=de&0xff
+        regs.PC=addr
+        for _ in range(350):
+            em.tick(1,render=False,sound=False)
+            if regs.PC in (0xc000,0xc001):
+                return regs.F
+        raise AssertionError(
+          f'{n}: direct CPU call did not return; PC={regs.PC:04x} SP={regs.SP:04x} '
+          f'AF={regs.A:02x}/{regs.F:02x} BC={regs.B:02x}/{regs.C:02x} '
+          f'DE={regs.D:02x}/{regs.E:02x} HL={regs.HL:04x} '
+          f'IE={em.memory[0xffff]:02x} IF={em.memory[0xff0f]:02x}')
+    def sram(bank,addr,length):
+        return bytes(em.memory[bank,addr+i] for i in range(length))
+    def set_sram(bank,addr,payload):
+        for i,x in enumerate(payload):em.memory[bank,addr+i]=x
+    def get(name):return sym[name][1]
+    try:
+        # Start via real CPU trampoline. No synthetic Python transaction results.
+        for case,(boxid,count,mode) in enumerate([(0,29,'capture'),(4,30,'abort'),(8,29,'capture')]):
+            bank=2+boxid//4
+            base=get('sBox1')+(boxid%4)*BOX
+            before=seed(count,case+3)
+            set_sram(bank,base,before)
+            set_sram(5,get('sYel012TransactionStatus'),b'\x00')
+            em.memory[get('wCurrentBoxNum')]=boxid|0x80
+            flag=call('Yel012BeginTransaction')
+            assert flag&16==0,(case,'begin',flag)
+            assert sram(5,get('sYel012TransactionBackup'),BOX)==before,(case,'snapshot')
+            if mode=='capture':
+                new=record(150,case+3)
+                inputaddr=get('wBoxDataStart')
+                for j,c in enumerate(new):em.memory[inputaddr+j]=c
+                flag=call('Yel012PrepareCaptureInsert',de=inputaddr)
+                assert flag&16==0,(case,'prepare',flag)
+                shadow=sram(5,get('sYel012TransactionShadow'),BOX)
+                assert shadow[0]==count+1,(case,'count')
+                flag=call('Yel012CommitTransaction')
+                assert flag&16==0,(case,'commit',flag)
+                after=sram(bank,base,BOX)
+                assert after==shadow,(case,'physical vs shadow')
+                for i in range(count):
+                    assert after[MON_OFFSET+(i+1)*MON:MON_OFFSET+(i+2)*MON]==before[MON_OFFSET+i*MON:MON_OFFSET+(i+1)*MON],(case,'shift mon',i)
+                    assert after[OT_OFFSET+(i+1)*NAME:OT_OFFSET+(i+2)*NAME]==before[OT_OFFSET+i*NAME:OT_OFFSET+(i+1)*NAME],(case,'shift ot',i)
+                    assert after[NICK_OFFSET+(i+1)*NAME:NICK_OFFSET+(i+2)*NAME]==before[NICK_OFFSET+i*NAME:NICK_OFFSET+(i+1)*NAME],(case,'shift nick',i)
+            else:
+                # Reject a new capture with count=30 before any page is dirty.
+                inputaddr=get('wBoxDataStart')
+                new=record(150,case+3)
+                for j,c in enumerate(new):em.memory[inputaddr+j]=c
+                flag=call('Yel012PrepareCaptureInsert',de=inputaddr)
+                assert flag&16,(case,'full box insertion wrongly accepted',flag)
+                assert sram(bank,base,BOX)==before,(case,'full rejection changed physical SRAM')
+                # Exercise both WRAM pages of a full 30-record physical box.
+                for page,pagecount in ((0,20),(20,10)):
+                    flag=call('Yel012StageWindow',a=page)
+                    assert flag&16==0,(case,'page stage',page,flag)
+                    assert em.memory[get('wBoxCount')]==pagecount,(case,'page count',page)
+                    for i in range(pagecount):
+                        slot=i+page
+                        assert em.memory[get('wBoxSpecies')+i]==before[1+slot],(case,'page species',slot)
+                        for label,offset,stride,sz in (
+                            ('mon',MON_OFFSET,MON,MON),
+                            ('ot',OT_OFFSET,NAME,NAME),
+                            ('nick',NICK_OFFSET,NAME,NAME)):
+                            wrambase=get({'mon':'wBoxMons','ot':'wBoxMonOT',
+                                          'nick':'wBoxMonNicks'}[label])
+                            seen=bytes(em.memory[wrambase+i*stride+j] for j in range(sz))
+                            wanted=before[offset+slot*stride:offset+(slot+1)*stride]
+                            assert seen==wanted,(case,'staged page',label,slot)
+                    if page==0:
+                        flag=call('Yel012CommitStagedWindow')
+                        assert flag&16==0,(case,'valid page commit',flag)
+                    else:
+                        # Force a species-table mismatch: the shadow must not
+                        # be physically committed and abort must restore it.
+                        em.memory[get('wBoxSpecies')]=0
+                        flag=call('Yel012CommitStagedWindow')
+                        assert flag&16,(case,'invalid page wrongly accepted',flag)
+                assert sram(5,get('sYel012TransactionBackup'),BOX)==before,(case,'rollback snapshot')
+                flag=call('Yel012AbortTransaction')
+                assert flag&16==0,(case,'abort',flag)
+                assert sram(bank,base,BOX)==before,(case,'abort corruption')
+            # Execute the banked LR35902 55-byte record reader for every
+            # physical 0..29 slot, including all OT/nickname fields.
+            final=sram(bank,base,BOX)
+            assert final[0]==30,(case,'final occupancy',final[0])
+            for index in range(30):
+                addr=get('wBoxDataStart')
+                flag=call('Yel012ReadBoxRecord',a=index,de=addr)
+                assert flag&16==0,(case,'record read',index,flag)
+                seen=bytes(em.memory[addr+j] for j in range(SLOT_BYTES))
+                expected=(final[MON_OFFSET+index*MON:MON_OFFSET+(index+1)*MON]
+                          +final[OT_OFFSET+index*NAME:OT_OFFSET+(index+1)*NAME]
+                          +final[NICK_OFFSET+index*NAME:NICK_OFFSET+(index+1)*NAME])
+                assert seen==expected,(case,'record bytes differ',index)
+            results.append({'box':boxid+1,'bank':bank,'mode':mode,
+                            'slots_verified':30,'status':'PASS_ASSEMBLY_CPU'})
+        # Integration probe: execute the new capture bridge with an
+        # intercepted *legacy naming/record builder* routine. This is
+        # real bridge CPU code, but NOT an end-to-end battle/ball test.
+        needed=('Yel012CaptureToBoxTransaction','SendNewMonToBox',
+                'wBoxMon1','wBoxMon1OT','wBoxMon1Nick','hLoadedROMBank')
+        for n in needed:
+            assert n in sym,('missing bridge test symbol',n)
+        boxid=1
+        physicalBank=2
+        base=get('sBox1')+BOX
+        starting=seed(29,57)
+        set_sram(physicalBank,base,starting)
+        set_sram(5,get('sYel012TransactionStatus'),bytes([0]))
+        em.memory[get('wCurrentBoxNum')]=boxid|0x80
+        expectedNew=record(150,57)
+        called={'count':0}
+        def fake_legacy_builder(context):
+            context['count']+=1
+            assert em.memory[get('wBoxCount')]==0,'bridge did not isolate legacy constructor'
+            em.memory[get('wBoxCount')]=1
+            em.memory[get('wBoxSpecies')]=expectedNew[0]
+            em.memory[get('wBoxSpecies')+1]=255
+            for baseAddr,data in (
+                (get('wBoxMon1'),expectedNew[:33]),
+                (get('wBoxMon1OT'),expectedNew[33:44]),
+                (get('wBoxMon1Nick'),expectedNew[44:55])):
+                for j,value in enumerate(data):em.memory[baseAddr+j]=value
+            # Simulate only the RET, preserving the real bank-switch stack.
+            sp=regs.SP
+            regs.PC=em.memory[sp] | (em.memory[(sp+1)&0xffff]<<8)
+            regs.SP=(sp+2)&0xffff
+        legacyBank,legacyAddr=sym['SendNewMonToBox']
+        em.hook_register(legacyBank,legacyAddr,fake_legacy_builder,called)
+        flag=call('Yel012CaptureToBoxTransaction')
+        assert flag&16==0,('bridge commit rejected',flag)
+        assert called['count']==1,('bridge legacy builder count',called)
+        physical=sram(physicalBank,base,BOX)
+        assert physical[0]==30,('bridge count',physical[0])
+        assert physical[MON_OFFSET:MON_OFFSET+33]==expectedNew[:33],('bridge mon bytes')
+        assert physical[OT_OFFSET:OT_OFFSET+11]==expectedNew[33:44],('bridge OT')
+        assert physical[NICK_OFFSET:NICK_OFFSET+11]==expectedNew[44:55],('bridge nick')
+        for index in range(29):
+            assert physical[MON_OFFSET+(index+1)*33:MON_OFFSET+(index+2)*33]==starting[MON_OFFSET+index*33:MON_OFFSET+(index+1)*33]
+            assert physical[OT_OFFSET+(index+1)*11:OT_OFFSET+(index+2)*11]==starting[OT_OFFSET+index*11:OT_OFFSET+(index+1)*11]
+            assert physical[NICK_OFFSET+(index+1)*11:NICK_OFFSET+(index+2)*11]==starting[NICK_OFFSET+index*11:NICK_OFFSET+(index+1)*11]
+        results.append({'box':2,'bank':physicalBank,'mode':'bridge-stubbed-legacy',
+                        'status':'PASS_ASSEMBLY_CPU_WITH_STUBBED_LEGACY_BUILDER'})
+        # Explicitly initialize the version guard for this seeded storage.
+        # This CPU fixture does not execute NEW GAME, so it must install
+        # the marker just as the dedicated initializer would.
+        set_sram(5,get('sYel012StorageVersion'),bytes([1,0xfe]))
+        # Physically grounded selection matrix. Fill all 12 boxes in the
+        # three SRAM banks; the selector must not consult partial WRAM count.
+        all_full=seed(30,20)
+        for idx in range(12):
+            set_sram(2+idx//4,get('sBox1')+(idx%4)*BOX,all_full)
+        def set_count(idx,count):
+            set_sram(2+idx//4,get('sBox1')+(idx%4)*BOX,seed(count,idx+70))
+        em.memory[get('wBoxCount')]=0
+        em.memory[get('wCurrentBoxNum')]=0x80
+        flag=call('Yel012FindCaptureBox')
+        assert flag&16,('all-full unexpectedly available',flag)
+        for label,active,available in (
+            ('current',3,3),('next',0,1),('skip-full',0,3),
+            ('wrap',11,0),('wrap-skip',10,1)):
+            for idx in range(12):
+                set_sram(2+idx//4,get('sBox1')+(idx%4)*BOX,all_full)
+            set_count(available,29)
+            em.memory[get('wCurrentBoxNum')]=active|0x80
+            selected_before=em.memory[get('wCurrentBoxNum')]
+            flag=call('Yel012FindCaptureBox')
+            assert flag&16==0,(label,'unexpected selector failure',flag)
+            assert regs.A==available,(label,'wrong box selected',regs.A,available)
+            assert em.memory[get('wCurrentBoxNum')]==selected_before,(label,'selection mutated before commit')
+            results.append({'mode':'physical-selector-'+label,
+                            'selected_box':available+1,'status':'PASS_ASSEMBLY_CPU'})
+        # A corrupt sentinel must reject rather than interpret as free.
+        for idx in range(12):
+            set_sram(2+idx//4,get('sBox1')+(idx%4)*BOX,all_full)
+        bad=bytearray(seed(29,7));bad[30]=0
+        set_sram(2,get('sBox1'),bad)
+        em.memory[get('wCurrentBoxNum')]=0x80
+        flag=call('Yel012FindCaptureBox')
+        assert flag&16,('corrupt sentinel accepted',flag)
+        # Zero flag on current-box number means physical initialization
+        # has never been verified. Fail closed.
+        em.memory[get('wCurrentBoxNum')]=0
+        flag=call('Yel012FindCaptureBox')
+        assert flag&16,('uninitialized storage accepted',flag)
+        results.append({'mode':'physical-selector-failure-cases','status':'PASS_ASSEMBLY_CPU'})
+        # Check bank-boundary availability and rejection without altering
+        # physical SRAM. The actual capture UI is NOT exercised here.
+        for active,free,label in ((3,4,'bank2-to-3'),(7,8,'bank3-to-4'),
+                                  (11,0,'bank4-to-2-wrap')):
+            for idx in range(12):
+                set_sram(2+idx//4,get('sBox1')+(idx%4)*BOX,all_full)
+            set_count(free,29)
+            snapshot=[sram(2+i//4,get('sBox1')+(i%4)*BOX,BOX) for i in range(12)]
+            em.memory[get('wCurrentBoxNum')]=active|0x80
+            flag=call('Yel012FindCaptureBox')
+            assert flag&16==0,(label,'boundary rejected',flag)
+            assert regs.A==free,(label,'wrong destination',regs.A,free)
+            assert all(sram(2+i//4,get('sBox1')+(i%4)*BOX,BOX)==snapshot[i]
+                       for i in range(12)),(label,'preflight mutated physical storage')
+            results.append({'mode':'boundary-selector-'+label,
+                            'status':'PASS_ASSEMBLY_CPU_PRECHECK_ONLY'})
+        # Both version bytes must be valid, even if every box has space.
+        for idx in range(12):
+            set_sram(2+idx//4,get('sBox1')+(idx%4)*BOX,seed(0,idx))
+        em.memory[get('wCurrentBoxNum')]=0x80
+        set_sram(5,get('sYel012StorageVersionCheck'),bytes([0]))
+        flag=call('Yel012FindCaptureBox')
+        assert flag&16,('invalid version accepted',flag)
+        set_sram(5,get('sYel012StorageVersionCheck'),bytes([0xfe]))
+        set_sram(5,get('sYel012StorageVersion'),bytes([0]))
+        flag=call('Yel012FindCaptureBox')
+        assert flag&16,('missing version accepted',flag)
+        set_sram(5,get('sYel012StorageVersion'),bytes([1]))
+        results.append({'mode':'corrupt-version-fail-closed',
+                        'status':'PASS_ASSEMBLY_CPU_PRECHECK_ONLY'})
+        # Explicit fresh-game initializer CPU test, after the selector
+        # matrix. This intentionally overwrites test-only seeded SRAM.
+        flag=call('Yel012InitializeFreshStorage')
+        assert flag&16==0,('fresh initializer rejected',flag)
+        assert sram(5,get('sYel012StorageVersion'),2)==bytes([1,0xfe]),('version marker')
+        for idx in range(12):
+            box=sram(2+idx//4,get('sBox1')+(idx%4)*BOX,BOX)
+            assert box==bytes([0,255])+bytes(BOX-2),('fresh box not blank',idx)
+        flag=call('Yel012CheckStorageVersion')
+        assert flag&16==0,('version validation rejected initialized storage',flag)
+        results.append({'mode':'fresh-initialization-12x30',
+                        'status':'PASS_ASSEMBLY_CPU_NOT_GAMEPLAY_SAVE'})
+        status='PASS_ISOLATED_ASSEMBLY_TRANSACTION_NOT_SAVE_VERIFIED'
+    except Exception as exc:
+        status='FAIL'
+        results.append({'status':'FAIL','error':str(exc)})
+        raise
+    finally:
+        em.stop(save=False)
+        out.write_text(json.dumps({'schema':'YEL-QOL-012-CPU/1',
+                                   'rom_sha256':hashlib.sha256(rom).hexdigest(),
+                                   'status':status if 'status' in locals() else 'FAIL',
+                                   'cases':results},indent=2)+'\n')
+if __name__=='__main__':main()

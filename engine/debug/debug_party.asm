@@ -9,7 +9,10 @@ SetDebugNewGameParty: ; unreferenced except in _DEBUG
 	ld a, [de]
 	ld [wCurEnemyLevel], a
 	inc de
+	; AddPartyMon may clobber DE; preserve the roster cursor.
+	push de
 	call AddPartyMon
+	pop de
 	jr .loop
 
 DebugNewGameParty: ; unreferenced except in _DEBUG
@@ -17,6 +20,9 @@ DebugNewGameParty: ; unreferenced except in _DEBUG
 	db PERSIAN, 80
 	db JIGGLYPUFF, 15
 	db STARTER_PIKACHU, 5
+	; Six-member party for DEBUG-only live capture regression.
+	db PIDGEY, 7
+	db RATTATA, 7
 	db -1 ; end
 
 PrepareNewGameDebug: ; dummy except in _DEBUG
@@ -73,6 +79,8 @@ IF DEF(_DEBUG)
 	ld hl, wPokedexSeen
 	call DebugSetPokedexEntries
 	SetEvent EVENT_GOT_POKEDEX
+	; DEBUG party starts after Oak's tutorial; allow exit north to Route 1.
+	SetEvent EVENT_FOLLOWED_OAK_INTO_LAB
 
 	; Rival chose Jolteon.
 	ld hl, wRivalStarter

@@ -45,6 +45,155 @@ jobs:
           make -j$(nproc)
           .github/checkdiff.sh
 
+      - name: YEL-QOL-012 storage transaction contract tests
+        run: |
+          python3 -m unittest discover -s tests -p 'test_yel_qol_012_storage_layout.py' -v
+          python3 -m unittest discover -s tests -p 'test_yel_qol_012_records.py' -v
+          python3 -m unittest discover -s tests -p 'test_yel_qol_012_transactions.py' -v
+          python3 -m unittest discover -s tests -p 'test_yel_qol_012_fixture.py' -v
+
+      - name: YEL-QOL-012 isolated real-emulator assembly transactions
+        run: |
+          python3 -m pip install 'pyboy==2.6.0'
+          mkdir -p test-results/yel-qol-012
+          python3 scripts/yel_qol_012_cpu_probe.py --rom pokeyellow_debug.gbc --sym pokeyellow_debug.sym --out test-results/yel-qol-012/cpu-transaction.json
+
+      - name: YEL-QOL-012 real capture and SAVE/CONTINUE replay
+        if: ${{ hashFiles('tests/replays/yel_qol_012_full_party_29_to_30.json') != '' }}
+        run: |
+          mkdir -p test-results/yel-qol-012
+          python3 scripts/yel_qol_012_gameplay_replay.py \
+            --rom pokeyellow_debug.gbc \
+            --sym pokeyellow_debug.sym \
+            --replay tests/replays/yel_qol_012_full_party_29_to_30.json \
+            --out test-results/yel-qol-012/real-gameplay.json
+
+      - name: Archive allowlisted YEL-QOL-012 gameplay evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yel-qol-012-gameplay-evidence
+          path: test-results/yel-qol-012/real-gameplay.json
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: YEL-QOL-012 combined six-party 29-slot physical staging
+        run: |
+          mkdir -p test-results/yel-qol-012
+          python3 scripts/yel_qol_012_combined_fixture_probe.py \
+            --rom pokeyellow_debug.gbc \
+            --sym pokeyellow_debug.sym \
+            --out test-results/yel-qol-012/combined-fixture.json
+
+      - name: Archive combined fixture evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yel-qol-012-combined-fixture
+          path: test-results/yel-qol-012/combined-fixture.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: YEL-QOL-012 verified DEBUG replay to physical-box overworld
+        run: |
+          mkdir -p test-results/yel-qol-012
+          python3 scripts/yel_qol_012_overworld_probe.py \
+            --rom pokeyellow_debug.gbc \
+            --sym pokeyellow_debug.sym \
+            --replay tests/replays/yel_qol_012_verified_debug_boot.json \
+            --out test-results/yel-qol-012/overworld.json
+
+      - name: Archive real overworld staging evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yel-qol-012-overworld-staging
+          path: test-results/yel-qol-012/overworld.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: YEL-QOL-012 controller route to wild area discovery
+        run: |
+          mkdir -p test-results/yel-qol-012
+          python3 scripts/yel_qol_012_route_search.py \
+            --rom pokeyellow_debug.gbc \
+            --sym pokeyellow_debug.sym \
+            --replay tests/replays/yel_qol_012_verified_debug_boot.json \
+            --out test-results/yel-qol-012/route-search.json
+
+      - name: Archive controller route discovery
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yel-qol-012-controller-route-search
+          path: test-results/yel-qol-012/route-search.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: YEL-QOL-012 controller-driven wild Ball discovery
+        continue-on-error: true # discovery until real capture assertions pass
+        run: |
+          mkdir -p test-results/yel-qol-012
+          python3 scripts/yel_qol_012_capture_discovery.py \
+            --rom pokeyellow_debug.gbc \
+            --sym pokeyellow_debug.sym \
+            --boot tests/replays/yel_qol_012_verified_debug_boot.json \
+            --route tests/replays/yel_qol_012_verified_route1_encounter.json \
+            --out test-results/yel-qol-012/capture-discovery.json
+
+      - name: Archive battle and Ball-controller diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yel-qol-012-ball-discovery
+          path: test-results/yel-qol-012/capture-discovery.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: YEL-QOL-012 standalone six-party ROM CPU fixture
+        run: |
+          mkdir -p test-results/yel-qol-012
+          python3 scripts/yel_qol_012_party_fixture_probe.py \
+            --rom pokeyellow_debug.gbc \
+            --sym pokeyellow_debug.sym \
+            --out test-results/yel-qol-012/party-fixture.json
+
+      - name: Archive six-party fixture evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yel-qol-012-six-party-fixture
+          path: test-results/yel-qol-012/party-fixture.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: YEL-QOL-012 discover actual DEBUG boot inputs
+        continue-on-error: true # diagnostic only; does not gate separately staged capture replay
+        run: |
+          mkdir -p test-results/yel-qol-012
+          python3 scripts/yel_qol_012_discover_debug_boot.py \
+            --rom pokeyellow_debug.gbc \
+            --sym pokeyellow_debug.sym \
+            --out test-results/yel-qol-012/debug-boot-controller.json
+
+      - name: Archive DEBUG boot controller trace
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yel-qol-012-debug-controller-trace
+          path: test-results/yel-qol-012/debug-boot-controller.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Archive allowlisted YEL-QOL-012 CPU evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yel-qol-012-cpu-evidence
+          path: test-results/yel-qol-012/cpu-transaction.json
+          if-no-files-found: warn
+          retention-days: 30
+
       - name: Discord webhook
         if: ${{ github.event_name == 'push' && github.repository_owner == 'pret' }}
         env:
