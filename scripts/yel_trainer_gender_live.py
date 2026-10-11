@@ -209,6 +209,9 @@ def main():
                         best_frame=screen.copy()
         if best_frame is not None:
             best_frame.convert("RGB").save(out/"bug_catcher_f_battle.png")
+            result["screenshot_frame_after_trigger"]=best["frame"]
+            result["screenshot_unique_colors"]=len(set(best_frame.getdata()))
+            result["screenshot_sha256"]=hashlib.sha256((out/"bug_catcher_f_battle.png").read_bytes()).hexdigest()
         result["portrait_pixel_match"]=best
         # The sprite might be transposed in the LCD by a few pixels; require
         # a high exact-match fraction after permitted palette normalization.
