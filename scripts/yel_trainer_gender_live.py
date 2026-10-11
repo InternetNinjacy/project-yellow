@@ -172,7 +172,7 @@ def main():
         result["enemy_party_levels"] = [mem8(emu, symbols[k]) for k in level_symbols]
         if result["enemy_party_levels"] != [7, 7]:
             raise AssertionError("Expected two level-7 Caterpie in the original Bug Catcher #1 party")
-        portrait=symbols["BugCatcherPic"]
+        portrait=symbols["BugCatcherFemalePic"]
         actual=int.from_bytes(bytes(result["portrait_pointer"]),"little")
         if actual!=portrait:
             raise AssertionError(f"Wrong portrait pointer: {actual:#06x} != {portrait:#06x}")
