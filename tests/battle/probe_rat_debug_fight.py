@@ -44,7 +44,7 @@ def main():
         rec = {"name":name,"frame":total}
         for label,addr in symbols.items():
             rec[label] = int(pyboy.memory[addr])
-        rec["battle_moves"] = [int(pyboy.memory[symbols["wBattleMonMoves"]]+i]) for i in range(4)]
+        rec["battle_moves"] = [int(pyboy.memory[symbols["wBattleMonMoves"] + i]) for i in range(4)]
         checkpoints.append(rec)
         try:
             a.output.mkdir(parents=True, exist_ok=True)
