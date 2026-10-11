@@ -68,7 +68,8 @@ def main():
             for hold in ((24,72,180) if direction in ("up","right","left","down") else (24,)):
                 restore(origin)
                 p.button(direction);tick(hold);p.button_release(direction);tick(30)
-                trial={"button":direction,"frames":hold,"after":get()}
+                trial={"button":direction,"frames":hold,"after":get(),
+                       "pc":int(p.register_file.PC), "sp":int(p.register_file.SP)}
                 trials.append(trial)
                 if hold==180 or direction in ("start","b","a"):p.screen.image.save(args.output/f"move_{direction}.png")
         (args.output/"movement_trials.json").write_text(json.dumps(trials,indent=2)+"\n")
