@@ -101,7 +101,7 @@ def main():
             play(em, spec["prepare"])
             if spec.get("party_fixture") == "synthetic-wram-six":
                 seed_six_party(em.memory,syms)
-             elif "party_fixture" in spec:
+            elif "party_fixture" in spec:
                 raise ValueError("unsupported party_fixture")
             if em.memory[syms["wPartyCount"][1]] != 6:
                 raise AssertionError("replay did not prepare a six-Pokémon party")
