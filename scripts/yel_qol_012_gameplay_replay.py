@@ -70,7 +70,7 @@ def assert_storage(em, syms, destination, count):
 def stage_party_from_rom(em, syms):
     """Fixture only: invoke actual ROM roster builder on CPU, restore CPU state."""
     regs = em.register_file
-    registers = ("PC","SP","A","F","B","C","D","E","H","L")
+    registers = ("PC","SP","A","F","B","C","D","E","HL")
     saved = {key:getattr(regs,key) for key in registers}
     bank, address = syms["SetDebugNewGameParty"]
     old_bank = em.memory[syms["hLoadedROMBank"][1]]
