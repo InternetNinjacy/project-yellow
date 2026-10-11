@@ -96,8 +96,12 @@ def main():
             emulator.button_press(key)
             for frame in range(count):
                 tick(1)
-                samples.append({"frame": frame, "map": location(),
-                                "coords": coords(), "dispatch": dispatch_snapshot()})
+                sample = {"frame": frame, "map": location(),
+                          "coords": coords(), "dispatch": dispatch_snapshot()}
+                samples.append(sample)
+                if location() == CITY and coords() == (16, 17):
+                    print("EXACT_GYM_DOOR_FRAME " + json.dumps(sample), flush=True)
+                    shot("exact_door_frame.png")
                 if location() == GYM:
                     break
             emulator.button_release(key)
