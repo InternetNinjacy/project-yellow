@@ -8,6 +8,7 @@ on:
       - 'tests/battle/capture_rat_move_outcomes.py'
       - 'tests/battle/test_rat_move_replay.py'
       - 'tests/battle/check_rattaking_evolution_contract.py'
+      - 'tests/battle/probe_rattaking_overworld_route.py'
       - '.github/workflows/yel-mon-004-controller-fixtures.yml'
 jobs:
   debug-controller-fixture:
@@ -24,7 +25,7 @@ jobs:
       - name: Build DEBUG ROM with symbols
         run: make -j2 pokeyellow_debug.gbc
       - name: Check probe syntax
-        run: python -m py_compile tests/battle/probe_debug_controller_startup.py tests/battle/probe_rat_debug_fight.py tests/battle/capture_rat_move_outcomes.py tests/battle/test_rat_move_replay.py
+        run: python -m py_compile tests/battle/probe_debug_controller_startup.py tests/battle/probe_rat_debug_fight.py tests/battle/capture_rat_move_outcomes.py tests/battle/test_rat_move_replay.py tests/battle/probe_rattaking_overworld_route.py
       - name: Verify Rattaking evolution source contract
         run: python tests/battle/check_rattaking_evolution_contract.py
       - name: Capture controller-only DEBUG startup diagnostics
@@ -34,6 +35,15 @@ jobs:
             --rom pokeyellow_debug.gbc \
             --symbols pokeyellow_debug.sym \
             --output artifacts/rat-debug-startup
+      - name: Find legitimate overworld route for Raticate experience fixture
+        run: |
+          mkdir -p artifacts/rat-evolution-route
+          python tests/battle/probe_rattaking_overworld_route.py \
+            --rom pokeyellow_debug.gbc \
+            --symbols pokeyellow_debug.sym \
+            --initial-state artifacts/rat-debug-startup/debug_startup_final.state \
+            --initial-trace artifacts/rat-debug-startup/debug_startup_inputs.json \
+            --output artifacts/rat-evolution-route
       - name: Probe real DEBUG Fight menu with controller only
         run: |
           mkdir -p artifacts/rat-debug-fight
