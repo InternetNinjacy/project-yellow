@@ -11,6 +11,7 @@ on:
       - 'tests/battle/probe_rattaking_overworld_route.py'
       - 'tests/battle/probe_rattaking_route1_encounter.py'
       - 'tests/battle/probe_rattaking_evolution_battle.py'
+      - 'tests/battle/probe_rattaking_save_continue.py'
       - '.github/workflows/yel-mon-004-controller-fixtures.yml'
 jobs:
   debug-controller-fixture:
@@ -27,7 +28,7 @@ jobs:
       - name: Build DEBUG ROM with symbols
         run: make -j2 pokeyellow_debug.gbc
       - name: Check probe syntax
-        run: python -m py_compile tests/battle/probe_debug_controller_startup.py tests/battle/probe_rat_debug_fight.py tests/battle/capture_rat_move_outcomes.py tests/battle/test_rat_move_replay.py tests/battle/probe_rattaking_overworld_route.py tests/battle/probe_rattaking_route1_encounter.py tests/battle/probe_rattaking_evolution_battle.py
+        run: python -m py_compile tests/battle/probe_debug_controller_startup.py tests/battle/probe_rat_debug_fight.py tests/battle/capture_rat_move_outcomes.py tests/battle/test_rat_move_replay.py tests/battle/probe_rattaking_overworld_route.py tests/battle/probe_rattaking_route1_encounter.py tests/battle/probe_rattaking_evolution_battle.py tests/battle/probe_rattaking_save_continue.py
       - name: Verify Rattaking evolution source contract
         run: python tests/battle/check_rattaking_evolution_contract.py
       - name: Capture controller-only DEBUG startup diagnostics
@@ -67,6 +68,16 @@ jobs:
             --initial-state artifacts/rat-route1-encounter/route1_wild_encounter.state \
             --initial-trace artifacts/rat-route1-encounter/route1_wild_encounter_trace.json \
             --output artifacts/rat-evolution-battle
+      - name: In-game SAVE and fresh CONTINUE record comparison
+        continue-on-error: true
+        run: |
+          mkdir -p artifacts/rat-persistence
+          python tests/battle/probe_rattaking_save_continue.py \
+            --rom pokeyellow_debug.gbc \
+            --symbols pokeyellow_debug.sym \
+            --evolved-state artifacts/rat-evolution-battle/rattaking_evolved.state \
+            --evolved-trace artifacts/rat-evolution-battle/evolution_battle_trace.json \
+            --output artifacts/rat-persistence
       - name: Probe real DEBUG Fight menu with controller only
         run: |
           mkdir -p artifacts/rat-debug-fight
