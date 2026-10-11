@@ -83,23 +83,23 @@ Yel012StagePartyDeposit::
 	ret c
 	ld a, [wPartyCount]
 	cp 2
-	jr c, .fail
+	jp c, .fail
 	ld b, a
 	ld a, [wWhichPokemon]
 	cp b
-	jr nc, .fail
+	jp nc, .fail
 	ld e, a
 	ld d, 0
 	ld hl, wPartySpecies
 	add hl, de
 	ld a, [hl]
 	and a
-	jr z, .fail
+	jp z, .fail
 	cp $ff
-	jr z, .fail
+	jp z, .fail
 	ld [wCurPartySpecies], a
 	call Yel012BeginTransaction
-	jr c, .fail
+	jp c, .fail
 	; Convert selected party record using the game's real MoveMon
 	; into a temporary ONE-record legacy window, not the physical box.
 	xor a
