@@ -49,8 +49,8 @@ def main():
     def restore(data):
         p.load_state(io.BytesIO(data))
     def step(button):
-        p.button(button);tick(19);p.button_release(button);tick(9)
-        return [{"button":button,"frames":19},{"release":button,"frames":9}]
+        p.button(button);tick(72);p.button_release(button);tick(24)
+        return [{"button":button,"frames":72},{"release":button,"frames":24}]
     try:
         with args.initial_state.open("rb") as fh:p.load_state(fh)
         first=get()
@@ -58,7 +58,19 @@ def main():
             raise AssertionError("Not verified five-Pokémon overworld state")
         p.screen.image.save(args.output/"overworld_start.png")
         original_trace=json.loads(args.initial_trace.read_text())
-        q=deque([(snapshot(),[])])
+        # Diagnose whether an action changes the real overworld position
+        # before launching graph traversal.
+        origin=snapshot()
+        trials=[]
+        for direction in ("up","right","left","down"):
+            for hold in (24,72,180):
+                restore(origin)
+                p.button(direction);tick(hold);p.button_release(direction);tick(30)
+                trial={"button":direction,"frames":hold,"after":get()}
+                trials.append(trial)
+                if hold==180:p.screen.image.save(args.output/f"move_{direction}.png")
+        (args.output/"movement_trials.json").write_text(json.dumps(trials,indent=2)+"\n")
+        q=deque([(origin,[])])
         seen={(first["wCurMap"],first["wXCoord"],first["wYCoord"])}
         found=None
         for _ in range(args.max_states):
