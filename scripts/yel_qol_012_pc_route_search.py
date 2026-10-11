@@ -45,7 +45,9 @@ def main():
                 todo.append((nxt,snap(em),candidate))
             if found:break
         report.update({"start":start,"explored":len(seen),
-                       "maps":sorted(set(p[0] for p in seen)),"found":bool(found)})
+                       "maps":sorted(set(p[0] for p in seen)),"found":bool(found),
+                       "house_coordinates":sorted([[p[1],p[2]] for p in seen if p[0]==37]),
+                       "stairs_reached":(37,7,1) in seen})
         if found:
             report.update({"status":"PASS_CONTROLLER_PATH_TO_REDS_ROOM",
                            "destination":found[0],"inputs":found[1]})
