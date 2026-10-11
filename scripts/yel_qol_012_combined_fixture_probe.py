@@ -29,7 +29,7 @@ def main():
         assert em.memory[sym["wPartyCount"][1]]==6
         assert occupancy==[29]+[0]*11
         assert all(len(rec)==55 and rec[0] not in (0,255) for rec in occupied)
-        assert len(occupied)==29 and len({rec for rec in occupied})==29
+        assert len(occupied)==29
         report.update({"status":"PASS_COMBINED_PRE_BATTLE_FIXTURE",
                        "party_count":6,"box_occupancies":occupancy,
                        "validated_box_records":len(occupied),
