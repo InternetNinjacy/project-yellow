@@ -62,7 +62,7 @@ def main():
         if observations[-1]["wCurMap"]!=12 or observations[-1]["wIsInBattle"]!=1 or observations[-1]["fifth_species"]!=RATICATE:
             raise AssertionError("Not verified Route1 wild battle with party Raticate")
         # Diagnostic: advance opening text progressively, capturing each menu.
-        for i in range(4):
+        for i in range(5):
             press("a",150)
             sample("opening_a"+str(i))
         press("right",70)
