@@ -90,6 +90,10 @@ def main():
             tile = int(emulator.memory[tilemap_addr + 9 * 20 + 8])
             state["door_check_tile_8_9"] = tile
             state["door_check_tile_eligible"] = tile in (0x1b, 0x58)
+            # Nearby background tiles reveal camera alignment and distinguish
+            # a misplaced map doorway from a tilemap-coordinate mismatch.
+            state["nearby_tiles"] = [[int(emulator.memory[tilemap_addr + yy * 20 + xx])
+                                      for xx in range(5, 13)] for yy in range(6, 13)]
             return state
         def record_frames(key, count):
             samples = []
