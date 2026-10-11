@@ -9,6 +9,7 @@ Any failed check exits nonzero, producing no raw save-state artifacts.
 import argparse,json,hashlib
 from pathlib import Path
 from pyboy import PyBoy
+from yel_qol_012_party_seed import seed_six_party
 
 BOX=1682
 MON=33
@@ -51,7 +52,7 @@ def main():
     sym=symbols(args.sym)
     names=['Yel012BeginTransaction','Yel012StageWindow','Yel012CommitStagedWindow',
            'Yel012ReadBoxRecord','Yel012FindCaptureBox','wBoxCount','wBoxSpecies','wBoxMons','wBoxMonOT','wBoxMonNicks',
-           'Yel012PrepareCaptureInsert','Yel012StageWithdrawRemove','Yel012CommitTransaction','Yel012AbortTransaction',
+           'Yel012PrepareCaptureInsert','Yel012StageWithdrawRemove','Yel012StagePartyDeposit','Yel012CommitTransaction','Yel012AbortTransaction',
            'wCurrentBoxNum','wBoxDataStart','sYel012TransactionStatus',
            'sYel012TransactionNewRecord','sYel012TransactionShadow','sYel012TransactionBackup',
            'sYel012StorageVersion','sYel012StorageVersionCheck',
@@ -264,6 +265,25 @@ def main():
         # This CPU fixture does not execute NEW GAME, so it must install
         # the marker just as the dedicated initializer would.
         set_sram(5,get('sYel012StorageVersion'),bytes([1,0xfe]))
+        # Unexposed deposit primitive: convert a real six-member party
+        # fixture through ROM MoveMon and commit only the physical box.
+        seed_six_party(em.memory,sym)
+        testbox=0
+        initial=seed(29,133)
+        set_sram(2,get('sBox1'),initial)
+        set_sram(5,get('sYel012TransactionStatus'),bytes([0]))
+        em.memory[get('wCurrentBoxNum')]=0x80
+        em.memory[get('wWhichPokemon')]=0
+        flag=call('Yel012StagePartyDeposit')
+        assert flag&16==0,('deposit transaction failed',flag)
+        deposited=sram(2,get('sBox1'),BOX)
+        assert deposited[0]==30 and deposited[MON_OFFSET]==em.memory[get('wPartySpecies')],('deposit count/species')
+        assert em.memory[get('wPartyCount')]==6,'deposit primitive removed party member prematurely'
+        for slot in range(29):
+            for offset,stride in ((MON_OFFSET,MON),(OT_OFFSET,NAME),(NICK_OFFSET,NAME)):
+                assert deposited[offset+(slot+1)*stride:offset+(slot+2)*stride]==initial[offset+slot*stride:offset+(slot+1)*stride],('deposit existing record changed',slot,offset)
+        results.append({'mode':'unexposed-transactional-deposit','status':'PASS_ASSEMBLY_CPU',
+                        'party_count_still':6,'physical_box_count':30})
         # Physically grounded selection matrix. Fill all 12 boxes in the
         # three SRAM banks; the selector must not consult partial WRAM count.
         all_full=seed(30,20)
