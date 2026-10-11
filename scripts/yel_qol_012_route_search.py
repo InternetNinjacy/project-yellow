@@ -49,7 +49,7 @@ def main():
                 nextpos=locate()
                 if nextpos==position or nextpos in seen:continue
                 candidate=path+[button]
-                if nextpos[0]!=start[0] or em.memory[sym["wIsInBattle"][1]]!=0:
+                if nextpos[0]==12 or em.memory[sym["wIsInBattle"][1]]!=0:
                     found=(nextpos,candidate)
                     break
                 seen.add(nextpos)
@@ -60,7 +60,7 @@ def main():
         if found:
             report["destination"]=found[0]
             report["movement_inputs"]=found[1]
-            report["status"]="PASS_CONTROLLER_PATH_TO_NEW_MAP"
+            report["status"]="PASS_CONTROLLER_PATH_TO_ROUTE1_OR_BATTLE"
         else:
             report["status"]="NO_ROUTE_FOUND"
     except Exception as e:
