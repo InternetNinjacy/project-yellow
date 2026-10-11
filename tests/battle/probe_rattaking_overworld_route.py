@@ -39,6 +39,15 @@ def main():
     args=ap.parse_args()
     from pyboy import PyBoy
     w=labels(args.symbols)
+    joy_names={"hJoyPressed","hJoyHeld","hJoy5","hJoy7"}
+    joy={}
+    for line in args.symbols.read_text().splitlines():
+        words=line.split(";")[0].split()
+        if len(words)>1 and words[1] in joy_names and ":" in words[0]:
+            addr=int(words[0].split(":",1)[1],16)
+            if 0xFF80<=addr<=0xFFFE:joy[words[1]]=addr
+    def joy_state():
+        return {label:int(p.memory[address]) for label,address in joy.items()}
     p=PyBoy(str(args.rom),window="null")
     args.output.mkdir(parents=True,exist_ok=True)
     records=[]
@@ -67,8 +76,10 @@ def main():
         for direction in ("up","right","left","down","start","b","a"):
             for hold in ((24,72,180) if direction in ("up","right","left","down") else (24,)):
                 restore(origin)
-                p.button(direction);tick(hold);p.button_release(direction);tick(30)
-                trial={"button":direction,"frames":hold,"after":get(),
+                p.button(direction);tick(hold)
+                during={"wram":get(),"joy":joy_state()}
+                p.button_release(direction);tick(30)
+                trial={"button":direction,"frames":hold,"during":during,"after":get(),
                        "pc":int(p.register_file.PC), "sp":int(p.register_file.SP)}
                 trials.append(trial)
                 if hold==180 or direction in ("start","b","a"):p.screen.image.save(args.output/f"move_{direction}.png")
