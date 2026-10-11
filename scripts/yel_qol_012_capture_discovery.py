@@ -57,13 +57,28 @@ def main():
         if em.memory[syms["wIsInBattle"][1]]!=1:
             raise AssertionError("real wild battle did not start from controller route")
         action(None,frames=1400,rest=0)
-        for _ in range(45):
-            if box_bytes(em,syms,0)[0]==30:break
-            action("a",5,140)
-        if box_bytes(em,syms,0)[0]!=30:
-            for button in ("right","a","down","a","a","a","a","a","a","a"):
-                action(button,3,160)
-                if box_bytes(em,syms,0)[0]==30:break
+        # Advance opening text only until the game's *actual* battle menu.
+        # Never mash A after that checkpoint: it selects FIGHT.
+        for attempt in range(28):
+            if any(e["name"]=="DisplayBattleMenu" for e in report["hooks"]):
+                report["battle_menu_reached_after_a"]=attempt
+                break
+            action("a",3,90)
+        else:
+            report["battle_menu_unreached"]=True
+        if em.memory[syms["wIsInBattle"][1]]==1 and "battle_menu_reached_after_a" in report:
+            # Gen I menu is FIGHT/PKMN above ITEM/RUN; DOWN selects ITEM.
+            action(None,frames=90,rest=0)
+            for button in ("down","a","a"):
+                action(button,4,125)
+            # In DEBUG inventory Master Ball is the first item; trace
+            # ItemUseBall to confirm any Ball use rather than guessing.
+            for attempt in range(10):
+                if any(e["name"]=="ItemUseBall" for e in report["hooks"]):
+                    report["item_use_ball_after_extra_a"]=attempt
+                    break
+                action("a",4,170)
+                if em.memory[syms["wIsInBattle"][1]]!=1:break
         action(None,frames=1200,rest=0)
         report["hook_count"]=len(report["hooks"])
         report["last_cpu_pc"]=em.register_file.PC
