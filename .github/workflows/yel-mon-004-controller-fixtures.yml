@@ -138,5 +138,6 @@ jobs:
           name: yel-mon-004-debug-startup-controller-evidence
           path: |
             artifacts/
+            !artifacts/**/*.gbc
             pokeyellow_debug.sym
           if-no-files-found: warn
