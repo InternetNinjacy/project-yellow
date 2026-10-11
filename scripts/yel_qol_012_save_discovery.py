@@ -27,9 +27,9 @@ def main():
             boy.set_emulation_speed(0)
             return boy
         em=start_emulator()
-        counts={"ItemUseBall":0,"Yel012CaptureToAvailableBox":0,"SaveGameData":0}
-        def hook(context,name):
-            counts[name]+=1
+        counts={"DisplayBattleMenu":0,"ItemUseBall":0,"Yel012CaptureToAvailableBox":0,"SaveGameData":0}
+        def hook(context):
+            counts[context]+=1
         for name in counts:
             if name not in sym:raise AssertionError("missing symbol "+name)
             bank,address=sym[name]
@@ -49,12 +49,18 @@ def main():
             assert em.memory[sym["wIsInBattle"][1]]==1,"wild battle missing"
             action(None,1400,0)
             # Observed real battle-menu appearance after three A prompts.
-            for _ in range(3):action("a",3,90)
+            for attempt in range(25):
+                if counts["DisplayBattleMenu"]>0:
+                    result["menu_after_prompts"]=attempt
+                    break
+                action("a",3,90)
+            assert counts["DisplayBattleMenu"]>0,"battle menu never appeared"
             action(None,90,0)
             for key in ("down","a","a"):action(key,4,125)
             for _ in range(28):
                 if box_bytes(em,sym,0)[0]==30:break
                 action("a",4,180)
+            result["hooks"]=dict(counts)
             assert counts["ItemUseBall"]>0,"ROM ItemUseBall not run"
             assert counts["Yel012CaptureToAvailableBox"]>0,"capture transaction not run"
             after=box_bytes(em,sym,0)
