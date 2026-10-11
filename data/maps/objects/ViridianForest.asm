@@ -22,7 +22,7 @@ ViridianForest_Object:
 	warp_event 18, 47, VIRIDIAN_FOREST_SOUTH_GATE, 2
 IF DEF(_DEBUG)
 	; Exit paired with the DEBUG upstairs test entrance.
-	warp_event 30, 35, REDS_HOUSE_2F, 2
+	warp_event 29, 33, REDS_HOUSE_2F, 2
 ENDC
 
 	def_bg_events
