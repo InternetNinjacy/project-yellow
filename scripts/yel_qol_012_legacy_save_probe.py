@@ -46,7 +46,17 @@ def main():
             em=emu()
             assert em.memory[5,symbols["sYel012StorageVersionCheck"][1]]==254
             em.memory[5,symbols["sYel012StorageVersionCheck"][1]]=0
+            loader_hits=[0]
+            if "TryLoadSaveFile" not in symbols:raise ValueError("missing TryLoadSaveFile")
+            bank,pc=symbols["TryLoadSaveFile"]
+            def loaded(context):loader_hits[0]+=1
+            em.hook_register(bank,pc,loaded,None)
             play(em,[{"frames":1100}])
+            for _ in range(24):
+                if loader_hits[0]>0 and em.memory[symbols["wSaveFileStatus"][1]]!=0:break
+                play(em,[{"button":"a","frames":4},{"frames":145}])
+            result["loader_hits"]=loader_hits[0]
+            assert loader_hits[0]>0,"game never entered TryLoadSaveFile"
             result["status_code"]=em.memory[symbols["wSaveFileStatus"][1]]
             result["party_count"]=em.memory[symbols["wPartyCount"][1]]
             assert result["status_code"]==1,"legacy marker did not reject old format"
