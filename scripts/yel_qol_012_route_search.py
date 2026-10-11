@@ -55,7 +55,13 @@ def main():
                 seen.add(nextpos)
                 queue.append((nextpos,snapshot(em),candidate))
             if found:break
-        report.update({"start":start,"explored_positions":len(seen),
+        mapids=sorted({pos[0] for pos in seen})
+        coverage={str(m):{"count":len([p for p in seen if p[0]==m]),
+                           "min_x":min(p[1] for p in seen if p[0]==m),
+                           "max_x":max(p[1] for p in seen if p[0]==m),
+                           "min_y":min(p[2] for p in seen if p[0]==m),
+                           "max_y":max(p[2] for p in seen if p[0]==m)} for m in mapids}
+        report.update({"map_coverage":coverage,"start":start,"explored_positions":len(seen),
                        "route_found":bool(found)})
         if found:
             report["destination"]=found[0]
