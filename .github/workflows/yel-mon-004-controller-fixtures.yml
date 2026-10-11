@@ -9,6 +9,7 @@ on:
       - 'tests/battle/test_rat_move_replay.py'
       - 'tests/battle/check_rattaking_evolution_contract.py'
       - 'tests/battle/probe_rattaking_overworld_route.py'
+      - 'tests/battle/probe_rattaking_route1_encounter.py'
       - '.github/workflows/yel-mon-004-controller-fixtures.yml'
 jobs:
   debug-controller-fixture:
@@ -25,7 +26,7 @@ jobs:
       - name: Build DEBUG ROM with symbols
         run: make -j2 pokeyellow_debug.gbc
       - name: Check probe syntax
-        run: python -m py_compile tests/battle/probe_debug_controller_startup.py tests/battle/probe_rat_debug_fight.py tests/battle/capture_rat_move_outcomes.py tests/battle/test_rat_move_replay.py tests/battle/probe_rattaking_overworld_route.py
+        run: python -m py_compile tests/battle/probe_debug_controller_startup.py tests/battle/probe_rat_debug_fight.py tests/battle/capture_rat_move_outcomes.py tests/battle/test_rat_move_replay.py tests/battle/probe_rattaking_overworld_route.py tests/battle/probe_rattaking_route1_encounter.py
       - name: Verify Rattaking evolution source contract
         run: python tests/battle/check_rattaking_evolution_contract.py
       - name: Capture controller-only DEBUG startup diagnostics
@@ -45,6 +46,16 @@ jobs:
             --initial-state artifacts/rat-debug-startup/debug_startup_final.state \
             --initial-trace artifacts/rat-debug-startup/debug_startup_inputs.json \
             --output artifacts/rat-evolution-route
+      - name: Capture real Route 1 wild battle with level-35 Raticate
+        continue-on-error: true
+        run: |
+          mkdir -p artifacts/rat-route1-encounter
+          python tests/battle/probe_rattaking_route1_encounter.py \
+            --rom pokeyellow_debug.gbc \
+            --symbols pokeyellow_debug.sym \
+            --starting-state artifacts/rat-evolution-route/overworld_route_found.state \
+            --starting-trace artifacts/rat-evolution-route/overworld_route_trace.json \
+            --output artifacts/rat-route1-encounter
       - name: Probe real DEBUG Fight menu with controller only
         run: |
           mkdir -p artifacts/rat-debug-fight
@@ -72,6 +83,18 @@ jobs:
           record=json.loads(path.read_text())
           found=record.get("found")
           assert found and (found.get("wIsInBattle") or found.get("wCurMap") == 12), "No actual controller-driven map transition"
+          PY
+      - name: Require actual Route 1 wild encounter
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          f=Path("artifacts/rat-route1-encounter/route1_encounter_search.json")
+          assert f.exists(), "Missing wild encounter search evidence"
+          o=json.loads(f.read_text())
+          e=o.get("encounter")
+          assert e and e["wCurMap"]==12 and e["wIsInBattle"]==1 and e["wEnemyMonSpecies"], "No verified wild encounter on Route 1"
           PY
       - name: Preserve evidence on both success and failure
         if: always()
