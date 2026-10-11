@@ -4,11 +4,22 @@ TryLoadSaveFile:
 	call LoadTextBoxTilePatterns
 	call LoadMainData
 	jr c, .badsum
+	; YEL-QOL-012: a valid legacy checksum alone is not proof that
+	; the twelve physical 30-slot boxes are present. Refuse an
+	; incompatible save BEFORE the legacy box can be exposed to PC.
+	; Check is read-only: never initialize/erase old SRAM on CONTINUE.
+	farcall Yel012CheckStorageVersion
+	jr c, .legacyFormat
 	call LoadCurrentBoxData
 	jr c, .badsum
 	call LoadPartyAndDexData
 	jr c, .badsum
 	ld a, $2 ; good checksum
+	jr .done
+.legacyFormat
+	ld hl, Yel012LegacySaveText
+	call PrintText
+	ld a, $1 ; block CONTINUE without changing the legacy save
 	jr .done
 .badsum
 	ld hl, wStatusFlags5
@@ -28,6 +39,13 @@ TryLoadSaveFile:
 FileDataDestroyedText:
 	text_far _FileDataDestroyedText
 	text_end
+
+Yel012LegacySaveText:
+	text "OLD SAVE FORMAT!"
+	line "BACK UP YOUR SAVE."
+	para "CONTINUE IS"
+	line "NOT AVAILABLE."
+	prompt
 
 LoadMainData:
 	call EnableSRAM
