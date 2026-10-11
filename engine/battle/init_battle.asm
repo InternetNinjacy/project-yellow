@@ -156,6 +156,8 @@ _LoadTrainerPic:
 	jr z, .variantPic
 	cp BUG_CATCHER
 	jr z, .variantPic
+	cp LASS
+	jr z, .variantPic
 .originalPic
 	ld a, BANK("Trainer Pics")
 	jr .loadSprite
