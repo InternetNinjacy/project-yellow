@@ -6588,8 +6588,11 @@ GetCurrentMove:
 	; Apply InitBattleVariables to FightDebugMenu.
 	ld a, [wStatusFlags7]
 	bit BIT_TEST_BATTLE, a
+	jr z, .normalSelection
 	ld a, [wTestBattlePlayerSelectedMove]
+	and a
 	jr nz, .selected
+.normalSelection
 	ld a, [wPlayerSelectedMove]
 .selected
 	ld [wNameListIndex], a
