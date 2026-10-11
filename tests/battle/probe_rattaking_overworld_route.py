@@ -92,6 +92,21 @@ def main():
             raise AssertionError("Not verified five-Pokémon overworld state")
         p.screen.image.save(args.output/"overworld_start.png")
         original_trace=json.loads(args.initial_trace.read_text())
+        # Observe every emulator frame while an input is held, not merely
+        # the final frame. Game Boy joypad data is transient and may be
+        # cleared before a once-per-press snapshot.
+        frame_samples=[]
+        p.button("up")
+        for frame in range(120):
+            p.tick()
+            frame_samples.append({"frame":frame,"joy":joy_state(),
+                                  "map":int(p.memory[w["wCurMap"]]),
+                                  "x":int(p.memory[w["wXCoord"]]),
+                                  "y":int(p.memory[w["wYCoord"]])})
+        p.button_release("up")
+        for _ in range(10):p.tick()
+        (args.output/"overworld_held_input_frames.json").write_text(
+            json.dumps(frame_samples,indent=2)+"\\n")
         # Diagnose whether an action changes the real overworld position
         # before launching graph traversal.
         origin=snapshot()
