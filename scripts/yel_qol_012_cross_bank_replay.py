@@ -76,7 +76,7 @@ def main():
             assert counts["Yel012CaptureToAvailableBox"]>0,"capture transaction not run"
             after=box_bytes(em,sym,a.target_box)
             result["selected_after_capture"]=em.memory[sym["wCurrentBoxNum"][1]] & 0x7f
-            assert result["selected_after_capture"]==a.target_box, "automatic box selection incorrect"
+            assert result["selected_after_capture"]==a.source_box, "temporary capture routing changed selected box"
             assert after[0]==30,"real capture did not insert record"
             captured=record(after,0)
             assert len(captured)==55 and captured[0] not in (0,255)
@@ -125,7 +125,7 @@ def main():
             for idx in range(12):
                 if idx!=a.target_box:
                     assert box_bytes(em,sym,idx)==prior[idx],f"CONTINUE changed unrelated box {idx+1}"
-            assert (em.memory[sym["wCurrentBoxNum"][1]] & 0x7f)==a.target_box,"CONTINUE lost new active box"
+            assert (em.memory[sym["wCurrentBoxNum"][1]] & 0x7f)==a.source_box,"CONTINUE changed player-selected box"
             result["status"]="PASS_REAL_CROSS_BANK_CAPTURE_SAVE_CONTINUE"
         except Exception as e:
             result["error"]=repr(e)
