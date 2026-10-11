@@ -120,7 +120,7 @@ def main():
         },indent=2)+"\n")
         with (out/"debug_fight_final.state").open("wb") as f:
             pyboy.save_state(f)
-        status=checkpoints[-1]
+        status=next(row for row in checkpoints if row["name"] == "battle_candidate")
         if not status["wIsInBattle"] or not status["wBattleMonSpecies"] or not status["wEnemyMonSpecies"]:
             raise AssertionError("Not a live battle. Inspect uploaded checkpoints and controller trace.")
         if status["wBattleMonSpecies"] != 0xBF:
