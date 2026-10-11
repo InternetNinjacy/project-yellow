@@ -22,7 +22,7 @@ CASES = (
 )
 NAMES = ("wIsInBattle", "wBattleMonSpecies", "wEnemyMonSpecies",
          "wEnemyMonStatus", "wEnemyBattleStatus3", "wEnemyMonStatMods",
-         "wEnemyMonHP", "wPlayerMoveEffect", "wBattleMonMoves")
+         "wEnemyMonHP", "wPlayerMoveEffect", "wPlayerMoveNum", "wBattleMonMoves", "wMoveMissed")
 PSN = 1 << 3
 BAD_POISON = 1
 
@@ -51,6 +51,8 @@ def read(pb, sym):
         "defense": byte("wEnemyMonStatMods", 1),
         "enemy_hp": byte("wEnemyMonHP") * 256 + byte("wEnemyMonHP", 1),
         "effect": byte("wPlayerMoveEffect"),
+        "move_num": byte("wPlayerMoveNum"),
+        "missed": byte("wMoveMissed"),
         "moves": [byte("wBattleMonMoves", i) for i in range(4)],
     }
 
@@ -135,10 +137,12 @@ def main():
                 result = attempt(pb, args.starting_state, sym, original_trace, slot, offset)
                 if result is None:
                     continue
+                if offset in (0, 5, 25, 50):
+                    print("diagnostic", slot, offset, "move", result["after"]["move_num"], "effect", result["after"]["effect"], "hp", result["after"]["enemy_hp"], "status", result["after"]["status"], "defense", result["after"]["defense"], flush=True)
                 for name, desired_slot, expected_proc, _ in CASES:
                     if desired_slot == slot and expected_proc == result["proc"] and name not in discoveries:
                         discoveries[name] = result
-                        print(name, "found at controller-only frame delay", offset, flush=True)
+                        print(name, "found at controller-only frame delay", offset, "before", result["before"], "after", result["after"], flush=True)
                 if all(name in discoveries for name, s, _, _ in CASES if s == slot):
                     break
     finally:
