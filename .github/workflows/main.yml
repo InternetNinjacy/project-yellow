@@ -150,6 +150,26 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
+      - name: YEL-QOL-012 real capture in-game SAVE and CONTINUE discovery
+        continue-on-error: true # diagnostic until the complete replay passes
+        run: |
+          mkdir -p test-results/yel-qol-012
+          python3 scripts/yel_qol_012_save_discovery.py \
+            --rom pokeyellow_debug.gbc \
+            --sym pokeyellow_debug.sym \
+            --boot tests/replays/yel_qol_012_verified_debug_boot.json \
+            --route tests/replays/yel_qol_012_verified_route1_encounter.json \
+            --out test-results/yel-qol-012/save-discovery.json
+
+      - name: Archive SAVE and CONTINUE verification
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yel-qol-012-save-discovery
+          path: test-results/yel-qol-012/save-discovery.json
+          if-no-files-found: warn
+          retention-days: 30
+
       - name: YEL-QOL-012 standalone six-party ROM CPU fixture
         run: |
           mkdir -p test-results/yel-qol-012
