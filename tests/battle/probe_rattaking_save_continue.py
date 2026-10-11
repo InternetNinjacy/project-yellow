@@ -46,7 +46,7 @@ def main():
     temp_rom=args.output/"rattaking_persistence_cartridge.gbc"
     shutil.copyfile(args.rom,temp_rom)
     assert sha(args.rom.read_bytes())==sha(temp_rom.read_bytes())
-    ram_path=temp_rom.with_suffix(".ram")
+    ram_path=Path(str(temp_rom)+".ram")
     if ram_path.exists():ram_path.unlink()
     def from_mem(pb,key,n=1):
         addr=sym[key]
