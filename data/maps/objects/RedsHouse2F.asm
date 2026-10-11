@@ -6,7 +6,8 @@ RedsHouse2F_Object:
 IF DEF(_DEBUG)
 	; Trainer-variant test entrance: real DEBUG map warp, not a RAM teleport.
 	warp_event  7,  2, VIRIDIAN_FOREST, 7
-	warp_event  7,  3, ROCKET_HIDEOUT_ELEVATOR, 1
+	; Separate Youngster female fixture from the Bug Catcher forest fixture.
+	warp_event  7,  3, ROUTE_3, 1
 	warp_event  7,  4, POKEMON_TOWER_7F, 1
 	warp_event  7,  5, SILPH_CO_11F, 4
 ENDC
