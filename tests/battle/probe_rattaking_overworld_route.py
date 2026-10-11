@@ -75,7 +75,14 @@ def main():
         p.button(button);tick(72);p.button_release(button);tick(24)
         return [{"button":button,"frames":72},{"release":button,"frames":24}]
     try:
-        with args.initial_state.open("rb") as fh:p.load_state(fh)
+        # Recreate from power-on using the verified full controller trace.
+        # PyBoy restore may retain an inactive JOYP device state even though
+        # the in-game WRAM/screenshot appears correct. Do not patch WRAM.
+        original_trace=json.loads(args.initial_trace.read_text())
+        for instruction in original_trace:
+            if "button" in instruction:p.button(instruction["button"])
+            if "release" in instruction:p.button_release(instruction["release"])
+            tick(instruction["frames"])
         first=get()
         if first["wPartyCount"]!=5 or first["wIsInBattle"]:
             raise AssertionError("Not verified five-Pokémon overworld state")
