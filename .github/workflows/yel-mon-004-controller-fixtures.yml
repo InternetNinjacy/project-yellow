@@ -9,7 +9,8 @@ on:
       - 'tests/battle/test_rat_move_replay.py'
       - 'tests/battle/check_rattaking_evolution_contract.py'
       - 'tests/battle/probe_rattaking_overworld_route.py'
-      - 'tests/battle/probe_rattaking_route1_encounter.py'
+      - 'tests/battle/probe_rattaking_route1_encounter.py tests/battle/probe_rattaking_evolution_battle.py'
+      - 'tests/battle/probe_rattaking_evolution_battle.py'
       - '.github/workflows/yel-mon-004-controller-fixtures.yml'
 jobs:
   debug-controller-fixture:
@@ -56,6 +57,16 @@ jobs:
             --starting-state artifacts/rat-evolution-route/overworld_route_found.state \
             --starting-trace artifacts/rat-evolution-route/overworld_route_trace.json \
             --output artifacts/rat-route1-encounter
+      - name: Switch level-35 Raticate into actual wild battle
+        continue-on-error: true
+        run: |
+          mkdir -p artifacts/rat-evolution-battle
+          python tests/battle/probe_rattaking_evolution_battle.py \
+            --rom pokeyellow_debug.gbc \
+            --symbols pokeyellow_debug.sym \
+            --initial-state artifacts/rat-route1-encounter/route1_wild_encounter.state \
+            --initial-trace artifacts/rat-route1-encounter/route1_wild_encounter_trace.json \
+            --output artifacts/rat-evolution-battle
       - name: Probe real DEBUG Fight menu with controller only
         run: |
           mkdir -p artifacts/rat-debug-fight
