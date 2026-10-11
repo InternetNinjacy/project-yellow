@@ -1,0 +1,113 @@
+{
+  "verified_run_id": 38100463705,
+  "verified_commit": "db9f0e4d8491d5f4b22bec0c412d903b164120c4",
+  "start_map": 0,
+  "route_map": 12,
+  "party_size": 6,
+  "destination_box": 0,
+  "physical_box_start": 29,
+  "boot_replay": "tests/replays/yel_qol_012_verified_debug_boot.json",
+  "settle": [
+    {
+      "frames": 600
+    }
+  ],
+  "movements": [
+    {
+      "button": "right",
+      "frames": 8
+    },
+    {
+      "frames": 24
+    },
+    {
+      "button": "right",
+      "frames": 8
+    },
+    {
+      "frames": 24
+    },
+    {
+      "button": "right",
+      "frames": 8
+    },
+    {
+      "frames": 24
+    },
+    {
+      "button": "up",
+      "frames": 8
+    },
+    {
+      "frames": 24
+    },
+    {
+      "button": "up",
+      "frames": 8
+    },
+    {
+      "frames": 24
+    },
+    {
+      "button": "up",
+      "frames": 8
+    },
+    {
+      "frames": 24
+    },
+    {
+      "button": "up",
+      "frames": 8
+    },
+    {
+      "frames": 24
+    },
+    {
+      "button": "right",
+      "frames": 8
+    },
+    {
+      "frames": 24
+    },
+    {
+      "button": "right",
+      "frames": 8
+    },
+    {
+      "frames": 24
+    },
+    {
+      "button": "up",
+      "frames": 8
+    },
+    {
+      "frames": 24
+    },
+    {
+      "button": "up",
+      "frames": 8
+    },
+    {
+      "frames": 24
+    },
+    {
+      "button": "up",
+      "frames": 8
+    },
+    {
+      "frames": 24
+    },
+    {
+      "button": "right",
+      "frames": 8
+    },
+    {
+      "frames": 24
+    },
+    {
+      "frames": 80
+    }
+  ],
+  "observed_wIsInBattle": 1,
+  "warning": "Path was found using temporary PyBoy state search; replay full sequence from fresh boot for acceptance."
+}
