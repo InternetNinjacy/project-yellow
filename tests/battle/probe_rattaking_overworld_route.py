@@ -76,7 +76,7 @@ def main():
     def restore(data):
         p.load_state(io.BytesIO(data))
     def step(button):
-        p.button(button);tick(72);p.button_release(button);tick(24)
+        p.button_press(button);tick(72);p.button_release(button);tick(24)
         return [{"button":button,"frames":72},{"release":button,"frames":24}]
     try:
         # Recreate from power-on using the verified full controller trace.
@@ -96,7 +96,7 @@ def main():
         # the final frame. Game Boy joypad data is transient and may be
         # cleared before a once-per-press snapshot.
         frame_samples=[]
-        p.button("up")
+        p.button_press("up")
         for frame in range(120):
             p.tick()
             frame_samples.append({"frame":frame,"joy":joy_state(),
@@ -116,7 +116,7 @@ def main():
             for hold in ((24,72,180) if direction in ("up","right","left","down") else (24,)):
                 if not (direction=="up" and hold==24):
                     restore(origin)
-                p.button(direction);tick(hold)
+                p.button_press(direction);tick(hold)
                 during={"wram":get(),"joy":joy_state()}
                 p.button_release(direction);tick(30)
                 trial={"button":direction,"frames":hold,"during":during,"after":get(),
@@ -134,7 +134,7 @@ def main():
                 for _ in range(instruction["frames"]):fresh.tick()
             continuous=[]
             for count in range(18):
-                fresh.button("up")
+                fresh.button_press("up")
                 for _ in range(60):fresh.tick()
                 fresh.button_release("up")
                 for _ in range(20):fresh.tick()
