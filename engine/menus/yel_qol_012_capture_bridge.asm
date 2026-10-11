@@ -72,3 +72,65 @@ Yel012CaptureToAvailableBox::
 	push bc
 	pop af
 	ret
+
+; Transactional deposit primitive (NOT YET connected to Bill's PC).
+; Input: wWhichPokemon indexes a live party member. The physical record
+; commits BEFORE the caller may remove that party member, so any failure
+; leaves the party intact. Do not expose this until controller-driven tests
+; prove party and SRAM consistency, including power-loss semantics.
+Yel012StagePartyDeposit::
+	call Yel012CheckStorageVersion
+	ret c
+	ld a, [wPartyCount]
+	cp 2
+	jr c, .fail
+	ld b, a
+	ld a, [wWhichPokemon]
+	cp b
+	jr nc, .fail
+	ld e, a
+	ld d, 0
+	ld hl, wPartySpecies
+	add hl, de
+	ld a, [hl]
+	and a
+	jr z, .fail
+	cp $ff
+	jr z, .fail
+	ld [wCurPartySpecies], a
+	call Yel012BeginTransaction
+	jr c, .fail
+	; Convert selected party record using the game's real MoveMon
+	; into a temporary ONE-record legacy window, not the physical box.
+	xor a
+	ld [wBoxCount], a
+	ld a, $ff
+	ld [wBoxSpecies], a
+	ld a, PARTY_TO_BOX
+	ld [wMoveMonType], a
+	callfar MoveMon
+	jr c, .abort
+	ld hl, wBoxMon1
+	ld de, wBoxDataStart
+	ld bc, BOXMON_STRUCT_LENGTH
+	call CopyData
+	ld hl, wBoxMon1OT
+	ld de, wBoxDataStart + BOXMON_STRUCT_LENGTH
+	ld bc, NAME_LENGTH
+	call CopyData
+	ld hl, wBoxMon1Nick
+	ld de, wBoxDataStart + BOXMON_STRUCT_LENGTH + NAME_LENGTH
+	ld bc, NAME_LENGTH
+	call CopyData
+	ld de, wBoxDataStart
+	call Yel012PrepareCaptureInsert
+	jr c, .abort
+	call Yel012CommitTransaction
+	jr c, .abort
+	and a
+	ret
+.abort
+	call Yel012AbortTransaction
+.fail
+	scf
+	ret
