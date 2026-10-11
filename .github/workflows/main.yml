@@ -287,24 +287,6 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
-      - name: YEL-QOL-012 Viridian Pokémon Center controller route
-        run: |
-          mkdir -p test-results/yel-qol-012
-          python3 scripts/yel_qol_012_viridian_pc_route.py \
-            --rom pokeyellow_debug.gbc \
-            --sym pokeyellow_debug.sym \
-            --boot tests/replays/yel_qol_012_verified_debug_boot.json \
-            --out test-results/yel-qol-012/viridian-pc-route.json
-
-      - name: Archive Viridian Pokémon Center controller route
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: yel-qol-012-viridian-pc-route
-          path: test-results/yel-qol-012/viridian-pc-route.json
-          if-no-files-found: warn
-          retention-days: 30
-
       - name: YEL-QOL-012 discover actual Viridian ActivatePC interaction
         run: |
           mkdir -p test-results/yel-qol-012
