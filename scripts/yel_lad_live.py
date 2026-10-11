@@ -120,7 +120,7 @@ def main():
             load_state_bytes(emu,saved)
         if not triggered:
             screenshot(emu,out/"battle_not_triggered.png")
-            raise AssertionError("Natural inputs did not trigger female Lad battle")
+            raise AssertionError("Natural inputs did not trigger male Lad battle")
         result["encounter_controller_inputs"]=battle
         if mem8(emu,symbols["wTrainerNo"])!=TARGET_PARTY:
             raise AssertionError("Wrong trainer party number")
@@ -133,7 +133,7 @@ def main():
         expected_name=bytes(int(emu.memory[name_bank,name_addr+i]) for i in range(13))
         result["expected_name_raw_hex"]=expected_name.hex()
         if name!=expected_name:
-            raise AssertionError("Battle name bytes do not match BUG CATCHR female lookup entry")
+            raise AssertionError("Battle name bytes do not match LAD class name entry")
         # The rendered screenshot is retained, and byte exact name is compared
         # to the encoded table by the game; verify chosen variant and display.
         result["trainer_class"]=mem8(emu,symbols["wTrainerClass"])
@@ -141,9 +141,9 @@ def main():
         result["trainer_party_no"]=mem8(emu,symbols["wTrainerNo"])
         result["enemy_party_count"]=mem8(emu,symbols["wEnemyPartyCount"])
         result["enemy_species_bytes"]=list(mem_bytes(emu,symbols["wEnemyPartySpecies"],3))
-        # Two original Lad #1 party members must be the same species.
+        # Two original Lass #1 party members must be the same species.
         if result["enemy_species_bytes"][0] != result["enemy_species_bytes"][1]:
-            raise AssertionError("Lad #1 party must contain two Pidgey")
+            raise AssertionError("Lass #1 party must contain two Pidgey")
         result["portrait_pointer"]=list(mem_bytes(emu,symbols["wTrainerPicPointer"],2))
         # A trainer pointer can be correct while the LCD is still black.
         # Require an actual nonblank battle frame before claiming graphics pass.
@@ -163,7 +163,7 @@ def main():
         result["screenshot_frame_after_trigger"]=selected[0]
         result["screenshot_unique_colors"]=selected[1]
         if result["enemy_party_count"]!=2:
-            raise AssertionError("Expected two Pokemon in original Lad #1 party")
+            raise AssertionError("Expected two Pokemon in original Lass #1 party")
         if result["enemy_species_bytes"][:2] != [0x24, 0x24]:
             raise AssertionError("Expected Lass party PIDGEY twice")
         level_symbols = ["wEnemyMon1Level", "wEnemyMon2Level"]
@@ -173,7 +173,7 @@ def main():
         result["enemy_party_levels"] = [mem8(emu, symbols[k]) for k in level_symbols]
         if result["enemy_party_levels"] != [9, 9]:
             raise AssertionError("Expected two level-9 Pidgey in Lass #1 party")
-        portrait=symbols["LadFemalePic"]
+        portrait=symbols["LadPic"]
         actual=int.from_bytes(bytes(result["portrait_pointer"]),"little")
         if actual!=portrait:
             raise AssertionError(f"Wrong portrait pointer: {actual:#06x} != {portrait:#06x}")
@@ -181,7 +181,7 @@ def main():
         result["screenshot_sha256"]=hashlib.sha256((out/"lad_f_battle.png").read_bytes()).hexdigest()
         # Match a 56x56 battle portrait against the unmodified original PNG
         # across the actual screen. Reject uniform/blank or wrong sprite data.
-        reference=Image.open("gfx/trainers/ladf.png").convert("L")
+        reference=Image.open("gfx/trainers/lad.png").convert("L")
         if reference.size!=(56,56):
             raise AssertionError(f"Unexpected reference trainer portrait size {reference.size}")
         # Compare categorical grayscale pixel ranks, independently of DMG palette.
