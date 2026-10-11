@@ -21,7 +21,7 @@ def main():
  em.set_emulation_speed(0)
  out=Path(args.out);out.parent.mkdir(parents=True,exist_ok=True)
  result={"status":"NOT_VERIFIED","scope":"REAL_VIRIDIAN_BILLS_PC","hooks":[],"pages":[],"actions":[]}
- visited={key:0 for key in ("ActivatePC","BillsPC_","Yel012SafePCView","Yel012SafePCDisplayPage","Yel012SafePCNextBox","Yel012AbortTransaction")}
+ visited={key:0 for key in ("OpenPokemonCenterPC","ActivatePC","BillsPC_","Yel012SafePCView","Yel012SafePCDisplayPage","Yel012SafePCNextBox","Yel012AbortTransaction")}
  def callback(ctx,name):
   visited[name]+=1
   if len(result["hooks"])<90:result["hooks"].append(name)
@@ -77,7 +77,11 @@ def main():
     press("a",4,170)
     result["attempts"].append({"tile":tile,"index":i,"location":loc(),
       "facing":em.memory[syms["wSpritePlayerStateData1FacingDirection"][1]],
-      "pc_hits":visited["ActivatePC"]})
+      "pc_hits":visited["ActivatePC"],
+      "hidden_event_hits":visited["OpenPokemonCenterPC"],
+      "cpu_pc":em.register_file.PC,
+      "rom_bank":em.memory[syms["hLoadedROMBank"][1]],
+      "joy_ignore":em.memory[syms["wJoyIgnore"][1]] if "wJoyIgnore" in syms else None})
     if visited["ActivatePC"]:break
    if visited["ActivatePC"]:break
   result["after_pc_action"]=loc()
