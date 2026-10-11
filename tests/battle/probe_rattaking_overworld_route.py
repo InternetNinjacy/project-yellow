@@ -80,7 +80,8 @@ def main():
                 during={"wram":get(),"joy":joy_state()}
                 p.button_release(direction);tick(30)
                 trial={"button":direction,"frames":hold,"during":during,"after":get(),
-                       "pc":int(p.register_file.PC), "sp":int(p.register_file.SP)}
+                       "pc":int(p.register_file.PC), "sp":int(p.register_file.SP),
+                       "registers":{key:int(getattr(p.register_file,key)) for key in ("A","B","C","D","E","H","L")}}
                 trials.append(trial)
                 if hold==180 or direction in ("start","b","a"):p.screen.image.save(args.output/f"move_{direction}.png")
         (args.output/"movement_trials.json").write_text(json.dumps(trials,indent=2)+"\n")
