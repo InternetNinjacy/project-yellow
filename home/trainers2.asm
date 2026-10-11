@@ -23,20 +23,8 @@ GetTrainerInformation::
 	ld a, [hli]
 	ld [de], a
 	call IsFightingJessieJames
-	; Alternate portraits are optional presentation overrides. Preserve
-	; the original trainer class, team, payout and encounter metadata.
-	ld a, [wTrainerGenderVariant]
-	and a
-	jr z, .keepOriginalPic
-	ld a, [wTrainerClass]
-	cp BUG_CATCHER
-	jr nz, .keepOriginalPic
-	ld de, BugCatcherFemalePic
-	ld hl, wTrainerPicPointer
-	ld a, e
-	ld [hli], a
-	ld [hl], d
-.keepOriginalPic
+	; The variant helper is banked to preserve scarce ROM0 space.
+	farcall MaybeUseTrainerVariantPic
 	jp BankswitchBack
 .linkBattle
 	ld hl, wTrainerPicPointer
