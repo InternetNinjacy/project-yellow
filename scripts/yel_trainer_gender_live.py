@@ -82,6 +82,23 @@ def main():
         # We have navigated onto the four-tile LEFT sight line, not merely
         # within Manhattan distance of the trainer's south side.
         battle=[]; triggered=False
+        # The DEBUG warp places us at (y=33,x=29), immediately left of
+        # Bug Catcher #1 at (33,30). A warp arrival does not necessarily run
+        # trainer line-of-sight logic; talk to the adjacent trainer instead.
+        pos=(mem8(emu,symbols["wYCoord"]),mem8(emu,symbols["wXCoord"]))
+        result["interaction_origin_y_x"]=list(pos)
+        if pos==(33,29):
+            tap(emu,"right",hold=2,settle=18)
+            tap(emu,"a",hold=4,settle=30)
+            battle=["right","a"]
+            for _ in range(40):
+                tick(emu,20)
+                if (mem8(emu,symbols["wTrainerClass"])==TARGET_CLASS
+                    and mem8(emu,symbols["wTrainerGenderVariant"])==1):
+                    triggered=True
+                    break
+                tap(emu,"a",hold=3,settle=15)
+                battle.append("a")
         tick(emu,120)
         if mem8(emu,symbols["wTrainerClass"])==TARGET_CLASS and mem8(emu,symbols["wTrainerGenderVariant"])==1:
             triggered=True
