@@ -99,7 +99,8 @@ def main():
         tracing[0]=True
         for direction in ("up","right","left","down","start","b","a"):
             for hold in ((24,72,180) if direction in ("up","right","left","down") else (24,)):
-                restore(origin)
+                if not (direction=="up" and hold==24):
+                    restore(origin)
                 p.button(direction);tick(hold)
                 during={"wram":get(),"joy":joy_state()}
                 p.button_release(direction);tick(30)
@@ -108,6 +109,25 @@ def main():
                        "registers":{key:int(getattr(p.register_file,key)) for key in ("A","B","C","D","E","HL")}}
                 trials.append(trial)
                 if hold==180 or direction in ("start","b","a"):p.screen.image.save(args.output/f"move_{direction}.png")
+        # Independently run a continuous controller route without ever
+        # loading a savestate; this distinguishes replay from restore bugs.
+        fresh=PyBoy(str(args.rom),window="null")
+        try:
+            for instruction in original_trace:
+                if "button" in instruction:fresh.button(instruction["button"])
+                if "release" in instruction:fresh.button_release(instruction["release"])
+                for _ in range(instruction["frames"]):fresh.tick()
+            continuous=[]
+            for count in range(18):
+                fresh.button("up")
+                for _ in range(60):fresh.tick()
+                fresh.button_release("up")
+                for _ in range(20):fresh.tick()
+                continuous.append({"attempt":count,"map":int(fresh.memory[w["wCurMap"]]),
+                    "x":int(fresh.memory[w["wXCoord"]]),"y":int(fresh.memory[w["wYCoord"]]),
+                    "held":int(fresh.memory[joy["hJoyHeld"]]) if "hJoyHeld" in joy else -1})
+            (args.output/"continuous_route.json").write_text(json.dumps(continuous,indent=2)+"\\n")
+        finally:fresh.stop()
         (args.output/"movement_trials.json").write_text(json.dumps(trials,indent=2)+"\n")
         (args.output/"input_routine_call_counts.json").write_text(json.dumps(counters,indent=2)+"\n")
         (args.output/"poll_samples.json").write_text(json.dumps(poll_samples,indent=2)+"\n")
