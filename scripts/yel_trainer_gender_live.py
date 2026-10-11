@@ -216,7 +216,7 @@ def main():
         # The sprite might be transposed in the LCD by a few pixels; require
         # a high exact-match fraction after permitted palette normalization.
         if best["matched"] < 2800:
-            raise AssertionError(f"Original Bug Catcher sprite pixels not verified: {best}")
+            raise AssertionError(f"Female Bug Catcher sprite pixels not verified: {best}")
         result["status"]="BATTLE_VISUAL_PASS"
     except Exception as e:
         result["error"]=f"{type(e).__name__}: {e}"
