@@ -118,6 +118,19 @@ jobs:
           e=o.get("encounter")
           assert e and e["wCurMap"]==12 and e["wIsInBattle"]==1 and e["wEnemyMonSpecies"], "No verified wild encounter on Route 1"
           PY
+      - name: Require verified Rattaking evolution and genuine SAVE CONTINUE
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          evolved=Path("artifacts/rat-evolution-battle/rattaking_evolved.state")
+          assert evolved.is_file() and evolved.stat().st_size>10000, "No genuine level-36 Rattaking evolution state"
+          marker=Path("artifacts/rat-persistence/persistence_gate_passed.json")
+          assert marker.is_file(), "Real in-game SAVE and fresh CONTINUE not verified"
+          data=json.loads(marker.read_text())
+          assert data.get("passed") is True, "Persistence comparison failed"
+          PY
       - name: Preserve evidence on both success and failure
         if: always()
         uses: actions/upload-artifact@v4
