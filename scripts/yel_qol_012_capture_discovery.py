@@ -27,7 +27,7 @@ def main():
         wanted=[n for n in syms if any(token in n for token in
                 ("BattleMenu","ItemUseBall","ItemUseItem","DisplayBattleMenu","StartBattle","HandleBattleMenu"))]
         report["available_battle_symbols"]=wanted[:75]
-        for name in dict.fromkeys([n for n in ("StartBattle","DisplayBattleMenu","DisplayBattleMenu.handleBattleMenuInput","ItemUseBall","ItemUseBall.captureStorageReady","ItemUseBall.sendToBox") if n in syms]+wanted[:65]):
+        for name in dict.fromkeys([n for n in ("StartBattle","DisplayBattleMenu","DisplayBattleMenu.handleBattleMenuInput","ItemUseBall","ItemUseBall.captured","ItemUseBall.skip6","Yel012CaptureToAvailableBox","ItemUseBall.captureStorageReady","ItemUseBall.sendToBox") if n in syms]+wanted[:65]):
             bank,address=syms[name]
             def callback(context,label=name):
                 if len(report["hooks"])<250:
@@ -79,6 +79,15 @@ def main():
                     break
                 action("a",4,170)
                 if em.memory[syms["wIsInBattle"][1]]!=1:break
+        # Capture animation, caught text and Pokédex prompts require A.
+        # Continue only after genuine ItemUseBall evidence; never assume
+        # that reaching the capture calculation has already stored a mon.
+        if any(e["name"]=="ItemUseBall" for e in report["hooks"]):
+            for prompt in range(28):
+                if box_bytes(em,syms,0)[0]==30:
+                    report["post_ball_prompts_to_storage"]=prompt
+                    break
+                action("a",4,180)
         action(None,frames=1200,rest=0)
         report["hook_count"]=len(report["hooks"])
         report["last_cpu_pc"]=em.register_file.PC
