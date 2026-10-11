@@ -81,7 +81,8 @@ def main():
         for _ in range(50):
             press("a", 24)
         check("player_selected")
-        press("start", 350)  # enter enemy selection
+        press("start", 350)  # add Rattaking to DEBUG party
+        press("b", 350)      # decline AddPartyMon nickname prompt
         check("enemy_type")
         press("down", 50)    # enemy species row
         press("a", 50)       # species 1 = Rhydon
