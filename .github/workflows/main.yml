@@ -112,6 +112,24 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
+      - name: YEL-QOL-012 controller route to wild area discovery
+        run: |
+          mkdir -p test-results/yel-qol-012
+          python3 scripts/yel_qol_012_route_search.py \
+            --rom pokeyellow_debug.gbc \
+            --sym pokeyellow_debug.sym \
+            --replay tests/replays/yel_qol_012_verified_debug_boot.json \
+            --out test-results/yel-qol-012/route-search.json
+
+      - name: Archive controller route discovery
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yel-qol-012-controller-route-search
+          path: test-results/yel-qol-012/route-search.json
+          if-no-files-found: warn
+          retention-days: 30
+
       - name: YEL-QOL-012 standalone six-party ROM CPU fixture
         run: |
           mkdir -p test-results/yel-qol-012
