@@ -65,14 +65,22 @@ def main():
   for direction in ("up","up")+("right",)*10:walk(direction)
   result["before_pc_action"]=loc()
   assert loc()==(41,13,5),("PC interaction base position differs",loc())
-  # Set facing UP without stepping onto the PC's interaction tile.
-  press("up",1,22)
-  result["facing_before_pc_action"]=em.memory[syms["wSpritePlayerStateData1FacingDirection"][1]]
-  press("a",4,150)
+  # Test both grounded interaction tiles with separate A key edges.
+  # The exploratory savestate search reached ActivatePC at (13,4);
+  # acceptance MUST verify from this uninterrupted real-input boot.
+  result["attempts"]=[]
+  for tile in ("below","standing"):
+   if tile=="standing":walk("up")
+   else:press("up",1,300)
+   press(None,300,0)
+   for i in range(12):
+    press("a",4,170)
+    result["attempts"].append({"tile":tile,"index":i,"location":loc(),
+      "facing":em.memory[syms["wSpritePlayerStateData1FacingDirection"][1]],
+      "pc_hits":visited["ActivatePC"]})
+    if visited["ActivatePC"]:break
+   if visited["ActivatePC"]:break
   result["after_pc_action"]=loc()
-  if not visited["ActivatePC"]:
-   # Unlike screenshot-driven guesses, record precise controller position.
-   result["pc_facing_byte"]=em.memory[syms["wSpritePlayerStateData1FacingDirection"][1]]
   assert visited["ActivatePC"]>0,"PC interaction never ran"
   for i in range(18):
    if visited["BillsPC_"]:break
