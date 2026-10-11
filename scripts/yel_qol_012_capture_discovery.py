@@ -25,7 +25,7 @@ def main():
             "timeline":[],"controller_inputs":[],"hooks":[]}
     try:
         wanted=[n for n in syms if any(token in n for token in
-                ("BattleMenu","ItemUseBall","ItemUseItem","DisplayBattleMenu"))]
+                ("BattleMenu","ItemUseBall","ItemUseItem","DisplayBattleMenu","StartBattle","HandleBattleMenu"))]
         report["available_battle_symbols"]=wanted[:75]
         for name in wanted[:35]:
             bank,address=syms[name]
@@ -56,15 +56,17 @@ def main():
         snapshot("after_real_route1_grass")
         if em.memory[syms["wIsInBattle"][1]]!=1:
             raise AssertionError("real wild battle did not start from controller route")
-        action(None,frames=240,rest=0)
-        for _ in range(5):
+        action(None,frames=1400,rest=0)
+        for _ in range(45):
             if box_bytes(em,syms,0)[0]==30:break
-            action("a",3,100)
+            action("a",5,140)
         if box_bytes(em,syms,0)[0]!=30:
-            for button in ("down","a","a","a"):
+            for button in ("right","a","down","a","a","a","a","a","a","a"):
                 action(button,3,160)
                 if box_bytes(em,syms,0)[0]==30:break
-        action(None,frames=900,rest=0)
+        action(None,frames=1200,rest=0)
+        report["hook_count"]=len(report["hooks"])
+        report["last_cpu_pc"]=em.register_file.PC
         if box_bytes(em,syms,0)[0]==30:
             after=box_bytes(em,syms,0)
             if len(record(after,0))!=55 or record(after,0)==record(before,0):
