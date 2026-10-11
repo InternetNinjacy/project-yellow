@@ -56,6 +56,7 @@ def main():
     ap.add_argument("--rom",default="pokeyellow_debug.gbc")
     ap.add_argument("--sym",default="pokeyellow_debug.sym")
     ap.add_argument("--out",default="test-results/trainer-gender-live")
+    ap.add_argument("--cgb",action="store_true",help="Run in Game Boy Color hardware emulation")
     args=ap.parse_args()
     out=Path(args.out);out.mkdir(parents=True,exist_ok=True)
     symbols=parse_sym(Path(args.sym))
@@ -65,10 +66,10 @@ def main():
               "wMaxMenuItem","wCurrentMenuItem"]
     missing=[x for x in required if x not in symbols]
     if missing: raise AssertionError(f"Missing symbols: {missing}")
-    result={"status":"INCOMPLETE","rom_sha256":hashlib.sha256(Path(args.rom).read_bytes()).hexdigest()}
+    result={"status":"INCOMPLETE","hardware_mode":"CGB" if args.cgb else "DMG","rom_sha256":hashlib.sha256(Path(args.rom).read_bytes()).hexdigest()}
     emu=None
     try:
-        emu=PyBoy(args.rom,window="null",cgb=False,sound_emulated=False,symbols=args.sym)
+        emu=PyBoy(args.rom,window="null",cgb=args.cgb,sound_emulated=False,symbols=args.sym)
         emu.set_emulation_speed(0)
         enter_debug_menu(emu,symbols,out)
         choose_debug_new_game(emu,symbols,out)
@@ -213,6 +214,11 @@ def main():
             result["screenshot_unique_colors"]=len(set(best_frame.getdata()))
             result["screenshot_sha256"]=hashlib.sha256((out/"bug_catcher_f_battle.png").read_bytes()).hexdigest()
         result["portrait_pixel_match"]=best
+        result["rendered_rgb_colors"]=[list(c) for c in sorted(set(best_frame.convert("RGB").getdata()))] if best_frame is not None else []
+        if args.cgb:
+            if best_frame is None: raise AssertionError("No rendered CGB portrait")
+            result["cgb_screen_color_count"]=len(result["rendered_rgb_colors"])
+            if result["cgb_screen_color_count"] < 2: raise AssertionError("CGB screenshot is uniform")
         # The sprite might be transposed in the LCD by a few pixels; require
         # a high exact-match fraction after permitted palette normalization.
         if best["matched"] < 2800:
