@@ -11,7 +11,8 @@ import json
 from pathlib import Path
 
 SYMBOLS = ("wPartyCount", "wIsInBattle", "wStatusFlags6",
-           "wCurMap", "wBattleMonSpecies", "wEnemyMonSpecies")
+           "wCurMap", "wBattleMonSpecies", "wEnemyMonSpecies",
+           "wPartySpecies", "wPartyMon5Level", "wPartyMon5Moves")
 # A conservative, replayable scripted sweep of menu/text advancement.
 # No claimed success: the probe fails if no initialized party is observed.
 STEPS = [
@@ -42,6 +43,8 @@ def run(rom, symbols, output):
         total_frames = 0
         def record(phase):
             values = {k: int(pb.memory[a]) for k, a in symbols.items()}
+            values["party_species"] = [int(pb.memory[symbols["wPartySpecies"] + i]) for i in range(6)]
+            values["fifth_mon_moves"] = [int(pb.memory[symbols["wPartyMon5Moves"] + i]) for i in range(4)]
             checkpoints.append({"phase": phase, "frame": total_frames, **values})
         def frames(n):
             nonlocal total_frames
@@ -66,8 +69,9 @@ def run(rom, symbols, output):
         }, indent=2) + "\n")
         with (output / "debug_startup_final.state").open("wb") as f:
             pb.save_state(f)
-        if not any(row["wPartyCount"] > 0 for row in checkpoints):
-            raise AssertionError("No initialized DEBUG party observed. See startup trace, checkpoints and state artifact.")
+        if not any(row["wPartyCount"] == 5 and row["party_species"][4] == 20
+                   and row["wPartyMon5Level"] == 35 for row in checkpoints):
+            raise AssertionError("No genuine level-35 fifth-party Raticate in DEBUG startup evidence.")
         print("DEBUG startup party observed; verify count and battle access separately.")
     finally:
         pb.stop()
