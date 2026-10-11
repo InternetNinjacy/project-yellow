@@ -40,6 +40,20 @@ IF DEF(_DEBUG)
 
 	call SetDebugNewGameParty
 
+	; YEL-MON-004 DEBUG-only evolution fixture. Ordinary AddPartyMon
+	; created the level-35 Raticate as party member five; put its
+	; medium-fast experience one point short of level 36 (36^3-1).
+	; The next level must still be earned by a real battle.
+	ld hl, wPartyMon5Exp
+	ld a, HIGH(46655)
+	ld [hli], a
+	ld a, LOW(46655)
+	ld [hl], a
+	dec hl
+	dec hl
+	xor a
+	ld [hl], a
+
 	; Pikachu gets Surf.
 	ld a, SURF
 	ld hl, wPartyMon4Moves + 2
