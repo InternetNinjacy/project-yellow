@@ -90,6 +90,21 @@ PKMNLeaguePCText: db "<PKMN>LEAGUE@"
 LogOffPCText:     db "LOG OFF@"
 
 BillsPC_::
+    ; YEL-QOL-012: the legacy PC copies at most 20 records into WRAM.
+    ; A 30-record physical box must NEVER enter the old list,
+    ; MoveMon, RemovePokemon or ChangeBox paths before pagination lands.
+    ; Fail closed for both versioned and legacy save layouts.
+    ld hl, Yel012PCUpgradeText
+    call PrintText
+    ret
+
+Yel012PCUpgradeText:
+    text "PC STORAGE"
+    line "UNAVAILABLE."
+    para "YOUR <PKMN> ARE"
+    line "SAFE."
+    prompt
+
 	ld hl, wStatusFlags5
 	set BIT_NO_TEXT_DELAY, [hl]
 	xor a
