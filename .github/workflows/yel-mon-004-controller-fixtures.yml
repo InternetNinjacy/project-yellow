@@ -61,6 +61,18 @@ jobs:
             --starting-state artifacts/rat-debug-fight/debug_fight_pre_action.state \
             --starting-trace artifacts/rat-debug-fight/debug_fight_pre_action_trace.json \
             --output artifacts/rat-move-fixtures
+      - name: Require actual Route 1 or battle transition
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path=Path("artifacts/rat-evolution-route/route_search.json")
+          assert path.exists(), "Missing overworld route evidence"
+          record=json.loads(path.read_text())
+          found=record.get("found")
+          assert found and (found.get("wIsInBattle") or found.get("wCurMap") != record["initial"]["wCurMap"]), "No actual controller-driven map transition"
+          PY
       - name: Preserve evidence on both success and failure
         if: always()
         uses: actions/upload-artifact@v4
