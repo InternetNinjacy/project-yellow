@@ -33,6 +33,16 @@ def main():
     from pyboy import PyBoy
     symbols = resolve(a.symbols)
     pyboy = PyBoy(str(a.rom), window="null")
+    input_names={"hJoyInput","hJoyHeld","hJoyLast","hJoyPressed","hDisableJoypadPolling"}
+    input_addresses={}
+    for line in a.symbols.read_text().splitlines():
+        words=line.split(";")[0].split()
+        if len(words)>1 and words[1] in input_names and ":" in words[0]:
+            addr=int(words[0].split(":",1)[1],16)
+            if 0xFF80<=addr<=0xFFFE:input_addresses[words[1]]=addr
+    def input_snapshot():
+        return {name:int(pyboy.memory[addr]) for name,addr in input_addresses.items()}
+    input_samples=[]
     total = 0
     trace, checkpoints = [], []
     def tick(n):
@@ -53,6 +63,12 @@ def main():
             rec["screen_capture_error"] = repr(exc)
     def press(button, settle=32):
         pyboy.button(button)
+        if len(input_samples)<40:
+            before=input_snapshot()
+            tick(2)
+            during=input_snapshot()
+            input_samples.append({"button":button,"before":before,"held_2frames":during,
+                                  "joystick_register":int(pyboy.memory[0xFF00])})
         trace.append({"button":button,"frames":2})
         tick(2)
         pyboy.button_release(button)
@@ -113,6 +129,7 @@ def main():
             check("battle_ui_" + str(index))
         out = a.output
         out.mkdir(parents=True, exist_ok=True)
+        (out/"working_fight_joypad_samples.json").write_text(json.dumps(input_samples,indent=2)+"\\n")
         (out/"debug_fight_trace.json").write_text(json.dumps(trace,indent=2)+"\n")
         (out/"debug_fight_checkpoints.json").write_text(json.dumps({
             "rom_sha256":hashlib.sha256(a.rom.read_bytes()).hexdigest(),
