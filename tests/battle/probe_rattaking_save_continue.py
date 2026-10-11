@@ -18,7 +18,7 @@ NAMES=("wPartyCount","wPartySpecies","wPartyMon5","wPartyMon6",
        "wPartyMon5OT","wPartyMon5Nick","wPokedexOwned",
        "wPokedexOwnedEnd","wPokedexSeen","wPokedexSeenEnd",
        "wCurMap","wIsInBattle","wCurrentBoxNum","wBoxDataStart",
-       "wBoxDataEnd","wBoxMonCounts")
+       "wBoxDataEnd","wBoxCount")
 
 def parse(path):
     d={}
