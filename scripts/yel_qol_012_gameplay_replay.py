@@ -13,6 +13,7 @@ import tempfile
 from pathlib import Path
 from pyboy import PyBoy
 from yel_qol_012_fixture import seed_scenario
+from yel_qol_012_party_seed import seed_six_party
 
 BOX_SIZE = 1682
 MON_BYTES = 33
@@ -137,7 +138,9 @@ def main():
         em = boot()
         try:
             play(em, spec["prepare"])
-            if spec.get("party_fixture") == "rom-debug-cpu":
+            if spec.get("party_fixture") == "synthetic-wram-six":
+                seed_six_party(em.memory,syms)
+            elif spec.get("party_fixture") == "rom-debug-cpu":
                 for name in ("SetDebugNewGameParty","hLoadedROMBank","wMonDataLocation"):
                     if name not in syms:
                         raise ValueError("missing party fixture symbol " + name)
