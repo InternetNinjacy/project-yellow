@@ -29,13 +29,14 @@ def main():
         start=loc()
         todo=deque([(start,snap(em),[])])
         seen={start};found=None
-        while todo and len(seen)<750:
+        while todo and len(seen)<450:
             position,state,path=todo.popleft()
             for direction in ("up","right","down","left"):
                 em.load_state(io.BytesIO(state))
                 move(direction)
                 nxt=loc()
                 if nxt==position or nxt in seen:continue
+                if nxt[0] not in (0,37,38):continue
                 candidate=path+[direction]
                 if nxt[0]==38:
                     found=(nxt,candidate)
