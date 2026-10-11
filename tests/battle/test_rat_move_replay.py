@@ -27,7 +27,7 @@ CRUNCH_EFFECT = 0x49
 SYMBOLS = (
     "wIsInBattle", "wBattleMonSpecies", "wEnemyMonSpecies",
     "wEnemyMonStatus", "wEnemyBattleStatus3", "wEnemyMonStatMods",
-    "wPlayerMoveNum", "wPlayerMoveEffect", "wBattleMonMoves", "wEnemyMonHP",
+    "wPlayerMoveNum", "wPlayerSelectedMove", "wPlayerMoveEffect", "wBattleMonMoves", "wEnemyMonHP",
 )
 
 def addresses(path):
@@ -54,6 +54,7 @@ def snapshot(pb, a):
         "toxic": pb.memory[a["wEnemyBattleStatus3"]],
         "defense_stage": pb.memory[a["wEnemyMonStatMods"] + 1],
         "move": pb.memory[a["wPlayerMoveNum"]],
+        "selected_move": pb.memory[a["wPlayerSelectedMove"]],
         "effect": pb.memory[a["wPlayerMoveEffect"]],
         "moves": [pb.memory[a["wBattleMonMoves"] + i] for i in range(4)],
         "enemy_hp": (pb.memory[a["wEnemyMonHP"]] << 8) | pb.memory[a["wEnemyMonHP"] + 1],
@@ -117,6 +118,8 @@ def main():
             slot = case.get("move_slot")
             if type(slot) is not int or slot not in range(4) or before["moves"][slot] != expected_id:
                 raise AssertionError(name + ": captured move slot does not match approved move")
+            if after["selected_move"] != expected_id:
+                raise AssertionError(name + ": engine selected a different move ID")
             if after["enemy_hp"] >= before["enemy_hp"]:
                 raise AssertionError(name + ": damaging move did not reduce target HP")
             if move == "poison_fang":
