@@ -15,6 +15,7 @@ Route3_Object:
 	def_warp_events
 IF DEF(_DEBUG)
 	warp_event 13, 4, REDS_HOUSE_2F, 3
+	warp_event 15, 9, REDS_HOUSE_2F, 4
 ENDC
 
 	def_bg_events
