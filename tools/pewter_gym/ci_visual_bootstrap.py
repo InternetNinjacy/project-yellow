@@ -75,6 +75,8 @@ def main():
         # Read-only warp-dispatch diagnostics. Never change emulator RAM.
         observed_symbols = {}
         for name in ("wCurMapTileset", "wWalkCounter", "wMovementFlags",
+                     "wXBlockCoord", "wYBlockCoord", "wCurMapWidth",
+                     "wMapViewVRAMPointer", "wCurrentMapViewPointer",
                      "wPlayerDirection", "wPlayerMovingDirection",
                      "wCurrentMapScriptFlags", "wStatusFlags7"):
             try:
