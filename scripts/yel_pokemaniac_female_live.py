@@ -20,7 +20,7 @@ from yel_dev_lab_verify import (
 FOREST = 0x0e  # DEBUG Route 3 fixture
 TARGET_CLASS = 7   # POKéMANIAC
 TARGET_PARTY = 1
-TARGET_YX = (6,22)  # trainer tile (y=33, x=30), facing LEFT, range 4
+TARGET_YX = (6,24)  # trainer tile (y=33, x=30), facing LEFT, range 4
 SIGHT_TILES = {(6,23)}  # left-adjacent talk tile
 MAX_VISITS = 2600
 
@@ -90,9 +90,9 @@ def main():
         pos=(mem8(emu,symbols["wYCoord"]),mem8(emu,symbols["wXCoord"]))
         result["interaction_origin_y_x"]=list(pos)
         if pos==(6,23):
-            tap(emu,"left",hold=2,settle=18)
+            tap(emu,"right",hold=2,settle=18)
             tap(emu,"a",hold=4,settle=30)
-            battle=["left","a"]
+            battle=["right","a"]
             for _ in range(40):
                 tick(emu,20)
                 if (mem8(emu,symbols["wTrainerClass"])==TARGET_CLASS
