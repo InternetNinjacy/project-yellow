@@ -1,0 +1,26 @@
+base_class,variant_key,display_name,gender,art_status,party_policy
+YOUNGSTER,YOUNGSTER_F,YOUNGSTER♀,female,pending,reuse-base-until-assigned
+BUG_CATCHER,BUG_CATCHER_F,BUG CATCHER♀,female,pending,reuse-base-until-assigned
+LASS,LAD,LAD,male,pending,reuse-base-until-assigned
+SAILOR,SAILOR_F,SAILOR♀,female,pending,reuse-base-until-assigned
+POKEMANIAC,POKEMANIAC_F,POKéMANIAC♀,female,pending,reuse-base-until-assigned
+SUPER_NERD,SUPER_NERD_F,SUPER NERD♀,female,pending,reuse-base-until-assigned
+HIKER,HIKER_F,HIKER♀,female,pending,reuse-base-until-assigned
+BIKER,BIKER_F,BIKER♀,female,pending,reuse-base-until-assigned
+BURGLAR,BURGLAR_F,BURGLAR♀,female,pending,reuse-base-until-assigned
+ENGINEER,ENGINEER_F,ENGINEER♀,female,pending,reuse-base-until-assigned
+FISHER,FISHER_F,FISHERMAN♀,female,pending,reuse-base-until-assigned
+SWIMMER,SWIMMER_F,SWIMMER♀,female,pending,reuse-base-until-assigned
+CUE_BALL,TOUGH_GIRL,TOUGH GIRL,female,pending,reuse-base-until-assigned
+GAMBLER,GAMBLER_F,GAMBLER♀,female,pending,reuse-base-until-assigned
+BEAUTY,HIMBO,HIMBO,male,pending,reuse-base-until-assigned
+PSYCHIC_TR,PSYCHIC_F,PSYCHIC♀,female,pending,reuse-base-until-assigned
+ROCKER,ROCKER_F,ROCKER♀,female,pending,reuse-base-until-assigned
+JUGGLER,JUGGLER_F,JUGGLER♀,female,pending,reuse-base-until-assigned
+TAMER,TAMER_F,TAMER♀,female,pending,reuse-base-until-assigned
+BIRD_KEEPER,BIRD_KEEPER_F,BIRD KEEPER♀,female,pending,reuse-base-until-assigned
+BLACKBELT,BLACKBELT_F,BLACKBELT♀,female,pending,reuse-base-until-assigned
+SCIENTIST,SCIENTIST_F,SCIENTIST♀,female,pending,reuse-base-until-assigned
+ROCKET,ROCKET_F,ROCKET♀,female,pending,reuse-base-until-assigned
+GENTLEMAN,GRANDMA,GRANDMA,female,pending,reuse-base-until-assigned
+CHANNELER,CHANNELER_M,CHANNELER♂,male,pending,reuse-base-until-assigned

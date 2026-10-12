@@ -4,10 +4,15 @@ RedsHouse2F_Object:
 	def_warp_events
 	warp_event  7,  1, REDS_HOUSE_1F, 3
 IF DEF(_DEBUG)
-	warp_event  7,  2, MT_MOON_B2F, 4
-	warp_event  7,  3, ROCKET_HIDEOUT_ELEVATOR, 1
-	warp_event  7,  4, POKEMON_TOWER_7F, 1
-	warp_event  7,  5, SILPH_CO_11F, 4
+	; Trainer-variant test entrance: real DEBUG map warp, not a RAM teleport.
+	warp_event  7,  2, VIRIDIAN_FOREST, 7
+	; Separate Youngster female fixture from the Bug Catcher forest fixture.
+	warp_event  7,  3, ROUTE_3, 1
+	warp_event  7,  4, ROUTE_3, 2
+	warp_event  7,  5, ROUTE_3, 3
+	warp_event  7,  6, ROUTE_3, 4
+	warp_event  7,  7, ROUTE_3, 5
+	; Pokemaniac counterparts share the reachable Route 3 test entrance.
 ENDC
 
 	def_bg_events

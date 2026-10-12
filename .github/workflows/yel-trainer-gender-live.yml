@@ -1,0 +1,36 @@
+name: Trainer gender live battle probe
+on:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  battle-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: gbdev/rgbds
+          ref: v1.0.3
+          path: .toolchain/rgbds
+      - name: Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bison libpng-dev pkg-config build-essential
+          python -m pip install pyboy Pillow
+      - name: Install RGBDS
+        working-directory: .toolchain/rgbds
+        run: sudo make -j2 install
+      - name: Build DEBUG
+        run: |
+          rm -rf .toolchain
+          make -j2 pokeyellow_debug.gbc
+      - name: Execute actual controller-path battle probe
+        run: python scripts/yel_trainer_gender_live.py
+      - name: Upload non-ROM traces and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yel-trainer-gender-live-evidence
+          path: test-results/trainer-gender-live/
+          if-no-files-found: warn

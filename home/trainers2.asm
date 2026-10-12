@@ -23,6 +23,8 @@ GetTrainerInformation::
 	ld a, [hli]
 	ld [de], a
 	call IsFightingJessieJames
+	; The variant helper is banked to preserve scarce ROM0 space.
+	farcall MaybeUseTrainerVariantPic
 	jp BankswitchBack
 .linkBattle
 	ld hl, wTrainerPicPointer

@@ -329,7 +329,7 @@ SECTION "Trainer Pics", ROMX
 YoungsterPic::     INCBIN "gfx/trainers/youngster.pic"
 BugCatcherPic::    INCBIN "gfx/trainers/bugcatcher.pic"
 LassPic::          INCBIN "gfx/trainers/lass.pic"
-SailorPic::        INCBIN "gfx/trainers/sailor.pic"
+; Matched Sailor artwork stored in Trainer Variant Pics
 JrTrainerMPic::    INCBIN "gfx/trainers/jr.trainerm.pic"
 JrTrainerFPic::    INCBIN "gfx/trainers/jr.trainerf.pic"
 PokemaniacPic::    INCBIN "gfx/trainers/pokemaniac.pic"
@@ -380,3 +380,13 @@ SECTION "Pics 7", ROMX
 RedPicBack::       INCBIN "gfx/player/redb.pic"
 OldManPicBack::    INCBIN "gfx/battle/oldmanb.pic"
 ProfOakPicBack::   INCBIN "gfx/battle/prof.oakb.pic"
+
+SECTION "Trainer Variant Pics", ROMX
+
+YoungsterFemalePic:: INCBIN "gfx/trainers/youngsterf.pic"
+BugCatcherFemalePic:: INCBIN "gfx/trainers/bugcatcherf.pic"
+LadPic:: INCBIN "gfx/trainers/lad.pic"
+SailorPic:: INCBIN "gfx/trainers/sailorm.pic"
+SailorFemalePic:: INCBIN "gfx/trainers/sailorf.pic"
+PokemaniacMalePic:: INCBIN "gfx/trainers/pokemaniacm.pic"
+PokemaniacFemalePic:: INCBIN "gfx/trainers/pokemaniacf.pic"

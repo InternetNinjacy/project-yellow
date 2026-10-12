@@ -21,4 +21,159 @@ GetTrainerName_::
 .foundName
 	ld de, wTrainerName
 	ld bc, TRAINER_NAME_LENGTH
+	call CopyData
+	; The opponent class and party data never change for presentation variants.
+	ld a, [wTrainerGenderVariant]
+	and a
+	ret z
+	ld a, [wTrainerClass]
+	ld b, a
+	ld hl, TrainerVariantClasses
+	ld c, 0
+.findVariant
+	ld a, [hli]
+	cp b
+	jr z, .variantFound
+	inc c
+	ld a, c
+	cp NUM_TRAINER_GENDER_VARIANTS
+	ret z
+	jr .findVariant
+.variantFound
+	ld a, c
+	ld hl, TrainerVariantNames
+	ld bc, TRAINER_NAME_LENGTH
+	call AddNTimes
+	ld de, wTrainerName
+	ld bc, TRAINER_NAME_LENGTH
 	jp CopyData
+
+DEF NUM_TRAINER_GENDER_VARIANTS EQU 25
+TrainerVariantClasses:
+	db YOUNGSTER
+	db BUG_CATCHER
+	db LASS
+	db SAILOR
+	db POKEMANIAC
+	db SUPER_NERD
+	db HIKER
+	db BIKER
+	db BURGLAR
+	db ENGINEER
+	db FISHER
+	db SWIMMER
+	db CUE_BALL
+	db GAMBLER
+	db BEAUTY
+	db PSYCHIC_TR
+	db ROCKER
+	db JUGGLER
+	db TAMER
+	db BIRD_KEEPER
+	db BLACKBELT
+	db SCIENTIST
+	db ROCKET
+	db GENTLEMAN
+	db CHANNELER
+
+TrainerVariantNames:
+	list_start TRAINER_NAME_LENGTH - 1
+	li "YOUNGSTER♀"
+	li "BUG CATCHR♀"
+	li "LAD"
+	li "SAILOR♀"
+	li "POKéMANIAC♀"
+	li "SUPER NERD♀"
+	li "HIKER♀"
+	li "BIKER♀"
+	li "BURGLAR♀"
+	li "ENGINEER♀"
+	li "FISHERMAN♀"
+	li "SWIMMER♀"
+	li "TOUGH GIRL"
+	li "GAMBLER♀"
+	li "HIMBO"
+	li "PSYCHIC♀"
+	li "ROCKER♀"
+	li "JUGGLER♀"
+	li "TAMER♀"
+	li "BIRDKEEPER♀"
+	li "BLACKBELT♀"
+	li "SCIENTIST♀"
+	li "ROCKET♀"
+	li "GRANDMA"
+	li "CHANNELER♂"
+	assert_list_length NUM_TRAINER_GENDER_VARIANTS
+
+
+
+; Banked trainer setup to avoid overflowing the fixed ROM0 Home section.
+InitBattleEnemyParameters_::
+	ld a, [wEngagedTrainerClass]
+	ld [wCurOpponent], a
+	ld [wEnemyMonOrTrainerClass], a
+	cp OPP_ID_OFFSET
+	jr c, .noTrainer
+	; Trainer number bit 7 is presentation metadata, not party index.
+	; The opponent ID and class remain the original one-byte values.
+	ld a, [wEngagedTrainerSet]
+	push af
+	rlca ; bit 7 becomes bit 0
+	and 1
+	ld [wTrainerGenderVariant], a
+	pop af
+	and TRAINER_PARTY_INDEX_MASK
+	ld [wTrainerNo], a
+	ret
+.noTrainer
+	xor a
+	ld [wTrainerGenderVariant], a
+	ld a, [wEngagedTrainerSet]
+	ld [wCurEnemyLevel], a
+	ret
+
+
+; Presentation-only override. The original class and party stay unchanged.
+MaybeUseTrainerVariantPic::
+	ld a, [wTrainerClass]
+	cp SAILOR
+	jr z, .sailor
+	cp POKEMANIAC
+	jr z, .pokemaniac
+	ld a, [wTrainerGenderVariant]
+	and a
+	ret z
+	ld a, [wTrainerClass]
+	cp YOUNGSTER
+	jr nz, .checkBugCatcher
+	ld de, YoungsterFemalePic
+	jr .setPortrait
+.checkBugCatcher
+	cp BUG_CATCHER
+	jr nz, .checkLad
+	ld de, BugCatcherFemalePic
+	jr .setPortrait
+.checkLad
+	cp LASS
+	ret nz
+	ld de, LadPic
+	jr .setPortrait
+.pokemaniac
+	ld a, [wTrainerGenderVariant]
+	and a
+	ld de, PokemaniacMalePic
+	jr z, .setPortrait
+	ld de, PokemaniacFemalePic
+	jr .setPortrait
+.sailor
+	ld a, [wTrainerGenderVariant]
+	and a
+	ld de, SailorPic
+	jr z, .setPortrait
+	ld de, SailorFemalePic
+.setPortrait
+	ld hl, wTrainerPicPointer
+	ld a, e
+	ld [hli], a
+	ld [hl], d
+	ret

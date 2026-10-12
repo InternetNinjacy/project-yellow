@@ -1,5 +1,14 @@
 DEF OPP_ID_OFFSET EQU 200
 
+; A trainer's map-event party number can carry presentation metadata.
+; All existing class IDs and trainer opponent IDs stay unchanged.
+DEF TRAINER_VARIANT_BIT EQU $80
+DEF TRAINER_PARTY_INDEX_MASK EQU $7f
+
+; Use on the trainer-number argument of object_event for an approved
+; opposite-gender counterpart. Example: TRAINER_F_VARIANT | 1
+DEF TRAINER_F_VARIANT EQU TRAINER_VARIANT_BIT
+
 MACRO trainer_const
 	const \1
 	DEF OPP_\1 EQU OPP_ID_OFFSET + \1

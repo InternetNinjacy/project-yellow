@@ -1,0 +1,36 @@
+name: Bug Catcher female GBC palette verification
+on:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  gbc-battle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: gbdev/rgbds
+          ref: v1.0.3
+          path: .toolchain/rgbds
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bison libpng-dev pkg-config build-essential
+          python -m pip install pyboy Pillow
+      - name: Install RGBDS
+        working-directory: .toolchain/rgbds
+        run: sudo make -j2 install
+      - name: Build DEBUG ROM
+        run: |
+          rm -rf .toolchain
+          make -j2 pokeyellow_debug.gbc
+      - name: Verify actual CGB-mode trainer pixels and palette
+        run: python scripts/yel_trainer_gender_live.py --cgb --out test-results/trainer-gender-gbc
+      - name: Upload CGB evidence, never ROM
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bugcatcher-female-gbc-evidence
+          path: test-results/trainer-gender-gbc/
+          if-no-files-found: warn
