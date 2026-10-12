@@ -18,7 +18,7 @@ from yel_dev_lab_verify import (
 )
 
 FOREST = 0x0e  # DEBUG Route 3 fixture
-TARGET_CLASS = 4   # BUG_CATCHER
+TARGET_CLASS = 4   # SAILOR
 TARGET_PARTY = 1
 TARGET_YX = (4, 23)  # trainer tile (y=33, x=30), facing LEFT, range 4
 SIGHT_TILES = {(4,22)}  # left-adjacent talk tile
@@ -173,7 +173,7 @@ def main():
         result["enemy_party_levels"] = [mem8(emu, symbols[k]) for k in level_symbols]
         if result["enemy_party_levels"] != [18, 18]:
             raise AssertionError("Expected level-18 Machop and Shellder in Sailor #1 party")
-        portrait=symbols["SailorPic"]
+        portrait=symbols["SailorFemalePic"]
         actual=int.from_bytes(bytes(result["portrait_pointer"]),"little")
         if actual!=portrait:
             raise AssertionError(f"Wrong portrait pointer: {actual:#06x} != {portrait:#06x}")
