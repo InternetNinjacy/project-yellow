@@ -92,7 +92,7 @@ def main():
         if pos==(6,23):
             tap(emu,"left",hold=2,settle=18)
             tap(emu,"a",hold=4,settle=30)
-            battle=["right","a"]
+            battle=["left","a"]
             for _ in range(40):
                 tick(emu,20)
                 if (mem8(emu,symbols["wTrainerClass"])==TARGET_CLASS
