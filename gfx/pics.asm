@@ -329,7 +329,7 @@ SECTION "Trainer Pics", ROMX
 YoungsterPic::     INCBIN "gfx/trainers/youngster.pic"
 BugCatcherPic::    INCBIN "gfx/trainers/bugcatcher.pic"
 LassPic::          INCBIN "gfx/trainers/lass.pic"
-SailorPic::        INCBIN "gfx/trainers/sailor.pic"
+; Matched Sailor artwork stored in Trainer Variant Pics
 JrTrainerMPic::    INCBIN "gfx/trainers/jr.trainerm.pic"
 JrTrainerFPic::    INCBIN "gfx/trainers/jr.trainerf.pic"
 PokemaniacPic::    INCBIN "gfx/trainers/pokemaniac.pic"
