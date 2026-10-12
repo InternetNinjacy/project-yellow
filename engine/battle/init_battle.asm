@@ -151,6 +151,8 @@ _LoadTrainerPic:
 	ld a, [wTrainerClass]
 	cp SAILOR
 	jr z, .variantPic
+	cp POKEMANIAC
+	jr z, .variantPic
 	ld a, [wTrainerGenderVariant]
 	and a
 	jr z, .originalPic
