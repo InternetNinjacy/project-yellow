@@ -21,7 +21,7 @@ def main():
  em.set_emulation_speed(0)
  out=Path(args.out);out.parent.mkdir(parents=True,exist_ok=True)
  result={"status":"NOT_VERIFIED","scope":"REAL_VIRIDIAN_BILLS_PC","hooks":[],"pages":[],"actions":[]}
- visited={key:0 for key in ("OpenPokemonCenterPC","ActivatePC","BillsPC_","Yel012SafePCView","Yel012SafePCDisplayPage","Yel012SafePCNextBox","Yel012AbortTransaction")}
+ visited={key:0 for key in ("OpenPokemonCenterPC","ActivatePC","BillsPC_","Yel012SafePCView","Yel012SafePCDisplayPage","Yel012SafePCNextBox","Yel012AbortTransaction","CheckForHiddenEventOrBookshelfOrCardKeyDoor","CheckForHiddenEvent")}
  def callback(ctx,name):
   visited[name]+=1
   if len(result["hooks"])<90:result["hooks"].append(name)
@@ -81,7 +81,12 @@ def main():
       "hidden_event_hits":visited["OpenPokemonCenterPC"],
       "cpu_pc":em.register_file.PC,
       "rom_bank":em.memory[syms["hLoadedROMBank"][1]],
-      "joy_ignore":em.memory[syms["wJoyIgnore"][1]] if "wJoyIgnore" in syms else None})
+      "joy_ignore":em.memory[syms["wJoyIgnore"][1]] if "wJoyIgnore" in syms else None,
+      "status_flags5":em.memory[syms["wStatusFlags5"][1]],
+      "joy_held":em.memory[syms["hJoyHeld"][1]],
+      "joy_pressed":em.memory[syms["hJoyPressed"][1]],
+      "hidden_dispatch_hits":visited["CheckForHiddenEventOrBookshelfOrCardKeyDoor"],
+      "hidden_lookup_hits":visited["CheckForHiddenEvent"]})
     if visited["ActivatePC"]:break
    if visited["ActivatePC"]:break
   result["after_pc_action"]=loc()
