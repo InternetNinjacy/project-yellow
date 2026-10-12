@@ -23,9 +23,6 @@ GetTrainerName_::
 	ld bc, TRAINER_NAME_LENGTH
 	call CopyData
 	; The opponent class and party data never change for presentation variants.
-	ld a, [wTrainerClass]
-	cp SAILOR
-	jr z, .sailor
 	ld a, [wTrainerGenderVariant]
 	and a
 	ret z
@@ -138,6 +135,9 @@ InitBattleEnemyParameters_::
 
 ; Presentation-only override. The original class and party stay unchanged.
 MaybeUseTrainerVariantPic::
+	ld a, [wTrainerClass]
+	cp SAILOR
+	jr z, .sailor
 	ld a, [wTrainerGenderVariant]
 	and a
 	ret z
@@ -155,6 +155,7 @@ MaybeUseTrainerVariantPic::
 	cp LASS
 	ret nz
 	ld de, LadPic
+	jr .setPortrait
 .sailor
 	ld a, [wTrainerGenderVariant]
 	and a
