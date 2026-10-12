@@ -20,7 +20,7 @@ from yel_dev_lab_verify import (
 FOREST = 0x0e  # DEBUG Route 3 fixture
 TARGET_CLASS = 7   # POKéMANIAC
 TARGET_PARTY = 1
-TARGET_YX = (10,33)  # trainer tile (y=33, x=30), facing LEFT, range 4
+TARGET_YX = (6,22)  # trainer tile (y=33, x=30), facing LEFT, range 4
 SIGHT_TILES = {(10,32)}  # left-adjacent talk tile
 MAX_VISITS = 2600
 
