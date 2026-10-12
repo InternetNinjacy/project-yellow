@@ -65,3 +65,14 @@ See [current draft PR #13](https://github.com/InternetNinjacy/project-yellow/pul
 **Framework/reporting policy for next thread:** Begin from this handoff, the Work Registry, Project Charter and CORE-003/004; use status badges, a progress bar and concise explanations for every multipart engineering task/progress request. Always end each progress report with **Next Step**, stated concretely. Separate source-implemented, compiled, controller/emulator verified, visual/user-approved, and merged statuses. Don't run background/asynchronous jobs without an actual scheduling mechanism, and do not imply a CI run succeeded unless checked. No need to repeat previously passed battle/evolution/SRAM work unless source changes warrant regression.
 
 **Immediate next engineering milestone (for the new thread, not this one):** Inspect PR #13's current HEAD and required CI, perform a gap audit against the approved YEL-DEX-001 rat-family contract, inventory placeholder artwork and Pokédex content, locate/implement the approved Safari Zone TM34 item without fabricating tile placement, verify all five Dark move retypes and TM/HM eligibility, run focused regressions, and prepare a documented merge-readiness decision while retaining draft status until approved.
+
+
+## THREAD RETIREMENT HANDOFF — 2026-10-11
+Thread retired at user request. Do not execute further implementation until a new user-directed thread.
+Latest verified milestone: legitimate controller-driven Route 1 (map $0C = 12) wild encounter at (7,29), with fifth-party level-35 Raticate $A6 and opponent wild Rattata $A5. Evidence GitHub Actions run 38131270007.
+PyBoy overworld input fix: button() auto-released after a single frame; use button_press() and button_release() for held movement. DEBUG-only startup also sets EVENT_FOLLOWED_OAK_INTO_LAB so Oak's script no longer blocks Route 1.
+Earlier Poison Fang and Crunch four-case tests passed in run 38104385666. Subsequent combined workflow runs included failed move-fixture collectors: historical success is not proof of passing current HEAD.
+Latest new unverified test: tests/battle/probe_rattaking_evolution_battle.py, drafted to switch the fifth-party Raticate into the real Route 1 wild battle. Its own CI run, success, and integration have NOT been verified.
+NOT DONE: Raticate battle switch, real level-36 EXP gain, Rattaking evolution, six stats/moves/Pokédex proof, actual SAVE, fresh CONTINUE, exact record/SRAM/box comparison.
+Keep PR #13 draft and feature branch active. No merge approval.
+Resume in new thread: inspect latest GitHub HEAD/CI; validate new evolution-battle probe, integrate and run controller replay; only then develop post-evolution and persistence checks.
