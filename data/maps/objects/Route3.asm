@@ -19,7 +19,7 @@ IF DEF(_DEBUG)
 	warp_event 18, 5, REDS_HOUSE_2F, 5
 	warp_event 22, 4, REDS_HOUSE_2F, 6
 	warp_event 23, 6, REDS_HOUSE_2F, 7
-	warp_event 32, 10, REDS_HOUSE_2F, 8
+	; Female Pokemaniac is tested beside the male arrival tile.
 ENDC
 
 	def_bg_events
