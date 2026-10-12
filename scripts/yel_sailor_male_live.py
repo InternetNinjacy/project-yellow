@@ -18,7 +18,7 @@ from yel_dev_lab_verify import (
 )
 
 FOREST = 0x0e  # DEBUG Route 3 fixture
-TARGET_CLASS = 4   # BUG_CATCHER
+TARGET_CLASS = 4   # SAILOR
 TARGET_PARTY = 1
 TARGET_YX = (5, 19)  # trainer tile (y=33, x=30), facing LEFT, range 4
 SIGHT_TILES = {(5,18)}  # left-adjacent talk tile
@@ -112,7 +112,7 @@ def main():
                 tick(emu,80)
                 cls=mem8(emu,symbols["wTrainerClass"])
                 var=mem8(emu,symbols["wTrainerGenderVariant"])
-                if cls==TARGET_CLASS and var==1:
+                if cls==TARGET_CLASS and var==0:
                     triggered=True
                     battle.append(direction)
                     break
@@ -128,7 +128,7 @@ def main():
         result["name_raw_hex"]=name.hex()
         # Fetch expected 13-byte name directly from the built ROM's symbol.
         name_bank=int(next(line[:2] for line in Path(args.sym).read_text().splitlines()
-                           if line.strip().endswith(" TrainerVariantNames")),16)
+                           if line.strip().endswith(" TrainerNames")),16)
         name_addr=symbols["TrainerNames"] + 3*13  # Original Sailor is class 4
         expected_name=bytes(int(emu.memory[name_bank,name_addr+i]) for i in range(13))
         result["expected_name_raw_hex"]=expected_name.hex()
