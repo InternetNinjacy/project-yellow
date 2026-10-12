@@ -148,6 +148,9 @@ _LoadTrainerPic:
 	ld a, [wLinkState]
 	and a
 	jr nz, .linkPic
+	ld a, [wTrainerClass]
+	cp SAILOR
+	jr z, .variantPic
 	ld a, [wTrainerGenderVariant]
 	and a
 	jr z, .originalPic
