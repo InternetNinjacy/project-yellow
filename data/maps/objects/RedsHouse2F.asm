@@ -9,7 +9,8 @@ IF DEF(_DEBUG)
 	; Separate Youngster female fixture from the Bug Catcher forest fixture.
 	warp_event  7,  3, ROUTE_3, 1
 	warp_event  7,  4, ROUTE_3, 2
-	warp_event  7,  5, SILPH_CO_11F, 4
+	warp_event  7,  5, ROUTE_3, 3
+	warp_event  7,  6, ROUTE_3, 4
 ENDC
 
 	def_bg_events
