@@ -1,0 +1,50 @@
+name: Pewter Gym CI-only visual verification
+
+on:
+  pull_request:
+    paths:
+      - 'engine/menus/main_menu.asm'
+      - 'tools/pewter_gym/**'
+      - '.github/workflows/pewter-gym-visual.yml'
+      - 'gfx/tilesets/pewter_gym.png'
+      - 'maps/PewterGym.blk'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  frozen-gym-render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install RGBDS dependencies
+        run: sudo apt-get update && sudo apt-get install -y bison libpng-dev pkg-config
+      - uses: actions/checkout@v4
+        with:
+          repository: gbdev/rgbds
+          ref: v1.0.3
+          path: rgbds
+      - name: Build RGBDS
+        run: sudo make -C rgbds -j2 install
+      - name: Build isolated CI visual ROM with symbols
+        run: |
+          make DEBUG=1 RGBASMFLAGS='-Weverything -Wtruncation=1 -Q8 -P includes.asm -D _PEWTER_GYM_VISUAL_TEST' -j2 pokeyellow.gbc
+          test -s pokeyellow.sym
+      - name: Install PyBoy
+        run: python3 -m pip install 'pyboy==2.6.0' 'Pillow>=10,<12'
+      - name: Test actual Pewter Gym entry and renderer
+        run: |
+          python3 tools/pewter_gym/ci_visual_bootstrap.py \
+            --rom pokeyellow.gbc --symbols pokeyellow.sym \
+            --output build/pewter_gym/actual
+      - name: Preserve evidence and failure screenshots (exclude ROM)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pewter-gym-ci-render-evidence
+          path: |
+            build/pewter_gym/actual/*.png
+            build/pewter_gym/actual/*.json
+          if-no-files-found: warn
+          retention-days: 30
