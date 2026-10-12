@@ -89,8 +89,8 @@ def main():
         # trainer line-of-sight logic; talk to the adjacent trainer instead.
         pos=(mem8(emu,symbols["wYCoord"]),mem8(emu,symbols["wXCoord"]))
         result["interaction_origin_y_x"]=list(pos)
-        if pos==(10,32):
-            tap(emu,"right",hold=2,settle=18)
+        if pos==(6,23):
+            tap(emu,"left",hold=2,settle=18)
             tap(emu,"a",hold=4,settle=30)
             battle=["right","a"]
             for _ in range(40):
