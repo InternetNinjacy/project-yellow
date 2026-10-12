@@ -74,7 +74,7 @@ def main():
    else:press("up",1,300)
    press(None,300,0)
    for i in range(12):
-    press("a",4,170)
+    press("a",30,170)
     result["attempts"].append({"tile":tile,"index":i,"location":loc(),
       "facing":em.memory[syms["wSpritePlayerStateData1FacingDirection"][1]],
       "pc_hits":visited["ActivatePC"],
