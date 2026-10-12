@@ -155,6 +155,12 @@ MaybeUseTrainerVariantPic::
 	cp LASS
 	ret nz
 	ld de, LadPic
+.sailor
+	ld a, [wTrainerGenderVariant]
+	and a
+	ld de, SailorPic
+	jr z, .setPortrait
+	ld de, SailorFemalePic
 .setPortrait
 	ld hl, wTrainerPicPointer
 	ld a, e
