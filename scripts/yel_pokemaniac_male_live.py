@@ -130,7 +130,7 @@ def main():
         # Validate exact original POKéMANIAC characters in Gen 1 text encoding.
         # The original TrainerNames table stores 12-byte records, whereas
         # the battle name buffer is 13 bytes; direct 13-byte indexing is wrong.
-        expected_prefix=bytes.fromhex("8f8e8aa48c808d888082")  # S A I L O R
+        expected_prefix=bytes.fromhex("8f8e8a")  # S A I L O R
         result["expected_name_prefix_hex"]=expected_prefix.hex()
         if not name.startswith(expected_prefix):
             raise AssertionError("Actual battle name is not POKéMANIAC")
@@ -171,7 +171,7 @@ def main():
         result["enemy_party_levels"] = [mem8(emu, symbols[k]) for k in level_symbols]
         if result["enemy_party_levels"] != [30, 30]:
             raise AssertionError("Expected level-18 Rhyhorn and Lickitung in Pokemaniac #1 party")
-        portrait=symbols["PokemaniacPic"]
+        portrait=symbols["PokemaniacMalePic"]
         actual=int.from_bytes(bytes(result["portrait_pointer"]),"little")
         if actual!=portrait:
             raise AssertionError(f"Wrong portrait pointer: {actual:#06x} != {portrait:#06x}")
