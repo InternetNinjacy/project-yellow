@@ -12,7 +12,7 @@ IF DEF(_DEBUG)
 	warp_event  7,  5, ROUTE_3, 3
 	warp_event  7,  6, ROUTE_3, 4
 	warp_event  7,  7, ROUTE_3, 5
-	warp_event  2,  2, ROUTE_3, 6
+	warp_event  7,  1, ROUTE_3, 6
 ENDC
 
 	def_bg_events
