@@ -126,8 +126,8 @@ ItemUseBall:
 	; A = 0 when every box is full.
 	; Bankswitch restores the previous ROM bank into A. The callee's
 	; zero flag survives the far call, but its A return value does not.
-	callfar CheckBoxSpaceForCapture
-	jp z, BoxFullCannotThrowBall
+	callfar Yel012PreflightCaptureTarget
+	jp c, BoxFullCannotThrowBall
 
 .canUseBall
 	xor a
@@ -533,6 +533,15 @@ ItemUseBall:
 	jp z, .oldManCaughtMon ; if so, don't give the player the caught Pokémon
 	cp BATTLE_TYPE_PIKACHU
 	jp z, .oldManCaughtMon ; same with Pikachu battle
+	ld a, [wPartyCount]
+	cp PARTY_LENGTH
+	jr nz, .captureStorageReady
+	callfar Yel012CaptureToAvailableBox
+	jr nc, .captureStorageReady
+	xor a
+	ld [wCapturedMonSpecies], a
+	jp BoxFullCannotThrowBall
+.captureStorageReady
 	ld hl, ItemUseBallText05
 	call PrintText
 
@@ -582,8 +591,6 @@ ItemUseBall:
 .sendToBox
 	call ClearSprites
 	; A successful catch now requires storage: switch only at this point.
-	callfar AutoSwitchBoxForCapture
-	call SendNewMonToBox
 	ld hl, ItemUseBallText07
 	CheckEvent EVENT_MET_BILL
 	jr nz, .printTransferredToPCText

@@ -30,25 +30,41 @@ DEF box_n = 0
 MACRO boxes
 	REPT \1
 		DEF box_n += 1
-	sBox{d:box_n}:: ds wBoxDataEnd - wBoxDataStart
+	sBox{d:box_n}:: ds 1682 ; YEL-QOL-012 physical 30-slot box, independent of WRAM window
 	ENDR
 ENDM
 
 SECTION "Saved Boxes 1", SRAM
-
-; sBox1 - sBox6
-	boxes 6
+	boxes 4
+ASSERT sBox4 - sBox1 == 3 * 1682
 sBank2AllBoxesChecksum:: db
-sBank2IndividualBoxChecksums:: ds 6
+sBank2IndividualBoxChecksums:: ds 4
 
 SECTION "Saved Boxes 2", SRAM
-
-; sBox7 - sBox12
-	boxes 6
+	boxes 4
 sBank3AllBoxesChecksum:: db
-sBank3IndividualBoxChecksums:: ds 6
+sBank3IndividualBoxChecksums:: ds 4
 
-; All 12 boxes fit within 2 SRAM banks
+SECTION "YEL012 Transaction Backup", SRAM
+sYel012TransactionBackup:: ds 1682
+sYel012TransactionShadow:: ds 1682
+sYel012TransactionWindowBackup:: ds wBoxDataEnd - wBoxDataStart
+sYel012TransactionNewRecord:: ds 55
+sYel012TransactionStatus:: db
+sYel012TransactionPage:: db
+sYel012TransactionBox:: db
+sYel012TransactionPagePending:: db
+; Version marker is written LAST by explicit new-game initialization only.
+; Never infer an empty/new save from an erased or corrupt marker.
+sYel012StorageVersion:: db
+sYel012StorageVersionCheck:: db
+
+SECTION "Saved Boxes 3", SRAM
+	boxes 4
+sBank4AllBoxesChecksum:: db
+sBank4IndividualBoxChecksums:: ds 4
+
+; Twelve 30-mon boxes occupy three distinct SRAM banks
 	ASSERT box_n == NUM_BOXES, \
 		"boxes: Expected {d:NUM_BOXES} total boxes, got {d:box_n}"
 

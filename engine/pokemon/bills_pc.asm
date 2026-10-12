@@ -90,6 +90,113 @@ PKMNLeaguePCText: db "<PKMN>LEAGUE@"
 LogOffPCText:     db "LOG OFF@"
 
 BillsPC_::
+    ; New versioned PC: read-only 20+10 staging and selection.
+    ; Deposits/withdrawals/releases remain fail-closed until they
+    ; have transaction-backed handlers. Legacy saves are refused.
+    farcall Yel012CheckStorageVersion
+    jr c, .unavailable
+    ld hl, Yel012SafePCChoiceText
+    call PrintText
+    call YesNoChoice
+    ld a, [wCurrentMenuItem]
+    and a
+    jr nz, Yel012SafePCNextBox
+    jp Yel012SafePCView
+.unavailable
+    ld hl, Yel012PCUpgradeText
+    call PrintText
+    ret
+
+Yel012SafePCNextBox:
+    ld a, [wCurrentBoxNum]
+    and BOX_NUM_MASK
+    inc a
+    cp NUM_BOXES
+    jr c, .store
+    xor a
+.store
+    set BIT_HAS_CHANGED_BOXES, a
+    ld [wCurrentBoxNum], a
+    ld hl, Yel012PCBoxChangedText
+    call PrintText
+    ret
+
+Yel012SafePCView:
+    ; Stage one of two pages. The 1122-byte WRAM buffer never
+    ; receives a 1682-byte physical box memcpy.
+    farcall Yel012BeginTransaction
+    jr c, .unavailable
+    xor a
+    farcall Yel012StageWindow
+    jr c, .abort
+    call Yel012SafePCDisplayPage
+    ; Restore original WRAM and leave physical SRAM untouched.
+    farcall Yel012AbortTransaction
+    ld hl, Yel012SafePCNextPageText
+    call PrintText
+    call YesNoChoice
+    ld a, [wCurrentMenuItem]
+    and a
+    ret nz
+    farcall Yel012BeginTransaction
+    jr c, .unavailable
+    ld a, 20
+    farcall Yel012StageWindow
+    jr c, .abort
+    call Yel012SafePCDisplayPage
+.abort
+    farcall Yel012AbortTransaction
+    ret
+.unavailable
+    ld hl, Yel012PCUpgradeText
+    call PrintText
+    ret
+
+Yel012SafePCDisplayPage:
+    ld a, [wBoxCount]
+    and a
+    jr nz, .hasMons
+    ld hl, NoMonText
+    call PrintText
+    ret
+.hasMons
+    ld a, 1 ; MONSTER_NAME
+    ld [wNameListType], a
+    xor a
+    ld [wPartyAndBillsPCSavedMenuItem], a
+    ld hl, wBoxCount
+    call DisplayMonListMenu
+    ret c
+    call SaveScreenTilesToBuffer1
+    ld a, BOX_DATA
+    ld [wMonDataLocation], a
+    predef StatusScreen
+    predef StatusScreen2
+    call LoadScreenTilesFromBuffer1
+    call ReloadTilesetTilePatterns
+    call RunDefaultPaletteCommand
+    call LoadGBPal
+    ret
+
+Yel012SafePCChoiceText:
+    text "VIEW BOX?"
+    line "NO: NEXT BOX"
+    prompt
+Yel012SafePCNextPageText:
+    text "VIEW SLOTS"
+    line "21 TO 30?"
+    prompt
+Yel012PCBoxChangedText:
+    text "NEXT BOX"
+    line "SELECTED."
+    prompt
+Yel012PCUpgradeText:
+    text "PC STORAGE"
+    line "UNAVAILABLE."
+    para "YOUR <PKMN> ARE"
+    line "SAFE."
+    prompt
+
 	ld hl, wStatusFlags5
 	set BIT_NO_TEXT_DELAY, [hl]
 	xor a
