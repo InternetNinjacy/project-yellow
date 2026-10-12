@@ -138,6 +138,8 @@ MaybeUseTrainerVariantPic::
 	ld a, [wTrainerClass]
 	cp SAILOR
 	jr z, .sailor
+	cp POKEMANIAC
+	jr z, .pokemaniac
 	ld a, [wTrainerGenderVariant]
 	and a
 	ret z
