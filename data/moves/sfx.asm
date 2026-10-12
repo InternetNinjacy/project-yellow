@@ -166,5 +166,8 @@ MoveSoundTable:
 	db SFX_NOT_VERY_EFFECTIVE, $01, $ff ; SLASH
 	db SFX_BATTLE_2C,          $d8, $04 ; SUBSTITUTE
 	db SFX_BATTLE_0B,          $00, $80 ; STRUGGLE
+	db SFX_BATTLE_2C,          $00, $80 ; SCARY_FACE
+	db SFX_BATTLE_0B,          $00, $80 ; POISON_FANG
+	db SFX_BATTLE_0B,          $00, $80 ; CRUNCH
 	assert_table_length NUM_ATTACKS
 	db SFX_BATTLE_0B,          $00, $80

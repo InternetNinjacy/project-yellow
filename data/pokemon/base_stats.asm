@@ -151,6 +151,7 @@ INCLUDE "data/pokemon/base_stats/dragonair.asm"
 INCLUDE "data/pokemon/base_stats/dragonite.asm"
 INCLUDE "data/pokemon/base_stats/mewtwo.asm"
 INCLUDE "data/pokemon/base_stats/mew.asm"
+INCLUDE "data/pokemon/base_stats/rattaking.asm"
 	assert_table_length NUM_POKEMON
 
 ; Independent SpA / SpD species bases (National Dex keyed, save-layout-neutral).

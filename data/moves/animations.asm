@@ -165,6 +165,9 @@ AttackAnimationPointers:
 	dw SlashAnim
 	dw SubstituteAnim
 	dw StruggleAnim
+	dw LeerAnim ; SCARY_FACE placeholder animation
+	dw BiteAnim ; POISON_FANG placeholder animation
+	dw BiteAnim ; CRUNCH placeholder animation
 	assert_table_length NUM_ATTACKS
 	dw ShowPicAnim
 	dw EnemyFlashAnim

@@ -9,7 +9,9 @@ SetDebugNewGameParty: ; unreferenced except in _DEBUG
 	ld a, [de]
 	ld [wCurEnemyLevel], a
 	inc de
+	push de ; AddPartyMon clobbers registers: preserve table cursor.
 	call AddPartyMon
+	pop de
 	jr .loop
 
 DebugNewGameParty: ; unreferenced except in _DEBUG
@@ -17,6 +19,9 @@ DebugNewGameParty: ; unreferenced except in _DEBUG
 	db PERSIAN, 80
 	db JIGGLYPUFF, 15
 	db STARTER_PIKACHU, 5
+	; YEL-MON-004 controller-only evolution fixture: ordinary AddPartyMon,
+	; not a scripted evolution or emulator WRAM insertion.
+	db RATICATE, 35
 	db -1 ; end
 
 PrepareNewGameDebug: ; dummy except in _DEBUG
@@ -33,7 +38,25 @@ IF DEF(_DEBUG)
 	ld a, ~(1 << BIT_EARTHBADGE)
 	ld [wObtainedBadges], a
 
+	; The DEBUG initialization entry can be reached more than once during
+	; intro navigation. Never append another copy of the fixture party.
+	ld a, [wPartyCount]
+	and a
+	jr nz, .partyAlreadyInitialized
 	call SetDebugNewGameParty
+.partyAlreadyInitialized
+
+	; YEL-MON-004 DEBUG-only evolution fixture. Ordinary AddPartyMon
+	; created the level-35 Raticate as party member five; put its
+	; medium-fast experience one point short of level 36 (36^3-1).
+	; The next level must still be earned by a real battle.
+	ld hl, wPartyMon5Exp
+	xor a
+	ld [hli], a ; high byte $00
+	ld a, HIGH(46655)
+	ld [hli], a ; middle byte $B6
+	ld a, LOW(46655)
+	ld [hl], a ; low byte $3F
 
 	; Pikachu gets Surf.
 	ld a, SURF
@@ -50,6 +73,11 @@ IF DEF(_DEBUG)
 	ld [hli], a
 	ld a, STRENGTH
 	ld [hl], a
+
+	; The DEBUG New Game party skips Oak's capture/lab introduction.
+	; Match the story gate to that test-only setup so Route 1 is traversable
+	; by ordinary controller inputs, without changing production gameplay.
+	SetEvent EVENT_FOLLOWED_OAK_INTO_LAB
 
 	; Get some debug items.
 	ld hl, wNumBagItems
@@ -149,7 +177,7 @@ DebugUnusedList: ; unreferenced
 	db TM_SOLARBEAM, 10
 	db TM_DRAGON_RAGE, 10
 	db TM_MIMIC, 10
-	db TM_BIDE, 10
+	db TM_POISON_FANG, 10
 	db TM_METRONOME, 10
 	db TM_SELFDESTRUCT, 10
 	db TM_SWIFT, 10

@@ -3744,7 +3744,7 @@ MirrorMoveCheck:
 	ld hl, AlwaysHappenSideEffects
 	ld de, 1
 	call IsInArray
-	call c, JumpMoveEffect ; not done after executing effects of AlwaysHappenSideEffects
+	call c, JumpMoveEffect ; original always-happen effects
 	ld hl, wEnemyMonHP
 	ld a, [hli]
 	ld b, [hl]
@@ -5537,9 +5537,10 @@ MetronomePickMove:
 	call BattleRandom
 	and a
 	jr z, .pickMoveLoop
-	cp STRUGGLE
-	ASSERT NUM_ATTACKS == STRUGGLE ; random numbers greater than STRUGGLE are not moves
+	cp NUM_ATTACKS + 1 ; include appended moves, reject out-of-range IDs
 	jr nc, .pickMoveLoop
+	cp STRUGGLE ; Struggle remains ineligible for Metronome
+	jr z, .pickMoveLoop
 	cp METRONOME
 	jr z, .pickMoveLoop
 	ld [hl], a
@@ -6254,7 +6255,7 @@ EnemyCheckIfMirrorMoveEffect:
 .handleExplosionMiss
 	ld a, [wEnemyMoveEffect]
 	ld hl, AlwaysHappenSideEffects
-	ld de, $1
+	ld de, 1
 	call IsInArray
 	call c, JumpMoveEffect
 	ld hl, wBattleMonHP
@@ -6588,11 +6589,8 @@ GetCurrentMove:
 	jr .selected
 .player
 	ld de, wPlayerMoveNum
-	; Apply InitBattleVariables to FightDebugMenu.
-	ld a, [wStatusFlags7]
-	bit BIT_TEST_BATTLE, a
-	ld a, [wTestBattlePlayerSelectedMove]
-	jr nz, .selected
+	; Even in DEBUG battles, load the move selected from the party's menu.
+	; wTestBattlePlayerSelectedMove is a separate animation-preview control.
 	ld a, [wPlayerSelectedMove]
 .selected
 	ld [wNameListIndex], a

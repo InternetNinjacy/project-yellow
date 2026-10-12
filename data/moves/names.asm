@@ -166,4 +166,7 @@ MoveNames::
 	li "SLASH"
 	li "SUBSTITUTE"
 	li "STRUGGLE"
+	li "SCARY FACE"
+	li "POISON FANG"
+	li "CRUNCH"
 	assert_list_length NUM_ATTACKS
