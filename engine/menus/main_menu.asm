@@ -163,6 +163,22 @@ IF DEF(_PEWTER_GYM_VISUAL_TEST)
 	ld [wXCoord], a
 	ld a, 18
 	ld [wYCoord], a
+	; OakSpeech initialized the overworld view for Pallet Town. A CI-only
+	; relocation must initialize the Pewter view origin as well: the player
+	; appears four 16px blocks from the left and four from the top of the
+	; 10x9 visible block area, with MAP_BORDER blocks around the map.
+	; Pewter width = 20 blocks; the bordered row stride is 26 blocks.
+	; View top-left map block (6,7) => bordered block (9,10).
+	ld hl, wOverworldMap + 10 * (20 + 2 * MAP_BORDER) + 9
+	ld a, l
+	ld [wCurrentTileBlockMapViewPointer], a
+	ld a, h
+	ld [wCurrentTileBlockMapViewPointer + 1], a
+	; Coordinates 16,18 are even, so the map view starts aligned to a
+	; 2x2-tile block. Do not carry OakSpeech block offsets forward.
+	xor a
+	ld [wXBlockCoord], a
+	ld [wYBlockCoord], a
 ENDC
 	ld a, PLAYER_DIR_UP
 	ld [wPlayerMovingDirection], a
