@@ -24,7 +24,7 @@ jobs:
       - name: Build DEBUG
         run: |
           rm -rf .toolchain
-          make -j2 pokeyellow_debug.gbc
+          make -j2 RGBASMFLAGS='-Weverything -Wtruncation=1 -Q8 -P includes.asm -D _DEBUG -D _POKEMANIAC_F_TEST' pokeyellow_debug.gbc
       - name: Execute actual controller-path battle probe
         run: python scripts/yel_pokemaniac_female_live.py --out test-results/pokemaniac-female-live
       - name: Upload non-ROM traces and screenshots
