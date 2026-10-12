@@ -158,6 +158,13 @@ MaybeUseTrainerVariantPic::
 	ret nz
 	ld de, LadPic
 	jr .setPortrait
+.pokemaniac
+	ld a, [wTrainerGenderVariant]
+	and a
+	ld de, PokemaniacMalePic
+	jr z, .setPortrait
+	ld de, PokemaniacFemalePic
+	jr .setPortrait
 .sailor
 	ld a, [wTrainerGenderVariant]
 	and a
